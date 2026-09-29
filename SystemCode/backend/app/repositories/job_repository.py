@@ -3,15 +3,18 @@ import json
 from pathlib import Path
 import sqlite3
 
+from sqlalchemy import text
+from sqlalchemy.engine import Connection, RowMapping
+
+from app.db.postgres import get_postgres_engine
 from app.db.sqlite import connect, initialize_database
 from app.ingestion.source_registry import JobSource
 from app.parsers.job_industry_classifier import (
     classify_company_industry,
     normalize_company_name,
 )
+from app.repositories.postgres_helpers import ensure_company, ensure_skill
 from app.schemas.job import (
-    CompanyDiscoveryStatus,
-    JobDiscoveryPreview,
     JobPosting,
     JobRequirementDocument,
 )
@@ -23,13 +26,21 @@ class JobRepository:
         # 延迟到第一次真正访问数据库时才建表/迁移，避免 import app 时就改写 data/careerpilot.db
         self._initialized = False
 
+    @property
+    def _use_postgres(self) -> bool:
+        return self.db_path is None
+
     def _connect(self) -> sqlite3.Connection:
+        if self.db_path is None:
+            raise RuntimeError("SQLite is available only with an explicit test database path.")
         if not self._initialized:
             initialize_database(self.db_path)
             self._initialized = True
         return connect(self.db_path)
 
     def upsert_many(self, jobs: list[JobPosting]) -> int:
+        if self._use_postgres:
+            return self._upsert_many_postgres(jobs)
         changed_count = 0
         with self._connect() as connection:
             for job in jobs:
@@ -89,6 +100,8 @@ class JobRepository:
         company: str | None = None,
         limit: int = 100,
     ) -> list[JobPosting]:
+        if self._use_postgres:
+            return self._list_jobs_postgres(status=status, company=company, limit=limit)
         query = "SELECT * FROM jobs WHERE status = ?"
         params: list[str | int] = [status]
         if company:
@@ -102,6 +115,8 @@ class JobRepository:
         return [self._row_to_job(row) for row in rows]
 
     def get_job(self, job_id: int) -> JobPosting | None:
+        if self._use_postgres:
+            return self._get_job_postgres(job_id)
         with self._connect() as connection:
             row = connection.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
         return self._row_to_job(row) if row else None
@@ -109,6 +124,9 @@ class JobRepository:
     def save_job_analysis(self, document: JobRequirementDocument) -> None:
         if document.job_id is None:
             raise ValueError("job_id is required before saving job analysis.")
+        if self._use_postgres:
+            self._save_job_analysis_postgres(document)
+            return
 
         with self._connect() as connection:
             connection.execute(
@@ -167,11 +185,17 @@ class JobRepository:
             )
 
     def count_job_analysis(self) -> int:
+        if self._use_postgres:
+            with get_postgres_engine().connect() as connection:
+                return int(connection.execute(text("SELECT COUNT(*) FROM job_analyses")).scalar_one())
         with self._connect() as connection:
             row = connection.execute("SELECT COUNT(*) AS count FROM job_analysis").fetchone()
         return int(row["count"])
 
     def mark_job_inactive(self, job_id: int, reason: str | None = None) -> None:
+        if self._use_postgres:
+            self._mark_job_inactive_postgres(job_id, reason)
+            return
         with self._connect() as connection:
             row = connection.execute("SELECT raw_json FROM jobs WHERE id = ?", (job_id,)).fetchone()
             raw_json = {}
@@ -190,6 +214,9 @@ class JobRepository:
             connection.execute("DELETE FROM job_analysis WHERE job_id = ?", (job_id,))
 
     def ensure_company_sources(self, sources: list[JobSource]) -> None:
+        if self._use_postgres:
+            self._ensure_company_sources_postgres(sources)
+            return
         now = datetime.now().astimezone().isoformat()
         with self._connect() as connection:
             for source in sources:
@@ -219,6 +246,8 @@ class JobRepository:
                 )
 
     def list_company_sources(self, enabled_only: bool = False) -> list[JobSource]:
+        if self._use_postgres:
+            return self._list_company_sources_postgres(enabled_only)
         query = "SELECT * FROM company_sources"
         params: list[int] = []
         if enabled_only:
@@ -245,6 +274,22 @@ class JobRepository:
         status: str,
         message: str | None = None,
     ) -> None:
+        if self._use_postgres:
+            with get_postgres_engine().begin() as connection:
+                connection.execute(
+                    text(
+                        """
+                        UPDATE job_sources
+                        SET last_checked_at = CURRENT_TIMESTAMP,
+                            last_status = :status,
+                            last_message = :message,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE name = :source_name
+                        """
+                    ),
+                    {"status": status, "message": message, "source_name": source_name},
+                )
+            return
         with self._connect() as connection:
             connection.execute(
                 """
@@ -262,161 +307,401 @@ class JobRepository:
                 ),
             )
 
-    def upsert_discovery_previews(self, previews: list[JobDiscoveryPreview]) -> int:
-        changed_count = 0
-        with self._connect() as connection:
-            for preview in previews:
-                existing = connection.execute(
-                    """
-                    SELECT raw_json
-                    FROM job_discovery_preview
-                    WHERE discovery_source = ? AND external_id = ?
-                    """,
-                    (preview.discovery_source, preview.external_id),
-                ).fetchone()
-                raw_json = json.dumps(preview.raw_json, ensure_ascii=False)
-                if existing is None or existing["raw_json"] != raw_json:
-                    changed_count += 1
-
-                connection.execute(
-                    """
-                    INSERT INTO job_discovery_preview (
-                        discovery_source, external_id, company, title, location, snippet,
-                        source_url, final_url, ats_type, jd_quality, status, collected_at,
-                        raw_json
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ON CONFLICT(discovery_source, external_id) DO UPDATE SET
-                        company = excluded.company,
-                        title = excluded.title,
-                        location = excluded.location,
-                        snippet = excluded.snippet,
-                        source_url = excluded.source_url,
-                        final_url = excluded.final_url,
-                        ats_type = excluded.ats_type,
-                        jd_quality = excluded.jd_quality,
-                        status = excluded.status,
-                        collected_at = excluded.collected_at,
-                        raw_json = excluded.raw_json
-                    """,
-                    (
-                        preview.discovery_source,
-                        preview.external_id,
-                        preview.company,
-                        preview.title,
-                        preview.location,
-                        preview.snippet,
-                        preview.source_url,
-                        preview.final_url,
-                        preview.ats_type,
-                        preview.jd_quality,
-                        preview.status,
-                        preview.collected_at.isoformat(),
-                        raw_json,
-                    ),
-                )
-        return changed_count
-
-    def list_discovery_previews(
-        self,
-        status: str = "preview",
-        limit: int = 100,
-    ) -> list[JobDiscoveryPreview]:
-        with self._connect() as connection:
-            rows = connection.execute(
-                """
-                SELECT *
-                FROM job_discovery_preview
-                WHERE status = ?
-                ORDER BY collected_at DESC
-                LIMIT ?
-                """,
-                (status, limit),
-            ).fetchall()
-        return [self._row_to_discovery_preview(row) for row in rows]
-
     def clear_all_job_data(self) -> None:
+        if self._use_postgres:
+            with get_postgres_engine().begin() as connection:
+                connection.execute(text("DELETE FROM job_postings"))
+            return
         with self._connect() as connection:
-            connection.execute("DELETE FROM job_match_features")
             connection.execute("DELETE FROM job_analysis")
             connection.execute("DELETE FROM jobs")
-            connection.execute("DELETE FROM job_discovery_preview")
-            connection.execute("DELETE FROM company_discovery_status")
             connection.execute(
                 """
                 DELETE FROM sqlite_sequence
-                WHERE name IN ('jobs', 'job_discovery_preview', 'company_discovery_status')
+                WHERE name = 'jobs'
                 """
             )
 
-    def get_company_discovery_status(
-        self,
-        normalized_company: str,
-        provider: str,
-    ):
-        with self._connect() as connection:
-            return connection.execute(
-                """
-                SELECT *
-                FROM company_discovery_status
-                WHERE normalized_company = ? AND provider = ?
-                """,
-                (normalized_company, provider),
-            ).fetchone()
-
-    def save_company_discovery_status(
-        self,
-        company: str,
-        normalized_company: str,
-        provider: str,
-        status: str,
-        provider_identifier: str | None = None,
-        jobs_found_count: int = 0,
-        message: str | None = None,
-    ) -> None:
-        with self._connect() as connection:
+    @staticmethod
+    def _ensure_source(connection: Connection, source_name: str, company_id: int) -> int:
+        source_id = connection.execute(
+            text("SELECT id FROM job_sources WHERE name = :name"),
+            {"name": source_name},
+        ).scalar_one_or_none()
+        if source_id is not None:
+            return int(source_id)
+        return int(
             connection.execute(
-                """
-                INSERT INTO company_discovery_status (
-                    company, normalized_company, provider, provider_identifier,
-                    status, jobs_found_count, message, checked_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(normalized_company, provider) DO UPDATE SET
-                    company = excluded.company,
-                    provider_identifier = excluded.provider_identifier,
-                    status = excluded.status,
-                    jobs_found_count = excluded.jobs_found_count,
-                    message = excluded.message,
-                    checked_at = excluded.checked_at
-                """,
-                (
-                    company,
-                    normalized_company,
-                    provider,
-                    provider_identifier,
-                    status,
-                    jobs_found_count,
-                    message,
-                    datetime.now().astimezone().isoformat(),
+                text(
+                    """
+                    INSERT INTO job_sources (
+                        company_id, name, provider, identifier, enabled, priority
+                    ) VALUES (
+                        :company_id, :name, 'runtime', :identifier, FALSE, 100
+                    )
+                    RETURNING id
+                    """
                 ),
+                {
+                    "company_id": company_id,
+                    "name": source_name,
+                    "identifier": source_name,
+                },
+            ).scalar_one()
+        )
+
+    def _upsert_many_postgres(self, jobs: list[JobPosting]) -> int:
+        changed_count = 0
+        with get_postgres_engine().begin() as connection:
+            for job in jobs:
+                company_id = ensure_company(connection, job.company)
+                source_id = self._ensure_source(connection, job.source, company_id)
+                existing = connection.execute(
+                    text(
+                        """
+                        SELECT jp.id, latest.content_hash
+                        FROM job_postings jp
+                        LEFT JOIN LATERAL (
+                            SELECT content_hash
+                            FROM job_versions
+                            WHERE job_id = jp.id
+                            ORDER BY collected_at DESC, id DESC
+                            LIMIT 1
+                        ) latest ON TRUE
+                        WHERE jp.source_id = :source_id
+                          AND jp.external_id = :external_id
+                        """
+                    ),
+                    {"source_id": source_id, "external_id": job.external_id},
+                ).mappings().one_or_none()
+                if existing is None or existing["content_hash"] != job.content_hash:
+                    changed_count += 1
+
+                job_id = int(
+                    connection.execute(
+                        text(
+                            """
+                            INSERT INTO job_postings (
+                                company_id, source_id, external_id, title, location_text,
+                                source_employment_type, source_url, status,
+                                first_seen_at, last_seen_at
+                            ) VALUES (
+                                :company_id, :source_id, :external_id, :title, :location,
+                                :employment_type, :source_url, :status,
+                                :first_seen_at, :last_seen_at
+                            )
+                            ON CONFLICT (source_id, external_id) DO UPDATE SET
+                                company_id = EXCLUDED.company_id,
+                                title = EXCLUDED.title,
+                                location_text = EXCLUDED.location_text,
+                                source_employment_type = EXCLUDED.source_employment_type,
+                                source_url = EXCLUDED.source_url,
+                                last_seen_at = EXCLUDED.last_seen_at,
+                                status = CASE
+                                    WHEN job_postings.status = 'inactive'
+                                     AND :content_unchanged
+                                    THEN job_postings.status
+                                    ELSE EXCLUDED.status
+                                END,
+                                updated_at = CURRENT_TIMESTAMP
+                            RETURNING id
+                            """
+                        ),
+                        {
+                            "company_id": company_id,
+                            "source_id": source_id,
+                            "external_id": job.external_id,
+                            "title": job.title,
+                            "location": job.location,
+                            "employment_type": job.employment_type,
+                            "source_url": job.url,
+                            "status": job.status,
+                            "first_seen_at": job.collected_at,
+                            "last_seen_at": job.last_seen_at,
+                            "content_unchanged": bool(
+                                existing is not None
+                                and existing["content_hash"] == job.content_hash
+                            ),
+                        },
+                    ).scalar_one()
+                )
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO job_versions (
+                            job_id, content_hash, description, raw_payload, collected_at
+                        ) VALUES (
+                            :job_id, :content_hash, :description,
+                            CAST(:raw_payload AS JSONB), :collected_at
+                        )
+                        ON CONFLICT (job_id, content_hash) DO NOTHING
+                        """
+                    ),
+                    {
+                        "job_id": job_id,
+                        "content_hash": job.content_hash,
+                        "description": job.description,
+                        "raw_payload": json.dumps(job.raw_json, ensure_ascii=False),
+                        "collected_at": job.collected_at,
+                    },
+                )
+        return changed_count
+
+    @staticmethod
+    def _job_select_sql() -> str:
+        return """
+            SELECT jp.id, js.name AS source, c.name AS company, jp.external_id,
+                   jp.title, jp.location_text AS location, latest.description,
+                   jp.source_url AS url, jp.source_employment_type AS employment_type,
+                   latest.collected_at, jp.last_seen_at, latest.content_hash,
+                   jp.status, latest.raw_payload AS raw_json
+            FROM job_postings jp
+            JOIN companies c ON c.id = jp.company_id
+            JOIN job_sources js ON js.id = jp.source_id
+            JOIN LATERAL (
+                SELECT jv.*
+                FROM job_versions jv
+                WHERE jv.job_id = jp.id
+                ORDER BY jv.collected_at DESC, jv.id DESC
+                LIMIT 1
+            ) latest ON TRUE
+        """
+
+    def _list_jobs_postgres(
+        self, status: str, company: str | None, limit: int
+    ) -> list[JobPosting]:
+        query = self._job_select_sql() + " WHERE jp.status = :status"
+        parameters: dict[str, object] = {"status": status, "limit": limit}
+        if company:
+            query += " AND c.name = :company"
+            parameters["company"] = company
+        query += " ORDER BY latest.collected_at DESC LIMIT :limit"
+        with get_postgres_engine().connect() as connection:
+            rows = connection.execute(text(query), parameters).mappings().all()
+        return [self._postgres_row_to_job(row) for row in rows]
+
+    def _get_job_postgres(self, job_id: int) -> JobPosting | None:
+        query = self._job_select_sql() + " WHERE jp.id = :job_id"
+        with get_postgres_engine().connect() as connection:
+            row = connection.execute(text(query), {"job_id": job_id}).mappings().one_or_none()
+        return self._postgres_row_to_job(row) if row else None
+
+    def _save_job_analysis_postgres(self, document: JobRequirementDocument) -> None:
+        assert document.job_id is not None
+        with get_postgres_engine().begin() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT jp.company_id, jv.id AS version_id
+                    FROM job_postings jp
+                    JOIN LATERAL (
+                        SELECT id
+                        FROM job_versions
+                        WHERE job_id = jp.id
+                        ORDER BY collected_at DESC, id DESC
+                        LIMIT 1
+                    ) jv ON TRUE
+                    WHERE jp.id = :job_id
+                    """
+                ),
+                {"job_id": document.job_id},
+            ).mappings().one_or_none()
+            if row is None:
+                raise ValueError(f"Job {document.job_id} does not exist.")
+            version_id = int(row["version_id"])
+            industry_id = connection.execute(
+                text("SELECT id FROM industries WHERE name = :name"),
+                {"name": classify_company_industry(document.company)},
+            ).scalar_one()
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO company_industries (company_id, industry_id)
+                    VALUES (:company_id, :industry_id)
+                    ON CONFLICT DO NOTHING
+                    """
+                ),
+                {"company_id": row["company_id"], "industry_id": industry_id},
+            )
+            connection.execute(
+                text("DELETE FROM job_analyses WHERE job_version_id = :version_id"),
+                {"version_id": version_id},
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO job_analyses (
+                        job_version_id, summary, employment_type, candidate_type,
+                        remote_policy, degree_required, raw_analysis
+                    ) VALUES (
+                        :version_id, :summary, :employment_type, :candidate_type,
+                        :remote_policy, :degree_required, CAST(:raw_analysis AS JSONB)
+                    )
+                    """
+                ),
+                {
+                    "version_id": version_id,
+                    "summary": document.summary,
+                    "employment_type": document.employment_type,
+                    "candidate_type": document.candidate_type,
+                    "remote_policy": document.remote_policy,
+                    "degree_required": document.degree_required,
+                    "raw_analysis": document.model_dump_json(exclude={"industry"}),
+                },
+            )
+            for sequence_no, value in enumerate(document.responsibilities):
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO job_responsibilities (
+                            job_version_id, sequence_no, responsibility_text
+                        ) VALUES (:version_id, :sequence_no, :value)
+                        """
+                    ),
+                    {"version_id": version_id, "sequence_no": sequence_no, "value": value},
+                )
+            for requirement_type, values in (
+                ("required", document.required_skills),
+                ("preferred", document.preferred_skills),
+            ):
+                for sequence_no, value in enumerate(values):
+                    connection.execute(
+                        text(
+                            """
+                            INSERT INTO job_skill_requirements (
+                                job_version_id, skill_id, requirement_type,
+                                sequence_no, source_text
+                            ) VALUES (
+                                :version_id, :skill_id, :requirement_type,
+                                :sequence_no, :value
+                            )
+                            """
+                        ),
+                        {
+                            "version_id": version_id,
+                            "skill_id": ensure_skill(connection, value),
+                            "requirement_type": requirement_type,
+                            "sequence_no": sequence_no,
+                            "value": value,
+                        },
+                    )
+            for table_name, column_name, values in (
+                ("job_major_requirements", "major_text", document.major_required),
+                ("job_keywords", "keyword_text", document.keywords),
+                ("job_source_evidence", "evidence_text", document.source_evidence),
+            ):
+                for sequence_no, value in enumerate(values):
+                    connection.execute(
+                        text(
+                            f"""
+                            INSERT INTO {table_name} (
+                                job_version_id, sequence_no, {column_name}
+                            ) VALUES (:version_id, :sequence_no, :value)
+                            """
+                        ),
+                        {"version_id": version_id, "sequence_no": sequence_no, "value": value},
+                    )
+
+    def _mark_job_inactive_postgres(self, job_id: int, reason: str | None) -> None:
+        inactive_reason = reason or "No required or preferred skills were extracted."
+        with get_postgres_engine().begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    UPDATE job_postings
+                    SET status = 'inactive', inactive_reason = :reason,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :job_id
+                    """
+                ),
+                {"reason": inactive_reason, "job_id": job_id},
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE job_versions
+                    SET raw_payload = raw_payload || jsonb_build_object('inactive_reason', :reason)
+                    WHERE job_id = :job_id
+                    """
+                ),
+                {"reason": inactive_reason, "job_id": job_id},
+            )
+            connection.execute(
+                text(
+                    """
+                    DELETE FROM job_analyses
+                    WHERE job_version_id IN (
+                        SELECT id FROM job_versions WHERE job_id = :job_id
+                    )
+                    """
+                ),
+                {"job_id": job_id},
             )
 
-    def list_company_discovery_statuses(
-        self,
-        provider: str | None = None,
-        limit: int = 100,
-    ) -> list[CompanyDiscoveryStatus]:
-        query = "SELECT * FROM company_discovery_status"
-        params: list[str | int] = []
-        if provider:
-            query += " WHERE provider = ?"
-            params.append(provider)
-        query += " ORDER BY checked_at DESC LIMIT ?"
-        params.append(limit)
-        with self._connect() as connection:
-            rows = connection.execute(query, params).fetchall()
-        return [self._row_to_company_discovery_status(row) for row in rows]
+    def _ensure_company_sources_postgres(self, sources: list[JobSource]) -> None:
+        with get_postgres_engine().begin() as connection:
+            for source in sources:
+                company_id = ensure_company(connection, source.company)
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO job_sources (
+                            company_id, name, provider, identifier, enabled, priority
+                        ) VALUES (
+                            :company_id, :name, :provider, :identifier, :enabled, :priority
+                        )
+                        ON CONFLICT (name) DO UPDATE SET
+                            company_id = EXCLUDED.company_id,
+                            provider = EXCLUDED.provider,
+                            identifier = EXCLUDED.identifier,
+                            enabled = EXCLUDED.enabled,
+                            priority = EXCLUDED.priority,
+                            updated_at = CURRENT_TIMESTAMP
+                        """
+                    ),
+                    {
+                        "company_id": company_id,
+                        "name": source.name,
+                        "provider": source.provider,
+                        "identifier": source.identifier,
+                        "enabled": source.enabled,
+                        "priority": source.priority,
+                    },
+                )
+
+    def _list_company_sources_postgres(self, enabled_only: bool) -> list[JobSource]:
+        query = """
+            SELECT js.name, c.name AS company, js.provider, js.identifier,
+                   js.enabled, js.priority
+            FROM job_sources js
+            JOIN companies c ON c.id = js.company_id
+        """
+        if enabled_only:
+            query += " WHERE js.enabled IS TRUE"
+        query += " ORDER BY js.priority ASC, c.name ASC, js.name ASC"
+        with get_postgres_engine().connect() as connection:
+            rows = connection.execute(text(query)).mappings().all()
+        return [JobSource(**dict(row)) for row in rows]
+
+    @staticmethod
+    def _postgres_row_to_job(row: RowMapping) -> JobPosting:
+        raw_json = row["raw_json"] or {}
+        return JobPosting(
+            id=row["id"],
+            source=row["source"],
+            company=row["company"],
+            external_id=row["external_id"],
+            title=row["title"],
+            location=row["location"],
+            description=row["description"],
+            url=row["url"],
+            employment_type=row["employment_type"],
+            collected_at=row["collected_at"],
+            last_seen_at=row["last_seen_at"],
+            content_hash=row["content_hash"],
+            status=row["status"],
+            raw_json=raw_json if isinstance(raw_json, dict) else json.loads(raw_json),
+        )
 
     def _row_to_job(self, row) -> JobPosting:
         return JobPosting(
@@ -434,35 +719,4 @@ class JobRepository:
             content_hash=row["content_hash"],
             status=row["status"],
             raw_json=json.loads(row["raw_json"]),
-        )
-
-    def _row_to_discovery_preview(self, row) -> JobDiscoveryPreview:
-        return JobDiscoveryPreview(
-            id=row["id"],
-            discovery_source=row["discovery_source"],
-            external_id=row["external_id"],
-            company=row["company"],
-            title=row["title"],
-            location=row["location"],
-            snippet=row["snippet"],
-            source_url=row["source_url"],
-            final_url=row["final_url"],
-            ats_type=row["ats_type"],
-            jd_quality=row["jd_quality"],
-            status=row["status"],
-            collected_at=datetime.fromisoformat(row["collected_at"]),
-            raw_json=json.loads(row["raw_json"]),
-        )
-
-    def _row_to_company_discovery_status(self, row) -> CompanyDiscoveryStatus:
-        return CompanyDiscoveryStatus(
-            id=row["id"],
-            company=row["company"],
-            normalized_company=row["normalized_company"],
-            provider=row["provider"],
-            provider_identifier=row["provider_identifier"],
-            status=row["status"],
-            jobs_found_count=row["jobs_found_count"],
-            message=row["message"],
-            checked_at=datetime.fromisoformat(row["checked_at"]),
         )

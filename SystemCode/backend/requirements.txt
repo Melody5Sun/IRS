@@ -17,5 +17,9 @@ openai==3.14.0
 numpy==2.4.6
 sentence-transformers==5.7.0
 pytest==8.3.4
+SQLAlchemy==2.0.43
+alembic==1.16.5
+psycopg[binary]==3.2.10
+pgvector==0.4.1
 # 规则引擎（app/rule_engine）；它锁定的 frozendict==1.2 在 Python 3.10+ 需要兼容补丁，已在 rules.py 里处理
 experta==1.9.4

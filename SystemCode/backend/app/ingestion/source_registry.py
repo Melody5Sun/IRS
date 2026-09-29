@@ -190,6 +190,20 @@ DEFAULT_SOURCES = [
         priority=25,
     ),
     JobSource(
+        name="globalfoundries_workday",
+        company="GlobalFoundries",
+        provider="workday",
+        identifier="https://globalfoundries.wd1.myworkdayjobs.com/en-US/External",
+        priority=25,
+    ),
+    JobSource(
+        name="ncs_smartrecruiters",
+        company="NCS Group",
+        provider="smartrecruiters",
+        identifier="NCS3",
+        priority=25,
+    ),
+    JobSource(
         name="viridien_workday",
         company="Viridien",
         provider="workday",

@@ -2,20 +2,17 @@ from pathlib import Path
 import sqlite3
 
 
-BACKEND_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DB_PATH = BACKEND_ROOT / "data" / "careerpilot.db"
 SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
 
-def connect(db_path: Path | None = None) -> sqlite3.Connection:
-    target_path = db_path or DEFAULT_DB_PATH
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    connection = sqlite3.connect(target_path)
+def connect(db_path: Path) -> sqlite3.Connection:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(db_path)
     connection.row_factory = sqlite3.Row
     return connection
 
 
-def initialize_database(db_path: Path | None = None) -> None:
+def initialize_database(db_path: Path) -> None:
     with connect(db_path) as connection:
         connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         connection.execute("DROP INDEX IF EXISTS idx_jobs_deadline_at")

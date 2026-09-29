@@ -3,10 +3,14 @@
 import json
 import logging
 import sqlite3
+from collections.abc import Mapping
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
+from sqlalchemy import text
+
+from app.db.postgres import get_postgres_engine
 from app.parsers.job_industry_classifier import normalize_company_name
 from app.rule_engine.constants import (
     DEGREE_RANK,
@@ -128,7 +132,9 @@ def filter_jobs(profile: UserProfile, db_path: str | Path) -> dict:
 def _to_document(fact: Job) -> JobRequirementDocument | None:
     """把岗位 fact 里的 analysis_json 还原成 JobRequirementDocument；解析失败返回 None。"""
     try:
-        payload = json.loads(fact["analysis_json"])
+        raw_payload = fact["analysis_json"]
+        payload = dict(raw_payload) if isinstance(raw_payload, Mapping) else json.loads(raw_payload)
+        payload = dict(payload)
         payload["job_id"] = fact["id"]  # 以库里的主键为准
         # 行业不再存进 analysis_json，读回来只会是默认值，所以这里用按公司查到的行业覆盖
         payload.pop("industry", None)
@@ -155,5 +161,73 @@ def screen_jobs(profile: UserProfile, db_path: str | Path) -> ScreeningResult:
     return ScreeningResult(
         documents=documents,
         total_jobs=len(job_facts),
+        rejected_by_rule=count_rejections(rejections),
+    )
+
+
+def screen_jobs_postgres(profile: UserProfile) -> ScreeningResult:
+    """Run the existing rule engine against the normalized PostgreSQL schema."""
+    query = text(
+        """
+        SELECT jp.id, jp.status, c.name AS company, ja.summary,
+               ja.employment_type, ja.candidate_type, ja.remote_policy,
+               ja.degree_required, ja.raw_analysis AS analysis_json,
+               COALESCE(industry.name, :not_stated) AS industry
+        FROM job_postings jp
+        JOIN companies c ON c.id = jp.company_id
+        JOIN LATERAL (
+            SELECT jv.id
+            FROM job_versions jv
+            JOIN job_analyses analysis ON analysis.job_version_id = jv.id
+            WHERE jv.job_id = jp.id
+            ORDER BY jv.collected_at DESC, jv.id DESC
+            LIMIT 1
+        ) latest ON TRUE
+        JOIN job_analyses ja ON ja.job_version_id = latest.id
+        LEFT JOIN LATERAL (
+            SELECT i.name
+            FROM company_industries ci
+            JOIN industries i ON i.id = ci.industry_id
+            WHERE ci.company_id = jp.company_id
+            ORDER BY i.name
+            LIMIT 1
+        ) industry ON TRUE
+        ORDER BY jp.id
+        """
+    )
+    with get_postgres_engine().connect() as connection:
+        rows = connection.execute(query, {"not_stated": NOT_STATED}).mappings().all()
+    facts: list[Job] = []
+    for row in rows:
+        fields = dict(row)
+        for field, vocab in JOB_FIELD_VOCAB.items():
+            value = fields.get(field)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                fields[field] = NOT_STATED
+            elif value not in vocab:
+                logger.warning(
+                    "岗位 %s 的 %s 取值 %r 不在词表内，按不约束处理",
+                    fields["id"],
+                    field,
+                    value,
+                )
+                fields[field] = NOT_STATED
+        facts.append(Job(**fields))
+
+    engine = FilterEngine()
+    engine.reset()
+    engine.declare(build_student_fact(profile))
+    for fact in facts:
+        engine.declare(fact)
+    engine.run()
+    rejections = engine.rejections
+    documents = [
+        document
+        for fact in facts
+        if fact["id"] not in rejections and (document := _to_document(fact)) is not None
+    ]
+    return ScreeningResult(
+        documents=documents,
+        total_jobs=len(facts),
         rejected_by_rule=count_rejections(rejections),
     )

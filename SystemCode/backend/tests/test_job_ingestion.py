@@ -79,6 +79,8 @@ def test_default_sources_enable_stable_public_apis() -> None:
     assert enabled_sources["amperesand_greenhouse"].provider == "greenhouse"
     assert enabled_sources["caladan_greenhouse"].provider == "greenhouse"
     assert enabled_sources["bosch_smartrecruiters"].provider == "smartrecruiters"
+    assert enabled_sources["globalfoundries_workday"].provider == "workday"
+    assert enabled_sources["ncs_smartrecruiters"].provider == "smartrecruiters"
     assert "tiktok_bytedance_campus" not in enabled_sources
     assert "alibaba_lazada_recruit" not in enabled_sources
     assert "huawei_careers" not in enabled_sources

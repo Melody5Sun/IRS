@@ -1,17 +1,19 @@
 from pathlib import Path
 
-from app.db.sqlite import DEFAULT_DB_PATH
-from app.rule_engine import screen_jobs
+from app.rule_engine import screen_jobs, screen_jobs_postgres
 from app.schemas.profile import UserProfile
 from app.schemas.rules_screening import RulesScreeningResponse
 
 
 class RulesScreeningService:
     def __init__(self, db_path: Path | None = None) -> None:
-        self.db_path = db_path or DEFAULT_DB_PATH
+        self.db_path = db_path
 
     def run(self, profile: UserProfile) -> RulesScreeningResponse:
-        screened = screen_jobs(profile, self.db_path)
+        if self.db_path is None:
+            screened = screen_jobs_postgres(profile)
+        else:
+            screened = screen_jobs(profile, self.db_path)
         return RulesScreeningResponse(
             total_jobs=screened.total_jobs,
             passed_count=len(screened.documents),

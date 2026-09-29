@@ -53,43 +53,6 @@ class JobListResponse(BaseModel):
     jobs: list[JobPosting]
 
 
-class JobDiscoveryPreview(BaseModel):
-    id: int | None = None
-    discovery_source: str
-    external_id: str
-    company: str
-    title: str
-    location: str | None = None
-    snippet: str = ""
-    source_url: str
-    final_url: str | None = None
-    ats_type: str = "unknown"
-    jd_quality: Literal["full", "partial", "external_only"] = "partial"
-    status: Literal["preview", "promoted", "discarded"] = "preview"
-    collected_at: datetime
-    raw_json: dict = Field(default_factory=dict)
-
-
-class JobDiscoveryPreviewResponse(BaseModel):
-    previews: list[JobDiscoveryPreview]
-
-
-class CompanyDiscoveryStatus(BaseModel):
-    id: int | None = None
-    company: str
-    normalized_company: str
-    provider: str
-    provider_identifier: str | None = None
-    status: str
-    jobs_found_count: int = 0
-    message: str | None = None
-    checked_at: datetime
-
-
-class CompanyDiscoveryStatusResponse(BaseModel):
-    statuses: list[CompanyDiscoveryStatus]
-
-
 class CompanySource(BaseModel):
     name: str
     company: str

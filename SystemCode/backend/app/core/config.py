@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     llm_base_url: str | None = None
     llm_model: str | None = None
 
+    # 正式运行时必须配置 PostgreSQL；SQLite 仅供显式传入临时路径的测试使用。
+    database_url: str | None = None
+
     # 本地岗位职责语义匹配
     responsibility_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     responsibility_similarity_floor: float = 0.35
