@@ -4,12 +4,14 @@ import os
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from app.core.config import settings
+
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-database_url = os.getenv("DATABASE_URL")
+database_url = os.getenv("DATABASE_URL") or settings.database_url
 if database_url:
     config.set_main_option("sqlalchemy.url", database_url)
 

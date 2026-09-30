@@ -31,7 +31,6 @@ def source_metrics(source: sqlite3.Connection) -> dict[str, int]:
     resumes = sqlite_rows(source, "resume_uploads")
     return {
         "job_postings": source.execute("SELECT COUNT(*) FROM jobs").fetchone()[0],
-        "job_versions": source.execute("SELECT COUNT(*) FROM jobs").fetchone()[0],
         "job_analyses": len(analyses),
         "job_responsibilities": sum(
             len(parse_json(row["responsibilities_json"], [])) for row in analyses
@@ -41,18 +40,8 @@ def source_metrics(source: sqlite3.Connection) -> dict[str, int]:
             + len(parse_json(row["preferred_skills_json"], []))
             for row in analyses
         ),
-        "job_major_requirements": sum(
-            len(parse_json(row["major_required_json"], [])) for row in analyses
-        ),
-        "job_keywords": sum(len(parse_json(row["keywords_json"], [])) for row in analyses),
-        "job_source_evidence": sum(
-            len(parse_json(row["source_evidence_json"], [])) for row in analyses
-        ),
         "interview_questions": len(questions),
         "question_sources": len(questions),
-        "question_keywords": sum(
-            len(parse_json(row["keywords_json"], [])) for row in questions
-        ),
         "resume_uploads": len(resumes),
     }
 
@@ -82,20 +71,15 @@ def verify(source_path: Path, target_url: str) -> dict[str, Any]:
             table_name: int(target.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar_one())
             for table_name in (
                 "job_postings",
-                "job_versions",
                 "job_analyses",
                 "job_responsibilities",
                 "job_skill_requirements",
-                "job_major_requirements",
-                "job_keywords",
-                "job_source_evidence",
                 "interview_questions",
                 "question_sources",
-                "question_keywords",
             )
         }
         actual_metrics["resume_uploads"] = int(
-            target.execute(text("SELECT COUNT(*) FROM resumes")).scalar_one()
+            target.execute(text("SELECT COUNT(*) FROM resume_uploads")).scalar_one()
         )
         actual_hashes = {
             (row.source_table, row.source_primary_key): row.row_sha256
@@ -109,13 +93,9 @@ def verify(source_path: Path, target_url: str) -> dict[str, Any]:
             )
         }
         orphan_checks = {
-            "job_versions_without_job": """
-                SELECT COUNT(*) FROM job_versions v
-                LEFT JOIN job_postings j ON j.id = v.job_id WHERE j.id IS NULL
-            """,
-            "analyses_without_version": """
+            "analyses_without_job": """
                 SELECT COUNT(*) FROM job_analyses a
-                LEFT JOIN job_versions v ON v.id = a.job_version_id WHERE v.id IS NULL
+                LEFT JOIN job_postings j ON j.id = a.job_id WHERE j.id IS NULL
             """,
             "questions_without_source": """
                 SELECT COUNT(*) FROM interview_questions q

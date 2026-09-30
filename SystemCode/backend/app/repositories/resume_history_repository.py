@@ -6,7 +6,6 @@ from sqlalchemy import text
 
 from app.db.postgres import get_postgres_engine
 from app.db.sqlite import connect, initialize_database
-from app.repositories.postgres_helpers import ensure_single_user, ensure_skill
 from app.schemas.resume import ParsedResume, ResumeHistoryEntry
 
 
@@ -46,9 +45,8 @@ class ResumeHistoryRepository:
                 rows = connection.execute(
                     text(
                         """
-                        SELECT id, filename, parsed_payload, uploaded_at
-                        FROM resumes
-                        WHERE user_id = 1
+                        SELECT id, filename, resume_json, uploaded_at
+                        FROM resume_uploads
                         ORDER BY id DESC
                         """
                     )
@@ -57,8 +55,8 @@ class ResumeHistoryRepository:
                 ResumeHistoryEntry(
                     id=row["id"],
                     filename=row["filename"],
-                    name=ParsedResume.model_validate(row["parsed_payload"]).name,
-                    uploaded_at=row["uploaded_at"].isoformat(),
+                    name=ParsedResume.model_validate_json(row["resume_json"]).name,
+                    uploaded_at=row["uploaded_at"],
                 )
                 for row in rows
             ]
@@ -82,14 +80,14 @@ class ResumeHistoryRepository:
                 payload = connection.execute(
                     text(
                         """
-                        SELECT parsed_payload
-                        FROM resumes
-                        WHERE id = :history_id AND user_id = 1
+                        SELECT resume_json
+                        FROM resume_uploads
+                        WHERE id = :history_id
                         """
                     ),
                     {"history_id": history_id},
                 ).scalar_one_or_none()
-            return ParsedResume.model_validate(payload) if payload else None
+            return ParsedResume.model_validate_json(payload) if payload else None
         with self._connect() as connection:
             row = connection.execute(
                 "SELECT resume_json FROM resume_uploads WHERE id = ?", (history_id,)
@@ -100,88 +98,20 @@ class ResumeHistoryRepository:
     def _add_postgres(parsed: ParsedResume, filename: str | None) -> int:
         uploaded_at = datetime.now(timezone.utc)
         with get_postgres_engine().begin() as connection:
-            user_id = ensure_single_user(connection)
-            resume_id = int(
+            return int(
                 connection.execute(
                     text(
                         """
-                        INSERT INTO resumes (
-                            user_id, filename, parsed_payload, uploaded_at
-                        ) VALUES (
-                            :user_id, :filename, CAST(:payload AS JSONB), :uploaded_at
-                        ) RETURNING id
+                        INSERT INTO resume_uploads (
+                            filename, resume_json, uploaded_at
+                        ) VALUES (:filename, :resume_json, :uploaded_at)
+                        RETURNING id
                         """
                     ),
                     {
-                        "user_id": user_id,
                         "filename": filename,
-                        "payload": parsed.model_dump_json(),
-                        "uploaded_at": uploaded_at,
+                        "resume_json": parsed.model_dump_json(),
+                        "uploaded_at": uploaded_at.isoformat(),
                     },
                 ).scalar_one()
             )
-            evidence_groups = (
-                (
-                    "experience",
-                    parsed.experiences,
-                    lambda item: item.title,
-                    lambda item: item.company,
-                    lambda item: item.description,
-                ),
-                (
-                    "project",
-                    parsed.projects,
-                    lambda item: item.title,
-                    lambda item: None,
-                    lambda item: item.summary,
-                ),
-                (
-                    "research",
-                    parsed.research,
-                    lambda item: item.title,
-                    lambda item: item.institution,
-                    lambda item: item.summary,
-                ),
-            )
-            for evidence_type, items, title_of, organization_of, summary_of in evidence_groups:
-                for sequence_no, item in enumerate(items):
-                    connection.execute(
-                        text(
-                            """
-                            INSERT INTO resume_evidence (
-                                resume_id, evidence_type, sequence_no, title,
-                                organization, summary, raw_payload
-                            ) VALUES (
-                                :resume_id, :evidence_type, :sequence_no, :title,
-                                :organization, :summary, CAST(:raw_payload AS JSONB)
-                            )
-                            """
-                        ),
-                        {
-                            "resume_id": resume_id,
-                            "evidence_type": evidence_type,
-                            "sequence_no": sequence_no,
-                            "title": title_of(item),
-                            "organization": organization_of(item),
-                            "summary": summary_of(item),
-                            "raw_payload": item.model_dump_json(),
-                        },
-                    )
-            for sequence_no, skill in enumerate(parsed.skills):
-                connection.execute(
-                    text(
-                        """
-                        INSERT INTO resume_skills (
-                            resume_id, skill_id, sequence_no, source_text
-                        ) VALUES (:resume_id, :skill_id, :sequence_no, :source_text)
-                        ON CONFLICT (resume_id, skill_id) DO NOTHING
-                        """
-                    ),
-                    {
-                        "resume_id": resume_id,
-                        "skill_id": ensure_skill(connection, skill),
-                        "sequence_no": sequence_no,
-                        "source_text": skill,
-                    },
-                )
-        return resume_id

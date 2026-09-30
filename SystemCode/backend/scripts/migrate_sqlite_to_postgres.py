@@ -220,9 +220,9 @@ def migrate_reference_data(
         target.execute(
             text(
                 """
-                INSERT INTO company_industries (company_id, industry_id)
-                VALUES (:company_id, :industry_id)
-                ON CONFLICT DO NOTHING
+                UPDATE companies
+                SET industry_id = :industry_id, updated_at = CURRENT_TIMESTAMP
+                WHERE id = :company_id
                 """
             ),
             {
@@ -296,11 +296,14 @@ def migrate_jobs(
                 INSERT INTO job_postings (
                     id, company_id, source_id, external_id, title, location_text,
                     source_employment_type, source_url, status, inactive_reason,
-                    first_seen_at, last_seen_at
+                    first_seen_at, last_seen_at, description, content_hash,
+                    raw_payload, collected_at
                 ) VALUES (
                     :id, :company_id, :source_id, :external_id, :title, :location,
                     :employment_type, :source_url, :status, :inactive_reason,
-                    CAST(:first_seen_at AS TIMESTAMPTZ), CAST(:last_seen_at AS TIMESTAMPTZ)
+                    CAST(:first_seen_at AS TIMESTAMPTZ), CAST(:last_seen_at AS TIMESTAMPTZ),
+                    :description, :content_hash, CAST(:raw_payload AS JSONB),
+                    CAST(:collected_at AS TIMESTAMPTZ)
                 )
                 """
             ),
@@ -317,24 +320,8 @@ def migrate_jobs(
                 "inactive_reason": raw_payload.get("inactive_reason"),
                 "first_seen_at": row["collected_at"],
                 "last_seen_at": row["last_seen_at"],
-            },
-        )
-        target.execute(
-            text(
-                """
-                INSERT INTO job_versions (
-                    id, job_id, content_hash, description, raw_payload, collected_at
-                ) VALUES (
-                    :id, :job_id, :content_hash, :description,
-                    CAST(:raw_payload AS JSONB), CAST(:collected_at AS TIMESTAMPTZ)
-                )
-                """
-            ),
-            {
-                "id": job_id,
-                "job_id": job_id,
-                "content_hash": row["content_hash"],
                 "description": row["description"],
+                "content_hash": row["content_hash"],
                 "raw_payload": canonical_json(raw_payload),
                 "collected_at": row["collected_at"],
             },
@@ -346,16 +333,16 @@ def migrate_jobs(
             text(
                 """
                 INSERT INTO job_analyses (
-                    job_version_id, summary, employment_type, candidate_type,
+                    job_id, summary, employment_type, candidate_type,
                     remote_policy, degree_required, raw_analysis
                 ) VALUES (
-                    :job_version_id, :summary, :employment_type, :candidate_type,
+                    :job_id, :summary, :employment_type, :candidate_type,
                     :remote_policy, :degree_required, CAST(:raw_analysis AS JSONB)
                 )
                 """
             ),
             {
-                "job_version_id": job_id,
+                "job_id": job_id,
                 "summary": analysis["summary"],
                 "employment_type": analysis["employment_type"],
                 "candidate_type": analysis["candidate_type"],
@@ -371,11 +358,11 @@ def migrate_jobs(
                 text(
                     """
                     INSERT INTO job_responsibilities (
-                        job_version_id, sequence_no, responsibility_text
-                    ) VALUES (:job_version_id, :sequence_no, :value)
+                        job_id, sequence_no, responsibility_text
+                    ) VALUES (:job_id, :sequence_no, :value)
                     """
                 ),
-                {"job_version_id": job_id, "sequence_no": sequence_no, "value": responsibility},
+                {"job_id": job_id, "sequence_no": sequence_no, "value": responsibility},
             )
         for requirement_type, column_name in (
             ("required", "required_skills_json"),
@@ -386,34 +373,19 @@ def migrate_jobs(
                     text(
                         """
                         INSERT INTO job_skill_requirements (
-                            job_version_id, skill_id, requirement_type, sequence_no, source_text
+                            job_id, skill_id, requirement_type, sequence_no, source_text
                         ) VALUES (
-                            :job_version_id, :skill_id, :requirement_type, :sequence_no, :source_text
+                            :job_id, :skill_id, :requirement_type, :sequence_no, :source_text
                         )
                         """
                     ),
                     {
-                        "job_version_id": job_id,
+                        "job_id": job_id,
                         "skill_id": ensure_skill(target, skill_ids, skill_name),
                         "requirement_type": requirement_type,
                         "sequence_no": sequence_no,
                         "source_text": skill_name,
                     },
-                )
-        for table_name, column_name, value_column in (
-            ("job_major_requirements", "major_required_json", "major_text"),
-            ("job_keywords", "keywords_json", "keyword_text"),
-            ("job_source_evidence", "source_evidence_json", "evidence_text"),
-        ):
-            for sequence_no, value in enumerate(parse_json(analysis[column_name], [])):
-                target.execute(
-                    text(
-                        f"""
-                        INSERT INTO {table_name} (job_version_id, sequence_no, {value_column})
-                        VALUES (:job_version_id, :sequence_no, :value)
-                        """
-                    ),
-                    {"job_version_id": job_id, "sequence_no": sequence_no, "value": value},
                 )
 
 
@@ -422,7 +394,6 @@ def migrate_questions(
     target: Connection,
     company_ids: dict[str, int],
     role_ids: dict[str, int],
-    skill_ids: dict[str, int],
 ) -> None:
     for row in sqlite_rows(source, "interview_questions"):
         company_id = (
@@ -479,174 +450,43 @@ def migrate_questions(
                     "sequence_no": sequence_no,
                 },
             )
-        for sequence_no, skill_name in enumerate(parse_json(row["skills_json"], [])):
-            target.execute(
-                text(
-                    """
-                    INSERT INTO question_skills (
-                        question_id, skill_id, sequence_no, source_text
-                    ) VALUES (:question_id, :skill_id, :sequence_no, :source_text)
-                    ON CONFLICT (question_id, skill_id) DO NOTHING
-                    """
-                ),
-                {
-                    "question_id": row["id"],
-                    "skill_id": ensure_skill(target, skill_ids, skill_name),
-                    "sequence_no": sequence_no,
-                    "source_text": skill_name,
-                },
-            )
-        for sequence_no, keyword in enumerate(parse_json(row["keywords_json"], [])):
-            target.execute(
-                text(
-                    """
-                    INSERT INTO question_keywords (question_id, sequence_no, keyword_text)
-                    VALUES (:question_id, :sequence_no, :keyword)
-                    """
-                ),
-                {"question_id": row["id"], "sequence_no": sequence_no, "keyword": keyword},
-            )
-        raw_embedding = parse_json(row["question_embedding_json"], None)
-        if raw_embedding is not None:
-            vector_value = (
-                "[" + ",".join(str(value) for value in raw_embedding) + "]"
-                if len(raw_embedding) == 384
-                else None
-            )
-            target.execute(
-                text(
-                    """
-                    INSERT INTO question_embeddings (question_id, embedding, raw_embedding)
-                    VALUES (
-                        :question_id, CAST(:embedding AS vector), CAST(:raw_embedding AS JSONB)
-                    )
-                    """
-                ),
-                {
-                    "question_id": row["id"],
-                    "embedding": vector_value,
-                    "raw_embedding": canonical_json(raw_embedding),
-                },
-            )
-
-
 def migrate_users(
     source: sqlite3.Connection,
     target: Connection,
-    role_ids: dict[str, int],
-    industry_ids: dict[str, int],
-    skill_ids: dict[str, int],
 ) -> None:
     profiles = sqlite_rows(source, "user_profile")
     resume_rows = sqlite_rows(source, "resume_uploads")
     if not profiles and not resume_rows:
         return
-    target.execute(text("INSERT INTO users (id) VALUES (1)"))
     for row in profiles:
-        profile = parse_json(row["profile_json"], {})
-        constraints = profile.get("constraints", {})
         target.execute(
             text(
                 """
-                INSERT INTO user_profiles (user_id, profile_payload, notes, updated_at)
-                VALUES (
-                    1, CAST(:payload AS JSONB), :notes, CAST(:updated_at AS TIMESTAMPTZ)
-                )
+                INSERT INTO user_profile (id, profile_json, updated_at)
+                VALUES (:id, :profile_json, :updated_at)
                 """
             ),
             {
-                "payload": canonical_json(profile),
-                "notes": constraints.get("notes", ""),
+                "id": row["id"],
+                "profile_json": row["profile_json"],
                 "updated_at": row["updated_at"],
             },
         )
-        for priority, role_name in enumerate(constraints.get("target_roles", []), start=1):
-            target.execute(
-                text(
-                    """
-                    INSERT INTO user_target_roles (user_id, role_id, priority)
-                    VALUES (1, :role_id, :priority)
-                    ON CONFLICT (user_id, role_id) DO NOTHING
-                    """
-                ),
-                {"role_id": ensure_role(target, role_ids, role_name), "priority": priority},
-            )
-        for industry_name in constraints.get("target_industries", []):
-            if industry_name in industry_ids:
-                target.execute(
-                    text(
-                        """
-                        INSERT INTO user_target_industries (user_id, industry_id)
-                        VALUES (1, :industry_id) ON CONFLICT DO NOTHING
-                        """
-                    ),
-                    {"industry_id": industry_ids[industry_name]},
-                )
     for row in resume_rows:
-        resume = parse_json(row["resume_json"], {})
         target.execute(
             text(
                 """
-                INSERT INTO resumes (
-                    id, user_id, legacy_resume_upload_id, filename, parsed_payload, uploaded_at
-                ) VALUES (
-                    :id, 1, :id, :filename, CAST(:payload AS JSONB),
-                    CAST(:uploaded_at AS TIMESTAMPTZ)
-                )
+                INSERT INTO resume_uploads (id, filename, resume_json, uploaded_at)
+                VALUES (:id, :filename, :resume_json, :uploaded_at)
                 """
             ),
             {
                 "id": row["id"],
                 "filename": row["filename"],
-                "payload": canonical_json(resume),
+                "resume_json": row["resume_json"],
                 "uploaded_at": row["uploaded_at"],
             },
         )
-        for sequence_no, skill_name in enumerate(resume.get("skills", [])):
-            target.execute(
-                text(
-                    """
-                    INSERT INTO resume_skills (resume_id, skill_id, sequence_no, source_text)
-                    VALUES (:resume_id, :skill_id, :sequence_no, :source_text)
-                    ON CONFLICT (resume_id, skill_id) DO NOTHING
-                    """
-                ),
-                {
-                    "resume_id": row["id"],
-                    "skill_id": ensure_skill(target, skill_ids, skill_name),
-                    "sequence_no": sequence_no,
-                    "source_text": skill_name,
-                },
-            )
-        evidence_groups = (
-            ("experience", resume.get("experiences", []), "title", "company", "description"),
-            ("project", resume.get("projects", []), "title", None, "summary"),
-            ("research", resume.get("research", []), "title", "institution", "summary"),
-        )
-        for evidence_type, entries, title_key, organization_key, summary_key in evidence_groups:
-            for sequence_no, entry in enumerate(entries):
-                target.execute(
-                    text(
-                        """
-                        INSERT INTO resume_evidence (
-                            resume_id, evidence_type, sequence_no, title,
-                            organization, summary, raw_payload
-                        ) VALUES (
-                            :resume_id, :evidence_type, :sequence_no, :title,
-                            :organization, :summary, CAST(:raw_payload AS JSONB)
-                        )
-                        """
-                    ),
-                    {
-                        "resume_id": row["id"],
-                        "evidence_type": evidence_type,
-                        "sequence_no": sequence_no,
-                        "title": entry.get(title_key, ""),
-                        "organization": entry.get(organization_key) if organization_key else None,
-                        "summary": entry.get(summary_key, ""),
-                        "raw_payload": canonical_json(entry),
-                    },
-                )
 
 
 def reset_sequences(target: Connection, table_names: Iterable[str]) -> None:
@@ -697,8 +537,8 @@ def run_migration(source_path: Path, target_url: str) -> dict[str, int]:
         role_ids = seed_roles(target)
         skill_ids: dict[str, int] = {}
         migrate_jobs(source, target, company_ids, source_ids, skill_ids)
-        migrate_questions(source, target, company_ids, role_ids, skill_ids)
-        migrate_users(source, target, role_ids, industry_ids, skill_ids)
+        migrate_questions(source, target, company_ids, role_ids)
+        migrate_users(source, target)
         reset_sequences(
             target,
             (
@@ -708,10 +548,8 @@ def run_migration(source_path: Path, target_url: str) -> dict[str, int]:
                 "roles",
                 "skills",
                 "job_postings",
-                "job_versions",
                 "interview_questions",
-                "users",
-                "resumes",
+                "resume_uploads",
             ),
         )
     source.close()

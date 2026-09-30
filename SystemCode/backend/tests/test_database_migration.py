@@ -3,6 +3,7 @@ import sqlite3
 
 from scripts.migrate_sqlite_to_postgres import canonical_json, normalized_name
 from scripts.verify_sqlite_backup import compare
+from app.repositories.job_semantic_repository import JobSemanticRepository
 
 
 def _create_legacy_database(path, question_text: str = "What is Python?") -> None:
@@ -39,6 +40,10 @@ def test_canonical_json_is_stable() -> None:
 
 def test_normalized_name_is_case_and_punctuation_insensitive() -> None:
     assert normalized_name("  NCS Group (Singapore) ") == "ncs group singapore"
+
+
+def test_pgvector_text_result_is_parsed_as_numeric_values() -> None:
+    assert JobSemanticRepository._vector_values("[0.25,-0.5,1]") == [0.25, -0.5, 1.0]
 
 
 def test_sqlite_backup_comparison_detects_no_changes(tmp_path) -> None:

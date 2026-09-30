@@ -175,23 +175,8 @@ def screen_jobs_postgres(profile: UserProfile) -> ScreeningResult:
                COALESCE(industry.name, :not_stated) AS industry
         FROM job_postings jp
         JOIN companies c ON c.id = jp.company_id
-        JOIN LATERAL (
-            SELECT jv.id
-            FROM job_versions jv
-            JOIN job_analyses analysis ON analysis.job_version_id = jv.id
-            WHERE jv.job_id = jp.id
-            ORDER BY jv.collected_at DESC, jv.id DESC
-            LIMIT 1
-        ) latest ON TRUE
-        JOIN job_analyses ja ON ja.job_version_id = latest.id
-        LEFT JOIN LATERAL (
-            SELECT i.name
-            FROM company_industries ci
-            JOIN industries i ON i.id = ci.industry_id
-            WHERE ci.company_id = jp.company_id
-            ORDER BY i.name
-            LIMIT 1
-        ) industry ON TRUE
+        JOIN job_analyses ja ON ja.job_id = jp.id
+        LEFT JOIN industries industry ON industry.id = c.industry_id
         ORDER BY jp.id
         """
     )

@@ -80,13 +80,14 @@ migration and archive procedure.
 
 ## Team database setup
 
-Alembic creates the PostgreSQL schema, but it does not include the shared job
-and interview-question data. To reproduce the complete team database, obtain
-`careerpilot-postgresql-after-migration-20260929.dump` from the team's shared
-storage. The expected SHA-256 is:
+Alembic creates the PostgreSQL schema, but it does not include the shared job,
+interview-question, responsibility-vector, and JD-role ranking data. The
+repository therefore includes the current PostgreSQL custom-format dump at
+`SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump`. Its
+expected SHA-256 is:
 
 ```text
-54CEECBC4778AB23EF59CD79FCF3106FB1F57E12169E8141CDDF47E25FBAAEEF
+7C82ED51A81E3C53329EA19262B75A4E83E77F50900F170A7FEEEDE0071606BF
 ```
 
 ### Recommended: Docker
@@ -96,7 +97,10 @@ Run these commands from the repository root:
 ```powershell
 docker compose up -d postgres
 docker compose ps
-docker cp "<path-to-dump>\careerpilot-postgresql-after-migration-20260929.dump" `
+Get-FileHash `
+  "SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump" `
+  -Algorithm SHA256
+docker cp "SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump" `
   careerpilot-postgres:/tmp/careerpilot.dump
 docker exec careerpilot-postgres pg_restore `
   -U careerpilot `
@@ -125,12 +129,22 @@ docker exec careerpilot-postgres psql -U careerpilot -d careerpilot `
 ```
 
 The current shared snapshot should return `134` jobs and `215` interview
-questions. Then install the Python dependencies, start the API, and open the
-Swagger page:
+questions. It already contains migration `20260930_0007`, all 618 JD
+responsibility vectors, and all 369 JD Top-3 role mappings. Install the Python
+dependencies and apply any migrations added after the snapshot:
 
 ```powershell
 cd SystemCode/backend
 python -m pip install -r requirements.txt
+python -m alembic upgrade head
+```
+
+`python -m scripts.backfill_job_semantics` remains available and idempotent if
+the JD analysis data is later replaced or imported without its semantic cache.
+
+Then start the API and open the Swagger page:
+
+```powershell
 python -m uvicorn app.main:app --reload
 ```
 

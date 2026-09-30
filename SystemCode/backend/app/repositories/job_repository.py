@@ -359,15 +359,8 @@ class JobRepository:
                 existing = connection.execute(
                     text(
                         """
-                        SELECT jp.id, latest.content_hash
+                        SELECT jp.id, jp.content_hash
                         FROM job_postings jp
-                        LEFT JOIN LATERAL (
-                            SELECT content_hash
-                            FROM job_versions
-                            WHERE job_id = jp.id
-                            ORDER BY collected_at DESC, id DESC
-                            LIMIT 1
-                        ) latest ON TRUE
                         WHERE jp.source_id = :source_id
                           AND jp.external_id = :external_id
                         """
@@ -384,11 +377,13 @@ class JobRepository:
                             INSERT INTO job_postings (
                                 company_id, source_id, external_id, title, location_text,
                                 source_employment_type, source_url, status,
-                                first_seen_at, last_seen_at
+                                first_seen_at, last_seen_at, description, content_hash,
+                                raw_payload, collected_at
                             ) VALUES (
                                 :company_id, :source_id, :external_id, :title, :location,
                                 :employment_type, :source_url, :status,
-                                :first_seen_at, :last_seen_at
+                                :first_seen_at, :last_seen_at, :description, :content_hash,
+                                CAST(:raw_payload AS JSONB), :collected_at
                             )
                             ON CONFLICT (source_id, external_id) DO UPDATE SET
                                 company_id = EXCLUDED.company_id,
@@ -397,6 +392,10 @@ class JobRepository:
                                 source_employment_type = EXCLUDED.source_employment_type,
                                 source_url = EXCLUDED.source_url,
                                 last_seen_at = EXCLUDED.last_seen_at,
+                                description = EXCLUDED.description,
+                                content_hash = EXCLUDED.content_hash,
+                                raw_payload = EXCLUDED.raw_payload,
+                                collected_at = EXCLUDED.collected_at,
                                 status = CASE
                                     WHEN job_postings.status = 'inactive'
                                      AND :content_unchanged
@@ -418,6 +417,10 @@ class JobRepository:
                             "status": job.status,
                             "first_seen_at": job.collected_at,
                             "last_seen_at": job.last_seen_at,
+                            "description": job.description,
+                            "content_hash": job.content_hash,
+                            "raw_payload": json.dumps(job.raw_json, ensure_ascii=False),
+                            "collected_at": job.collected_at,
                             "content_unchanged": bool(
                                 existing is not None
                                 and existing["content_hash"] == job.content_hash
@@ -425,46 +428,24 @@ class JobRepository:
                         },
                     ).scalar_one()
                 )
-                connection.execute(
-                    text(
-                        """
-                        INSERT INTO job_versions (
-                            job_id, content_hash, description, raw_payload, collected_at
-                        ) VALUES (
-                            :job_id, :content_hash, :description,
-                            CAST(:raw_payload AS JSONB), :collected_at
-                        )
-                        ON CONFLICT (job_id, content_hash) DO NOTHING
-                        """
-                    ),
-                    {
-                        "job_id": job_id,
-                        "content_hash": job.content_hash,
-                        "description": job.description,
-                        "raw_payload": json.dumps(job.raw_json, ensure_ascii=False),
-                        "collected_at": job.collected_at,
-                    },
-                )
+                if existing is not None and existing["content_hash"] != job.content_hash:
+                    connection.execute(
+                        text("DELETE FROM job_analyses WHERE job_id = :job_id"),
+                        {"job_id": job_id},
+                    )
         return changed_count
 
     @staticmethod
     def _job_select_sql() -> str:
         return """
             SELECT jp.id, js.name AS source, c.name AS company, jp.external_id,
-                   jp.title, jp.location_text AS location, latest.description,
+                   jp.title, jp.location_text AS location, jp.description,
                    jp.source_url AS url, jp.source_employment_type AS employment_type,
-                   latest.collected_at, jp.last_seen_at, latest.content_hash,
-                   jp.status, latest.raw_payload AS raw_json
+                   jp.collected_at, jp.last_seen_at, jp.content_hash,
+                   jp.status, jp.raw_payload AS raw_json
             FROM job_postings jp
             JOIN companies c ON c.id = jp.company_id
             JOIN job_sources js ON js.id = jp.source_id
-            JOIN LATERAL (
-                SELECT jv.*
-                FROM job_versions jv
-                WHERE jv.job_id = jp.id
-                ORDER BY jv.collected_at DESC, jv.id DESC
-                LIMIT 1
-            ) latest ON TRUE
         """
 
     def _list_jobs_postgres(
@@ -475,7 +456,7 @@ class JobRepository:
         if company:
             query += " AND c.name = :company"
             parameters["company"] = company
-        query += " ORDER BY latest.collected_at DESC LIMIT :limit"
+        query += " ORDER BY jp.collected_at DESC LIMIT :limit"
         with get_postgres_engine().connect() as connection:
             rows = connection.execute(text(query), parameters).mappings().all()
         return [self._postgres_row_to_job(row) for row in rows]
@@ -492,15 +473,8 @@ class JobRepository:
             row = connection.execute(
                 text(
                     """
-                    SELECT jp.company_id, jv.id AS version_id
+                    SELECT jp.company_id
                     FROM job_postings jp
-                    JOIN LATERAL (
-                        SELECT id
-                        FROM job_versions
-                        WHERE job_id = jp.id
-                        ORDER BY collected_at DESC, id DESC
-                        LIMIT 1
-                    ) jv ON TRUE
                     WHERE jp.id = :job_id
                     """
                 ),
@@ -508,7 +482,6 @@ class JobRepository:
             ).mappings().one_or_none()
             if row is None:
                 raise ValueError(f"Job {document.job_id} does not exist.")
-            version_id = int(row["version_id"])
             industry_id = connection.execute(
                 text("SELECT id FROM industries WHERE name = :name"),
                 {"name": classify_company_industry(document.company)},
@@ -516,31 +489,31 @@ class JobRepository:
             connection.execute(
                 text(
                     """
-                    INSERT INTO company_industries (company_id, industry_id)
-                    VALUES (:company_id, :industry_id)
-                    ON CONFLICT DO NOTHING
+                    UPDATE companies
+                    SET industry_id = :industry_id, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :company_id
                     """
                 ),
                 {"company_id": row["company_id"], "industry_id": industry_id},
             )
             connection.execute(
-                text("DELETE FROM job_analyses WHERE job_version_id = :version_id"),
-                {"version_id": version_id},
+                text("DELETE FROM job_analyses WHERE job_id = :job_id"),
+                {"job_id": document.job_id},
             )
             connection.execute(
                 text(
                     """
                     INSERT INTO job_analyses (
-                        job_version_id, summary, employment_type, candidate_type,
+                        job_id, summary, employment_type, candidate_type,
                         remote_policy, degree_required, raw_analysis
                     ) VALUES (
-                        :version_id, :summary, :employment_type, :candidate_type,
+                        :job_id, :summary, :employment_type, :candidate_type,
                         :remote_policy, :degree_required, CAST(:raw_analysis AS JSONB)
                     )
                     """
                 ),
                 {
-                    "version_id": version_id,
+                    "job_id": document.job_id,
                     "summary": document.summary,
                     "employment_type": document.employment_type,
                     "candidate_type": document.candidate_type,
@@ -554,11 +527,11 @@ class JobRepository:
                     text(
                         """
                         INSERT INTO job_responsibilities (
-                            job_version_id, sequence_no, responsibility_text
-                        ) VALUES (:version_id, :sequence_no, :value)
+                            job_id, sequence_no, responsibility_text
+                        ) VALUES (:job_id, :sequence_no, :value)
                         """
                     ),
-                    {"version_id": version_id, "sequence_no": sequence_no, "value": value},
+                    {"job_id": document.job_id, "sequence_no": sequence_no, "value": value},
                 )
             for requirement_type, values in (
                 ("required", document.required_skills),
@@ -569,37 +542,21 @@ class JobRepository:
                         text(
                             """
                             INSERT INTO job_skill_requirements (
-                                job_version_id, skill_id, requirement_type,
+                                job_id, skill_id, requirement_type,
                                 sequence_no, source_text
                             ) VALUES (
-                                :version_id, :skill_id, :requirement_type,
+                                :job_id, :skill_id, :requirement_type,
                                 :sequence_no, :value
                             )
                             """
                         ),
                         {
-                            "version_id": version_id,
+                            "job_id": document.job_id,
                             "skill_id": ensure_skill(connection, value),
                             "requirement_type": requirement_type,
                             "sequence_no": sequence_no,
                             "value": value,
                         },
-                    )
-            for table_name, column_name, values in (
-                ("job_major_requirements", "major_text", document.major_required),
-                ("job_keywords", "keyword_text", document.keywords),
-                ("job_source_evidence", "evidence_text", document.source_evidence),
-            ):
-                for sequence_no, value in enumerate(values):
-                    connection.execute(
-                        text(
-                            f"""
-                            INSERT INTO {table_name} (
-                                job_version_id, sequence_no, {column_name}
-                            ) VALUES (:version_id, :sequence_no, :value)
-                            """
-                        ),
-                        {"version_id": version_id, "sequence_no": sequence_no, "value": value},
                     )
 
     def _mark_job_inactive_postgres(self, job_id: int, reason: str | None) -> None:
@@ -619,9 +576,9 @@ class JobRepository:
             connection.execute(
                 text(
                     """
-                    UPDATE job_versions
+                    UPDATE job_postings
                     SET raw_payload = raw_payload || jsonb_build_object('inactive_reason', :reason)
-                    WHERE job_id = :job_id
+                    WHERE id = :job_id
                     """
                 ),
                 {"reason": inactive_reason, "job_id": job_id},
@@ -629,10 +586,7 @@ class JobRepository:
             connection.execute(
                 text(
                     """
-                    DELETE FROM job_analyses
-                    WHERE job_version_id IN (
-                        SELECT id FROM job_versions WHERE job_id = :job_id
-                    )
+                    DELETE FROM job_analyses WHERE job_id = :job_id
                     """
                 ),
                 {"job_id": job_id},

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import json
+import hashlib
 import re
 from pathlib import Path
 from threading import Lock
@@ -18,8 +18,6 @@ class CareerIntentScorer:
         self,
         embedding_provider: EmbeddingProvider,
         taxonomy_path: Path,
-        embedding_cache_path: Path,
-        metadata_path: Path,
         model_name: str,
         similarity_floor: float = 0.40,
         similarity_full: float = 0.85,
@@ -28,8 +26,6 @@ class CareerIntentScorer:
             raise ValueError("similarity thresholds must satisfy -1 <= floor < full <= 1")
         self.embedding_provider = embedding_provider
         self.taxonomy = RoleTaxonomy.load(taxonomy_path)
-        self.embedding_cache_path = embedding_cache_path
-        self.metadata_path = metadata_path
         self.model_name = model_name
         self.similarity_floor = similarity_floor
         self.similarity_full = similarity_full
@@ -57,10 +53,7 @@ class CareerIntentScorer:
             raise ValueError("job and role embeddings have inconsistent dimensions")
 
         similarities = role_embeddings @ job_embeddings[0]
-        similarity_by_role = {
-            profile.role: float(similarities[index])
-            for index, profile in enumerate(self.taxonomy.profiles)
-        }
+        similarity_by_role = self._similarity_by_role(similarities)
         target_matches = sorted(
             (
                 StandardRoleSimilarity(
@@ -72,18 +65,104 @@ class CareerIntentScorer:
             key=lambda item: item.similarity,
             reverse=True,
         )
-        top_indices = np.argsort(similarities)[::-1][:3]
-        top_standard_roles = [
+        return self._response(
+            job_id=job.job_id,
+            target_matches=target_matches,
+            top_standard_roles=self._top_matches(similarities, top_k=3),
+        )
+
+    def classify(
+        self, job: JobRequirementDocument, top_k: int = 3
+    ) -> list[StandardRoleSimilarity]:
+        job_text = self._job_text(job)
+        if not job_text:
+            return []
+        role_embeddings = self._get_role_embeddings()
+        job_embeddings = self._normalized_array(self.embedding_provider.encode([job_text]))
+        if job_embeddings.shape[0] != 1 or job_embeddings.shape[1] != role_embeddings.shape[1]:
+            raise ValueError("job and role embeddings have inconsistent dimensions")
+        return self._top_matches(role_embeddings @ job_embeddings[0], top_k=top_k)
+
+    def score_from_role_matches(
+        self,
+        target_roles: list[str],
+        job_id: int | None,
+        top_standard_roles: list[StandardRoleSimilarity],
+    ) -> CareerIntentScoreResponse:
+        if not target_roles or not top_standard_roles:
+            return CareerIntentScoreResponse(
+                job_id=job_id,
+                intent_calculable=False,
+                intent_similarity=0,
+                intent_coverage=0,
+                career_intent_points=0,
+                top_standard_roles=top_standard_roles,
+            )
+        similarity_by_role = {
+            match.role: match.similarity for match in top_standard_roles
+        }
+        target_matches = sorted(
+            (
+                StandardRoleSimilarity(
+                    role=role,
+                    similarity=similarity_by_role.get(role, 0.0),
+                )
+                for role in target_roles
+            ),
+            key=lambda item: item.similarity,
+            reverse=True,
+        )
+        return self._response(
+            job_id=job_id,
+            target_matches=target_matches,
+            top_standard_roles=top_standard_roles,
+        )
+
+    def input_hash(self, job: JobRequirementDocument) -> str:
+        return hashlib.sha256(self._job_text(job).encode("utf-8")).hexdigest()
+
+    def _get_role_embeddings(self) -> np.ndarray:
+        if self._role_embeddings is not None:
+            return self._role_embeddings
+        with self._load_lock:
+            if self._role_embeddings is None:
+                self._role_embeddings = self._build_embeddings()
+        return self._role_embeddings
+
+    def _build_embeddings(self) -> np.ndarray:
+        texts = [profile.embedding_text() for profile in self.taxonomy.profiles]
+        embeddings = self._normalized_array(self.embedding_provider.encode(texts))
+        if embeddings.shape[0] != len(self.taxonomy.profiles):
+            raise ValueError("embedding provider returned an unexpected role count")
+        return embeddings
+
+    def _top_matches(self, similarities: np.ndarray, top_k: int) -> list[StandardRoleSimilarity]:
+        top_indices = np.argsort(similarities)[::-1][:top_k]
+        return [
             StandardRoleSimilarity(
                 role=self.taxonomy.profiles[int(index)].role,
                 similarity=self._round(float(similarities[index]), 4),
             )
             for index in top_indices
         ]
+
+    def _similarity_by_role(self, similarities: np.ndarray) -> dict[str, float]:
+        return {
+            profile.role: float(similarities[index])
+            for index, profile in enumerate(self.taxonomy.profiles)
+        }
+
+    def _response(
+        self,
+        *,
+        job_id: int | None,
+        target_matches: list[StandardRoleSimilarity],
+        top_standard_roles: list[StandardRoleSimilarity],
+    ) -> CareerIntentScoreResponse:
         best = target_matches[0]
         coverage = self._coverage(best.similarity)
         return CareerIntentScoreResponse(
-            job_id=job.job_id,
+            job_id=job_id,
             intent_calculable=True,
             best_target_role=best.role,
             intent_similarity=best.similarity,
@@ -92,54 +171,6 @@ class CareerIntentScorer:
             target_role_matches=target_matches,
             top_standard_roles=top_standard_roles,
         )
-
-    def _get_role_embeddings(self) -> np.ndarray:
-        if self._role_embeddings is not None:
-            return self._role_embeddings
-        with self._load_lock:
-            if self._role_embeddings is None:
-                cached = self._load_cache()
-                self._role_embeddings = cached if cached is not None else self._build_cache()
-        return self._role_embeddings
-
-    def _load_cache(self) -> np.ndarray | None:
-        if not self.embedding_cache_path.exists() or not self.metadata_path.exists():
-            return None
-        try:
-            metadata = json.loads(self.metadata_path.read_text(encoding="utf-8"))
-            if metadata != self._metadata_template():
-                return None
-            embeddings = np.load(self.embedding_cache_path, allow_pickle=False)
-            embeddings = self._normalized_array(embeddings)
-            if embeddings.shape[0] != len(self.taxonomy.profiles):
-                return None
-            return embeddings
-        except (OSError, ValueError, TypeError, json.JSONDecodeError):
-            return None
-
-    def _build_cache(self) -> np.ndarray:
-        texts = [profile.embedding_text() for profile in self.taxonomy.profiles]
-        embeddings = self._normalized_array(self.embedding_provider.encode(texts))
-        if embeddings.shape[0] != len(self.taxonomy.profiles):
-            raise ValueError("embedding provider returned an unexpected role count")
-
-        self.embedding_cache_path.parent.mkdir(parents=True, exist_ok=True)
-        self.metadata_path.parent.mkdir(parents=True, exist_ok=True)
-        np.save(self.embedding_cache_path, embeddings, allow_pickle=False)
-        self.metadata_path.write_text(
-            json.dumps(self._metadata_template(), indent=2, ensure_ascii=True) + "\n",
-            encoding="utf-8",
-        )
-        return embeddings
-
-    def _metadata_template(self) -> dict:
-        return {
-            "model": self.model_name,
-            "dimension": 384 if self.model_name.endswith("all-MiniLM-L6-v2") else None,
-            "normalized": True,
-            "taxonomy_hash": self.taxonomy.source_hash,
-            "roles": [profile.role for profile in self.taxonomy.profiles],
-        }
 
     def _coverage(self, similarity: float) -> float:
         normalized = (similarity - self.similarity_floor) / (

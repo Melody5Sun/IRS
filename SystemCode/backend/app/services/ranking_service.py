@@ -25,23 +25,30 @@ class RankingService:
     ) -> None:
         self.rules_screening_service = rules_screening_service
         self.skill_match_service = skill_match_service
+        persist_job_semantics = rules_screening_service.db_path is None
         self.responsibility_match_service = (
-            responsibility_match_service or ResponsibilityMatchService()
+            responsibility_match_service
+            or ResponsibilityMatchService(persist=persist_job_semantics)
         )
         self.career_intent_match_service = (
-            career_intent_match_service or CareerIntentMatchService()
+            career_intent_match_service
+            or CareerIntentMatchService(persist=persist_job_semantics)
         )
         self.overall_scorer = overall_scorer or OverallScorer()
 
     def run(self, profile: UserProfile) -> RankingResponse:
         screened = self.rules_screening_service.run(profile)
         results = []
+        prepared_evidence = self.responsibility_match_service.prepare_candidate(
+            profile.resume
+        )
         for job in screened.jobs:
             skill_score = self.skill_match_service.score(
                 SkillScoreRequest(candidate=profile.resume, job=job)
             )
             responsibility_score = self.responsibility_match_service.score(
-                ResponsibilityScoreRequest(candidate=profile.resume, job=job)
+                ResponsibilityScoreRequest(candidate=profile.resume, job=job),
+                prepared_evidence=prepared_evidence,
             )
             career_intent_score = self.career_intent_match_service.score(
                 CareerIntentScoreRequest(

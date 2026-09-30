@@ -26,6 +26,12 @@ class _EvidenceUnit:
     text: str
 
 
+@dataclass(frozen=True)
+class PreparedResumeEvidence:
+    evidence: list[_EvidenceUnit]
+    embeddings: list[list[float]]
+
+
 class ResponsibilityScorer:
     def __init__(
         self,
@@ -47,9 +53,15 @@ class ResponsibilityScorer:
         self,
         candidate: ResumeDocument,
         job: JobRequirementDocument,
+        responsibility_embeddings: list[list[float]] | None = None,
+        prepared_evidence: PreparedResumeEvidence | None = None,
     ) -> ResponsibilityScoreResponse:
-        responsibilities = self._unique_nonempty(job.responsibilities)
-        evidence = self._build_evidence(candidate)
+        responsibilities = self.responsibility_texts(job)
+        evidence = (
+            prepared_evidence.evidence
+            if prepared_evidence is not None
+            else self._build_evidence(candidate)
+        )
 
         if not responsibilities:
             return ResponsibilityScoreResponse(
@@ -76,8 +88,16 @@ class ResponsibilityScorer:
                 unmatched_responsibilities=responsibilities,
             )
 
-        responsibility_embeddings = self._responsibility_embeddings(responsibilities)
-        evidence_embeddings = self.embedding_provider.encode([item.text for item in evidence])
+        responsibility_embeddings = (
+            responsibility_embeddings
+            if responsibility_embeddings is not None
+            else self._responsibility_embeddings(responsibilities)
+        )
+        evidence_embeddings = (
+            prepared_evidence.embeddings
+            if prepared_evidence is not None
+            else self.embedding_provider.encode([item.text for item in evidence])
+        )
         self._validate_embeddings(responsibility_embeddings, evidence_embeddings)
 
         matches = [
@@ -152,6 +172,22 @@ class ResponsibilityScorer:
                 self._job_embedding_cache.clear()
             self._job_embedding_cache[key] = embeddings
         return embeddings
+
+    def encode_responsibilities(self, responsibilities: list[str]) -> list[list[float]]:
+        return self._responsibility_embeddings(responsibilities)
+
+    def prepare_candidate(self, candidate: ResumeDocument) -> PreparedResumeEvidence:
+        evidence = self._build_evidence(candidate)
+        embeddings = (
+            self.embedding_provider.encode([item.text for item in evidence])
+            if evidence
+            else []
+        )
+        return PreparedResumeEvidence(evidence=evidence, embeddings=embeddings)
+
+    @classmethod
+    def responsibility_texts(cls, job: JobRequirementDocument) -> list[str]:
+        return cls._unique_nonempty(job.responsibilities)
 
     def _coverage(self, similarity: float) -> float:
         normalized = (similarity - self.similarity_floor) / (

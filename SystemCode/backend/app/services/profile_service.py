@@ -6,7 +6,6 @@ from sqlalchemy import text
 
 from app.db.postgres import get_postgres_engine
 from app.db.sqlite import connect, initialize_database
-from app.repositories.postgres_helpers import ensure_role, ensure_single_user
 from app.schemas.profile import JobSearchConstraints, UserProfile
 from app.schemas.resume import ParsedResume, ResumeDocument
 
@@ -85,9 +84,9 @@ class ProfileService:
             if self._use_postgres:
                 with get_postgres_engine().connect() as connection:
                     payload = connection.execute(
-                        text("SELECT profile_payload FROM user_profiles WHERE user_id = 1")
+                        text("SELECT profile_json FROM user_profile WHERE id = 1")
                     ).scalar_one_or_none()
-                self._profile = UserProfile.model_validate(payload) if payload else None
+                self._profile = UserProfile.model_validate_json(payload) if payload else None
             else:
                 with self._connect() as connection:
                     row = connection.execute(
@@ -124,74 +123,26 @@ class ProfileService:
     @staticmethod
     def _save_postgres_profile(value: UserProfile | None) -> None:
         with get_postgres_engine().begin() as connection:
-            user_id = ensure_single_user(connection)
             if value is None:
                 connection.execute(
-                    text("DELETE FROM user_profiles WHERE user_id = :user_id"),
-                    {"user_id": user_id},
-                )
-                connection.execute(
-                    text("DELETE FROM user_target_roles WHERE user_id = :user_id"),
-                    {"user_id": user_id},
-                )
-                connection.execute(
-                    text("DELETE FROM user_target_industries WHERE user_id = :user_id"),
-                    {"user_id": user_id},
+                    text("DELETE FROM user_profile WHERE id = 1")
                 )
                 return
             connection.execute(
                 text(
                     """
-                    INSERT INTO user_profiles (user_id, profile_payload, notes)
-                    VALUES (:user_id, CAST(:payload AS JSONB), :notes)
-                    ON CONFLICT (user_id) DO UPDATE SET
-                        profile_payload = EXCLUDED.profile_payload,
-                        notes = EXCLUDED.notes,
-                        updated_at = CURRENT_TIMESTAMP
+                    INSERT INTO user_profile (id, profile_json, updated_at)
+                    VALUES (1, :profile_json, :updated_at)
+                    ON CONFLICT (id) DO UPDATE SET
+                        profile_json = EXCLUDED.profile_json,
+                        updated_at = EXCLUDED.updated_at
                     """
                 ),
                 {
-                    "user_id": user_id,
-                    "payload": value.model_dump_json(),
-                    "notes": value.constraints.notes,
+                    "profile_json": value.model_dump_json(),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
                 },
             )
-            connection.execute(
-                text("DELETE FROM user_target_roles WHERE user_id = :user_id"),
-                {"user_id": user_id},
-            )
-            for priority, role_name in enumerate(value.constraints.target_roles, start=1):
-                connection.execute(
-                    text(
-                        """
-                        INSERT INTO user_target_roles (user_id, role_id, priority)
-                        VALUES (:user_id, :role_id, :priority)
-                        """
-                    ),
-                    {
-                        "user_id": user_id,
-                        "role_id": ensure_role(connection, role_name),
-                        "priority": priority,
-                    },
-                )
-            connection.execute(
-                text("DELETE FROM user_target_industries WHERE user_id = :user_id"),
-                {"user_id": user_id},
-            )
-            for industry_name in value.constraints.target_industries:
-                industry_id = connection.execute(
-                    text("SELECT id FROM industries WHERE name = :name"),
-                    {"name": industry_name},
-                ).scalar_one()
-                connection.execute(
-                    text(
-                        """
-                        INSERT INTO user_target_industries (user_id, industry_id)
-                        VALUES (:user_id, :industry_id)
-                        """
-                    ),
-                    {"user_id": user_id, "industry_id": industry_id},
-                )
 
     def save_resume(self, parsed: ParsedResume) -> None:
         # 重新上传简历时只替换画像，已经填写的求职约束保留

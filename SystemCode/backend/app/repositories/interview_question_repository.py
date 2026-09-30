@@ -11,7 +11,6 @@ from app.db.sqlite import connect, initialize_database
 from app.repositories.postgres_helpers import (
     ensure_company,
     ensure_role,
-    ensure_skill,
 )
 from app.schemas.interview_question import InterviewQuestion
 
@@ -223,16 +222,10 @@ class InterviewQuestionRepository:
                             "collected_at": question.collected_at,
                         },
                     )
-                    for table_name in (
-                        "question_roles",
-                        "question_skills",
-                        "question_keywords",
-                        "question_embeddings",
-                    ):
-                        connection.execute(
-                            text(f"DELETE FROM {table_name} WHERE question_id = :question_id"),
-                            {"question_id": question_id},
-                        )
+                    connection.execute(
+                        text("DELETE FROM question_roles WHERE question_id = :question_id"),
+                        {"question_id": question_id},
+                    )
                 for sequence_no, role in enumerate(question.roles):
                     connection.execute(
                         text(
@@ -246,62 +239,6 @@ class InterviewQuestionRepository:
                             "question_id": question_id,
                             "role_id": ensure_role(connection, role),
                             "sequence_no": sequence_no,
-                        },
-                    )
-                for sequence_no, skill in enumerate(question.skills):
-                    connection.execute(
-                        text(
-                            """
-                            INSERT INTO question_skills (
-                                question_id, skill_id, sequence_no, source_text
-                            ) VALUES (:question_id, :skill_id, :sequence_no, :source_text)
-                            ON CONFLICT (question_id, skill_id) DO NOTHING
-                            """
-                        ),
-                        {
-                            "question_id": question_id,
-                            "skill_id": ensure_skill(connection, skill),
-                            "sequence_no": sequence_no,
-                            "source_text": skill,
-                        },
-                    )
-                for sequence_no, keyword in enumerate(question.keywords):
-                    connection.execute(
-                        text(
-                            """
-                            INSERT INTO question_keywords (
-                                question_id, sequence_no, keyword_text
-                            ) VALUES (:question_id, :sequence_no, :keyword)
-                            """
-                        ),
-                        {
-                            "question_id": question_id,
-                            "sequence_no": sequence_no,
-                            "keyword": keyword,
-                        },
-                    )
-                if question.question_embedding is not None:
-                    raw_embedding = json.dumps(question.question_embedding)
-                    vector_value = (
-                        "[" + ",".join(str(value) for value in question.question_embedding) + "]"
-                        if len(question.question_embedding) == 384
-                        else None
-                    )
-                    connection.execute(
-                        text(
-                            """
-                            INSERT INTO question_embeddings (
-                                question_id, embedding, raw_embedding
-                            ) VALUES (
-                                :question_id, CAST(:embedding AS vector),
-                                CAST(:raw_embedding AS JSONB)
-                            )
-                            """
-                        ),
-                        {
-                            "question_id": question_id,
-                            "embedding": vector_value,
-                            "raw_embedding": raw_embedding,
                         },
                     )
         return changed_count
@@ -323,18 +260,7 @@ class InterviewQuestionRepository:
                        FROM question_roles qr
                        JOIN roles r ON r.id = qr.role_id
                        WHERE qr.question_id = iq.id
-                   ), '[]'::jsonb) AS roles,
-                   COALESCE((
-                       SELECT jsonb_agg(qs2.source_text ORDER BY qs2.sequence_no)
-                       FROM question_skills qs2
-                       WHERE qs2.question_id = iq.id
-                   ), '[]'::jsonb) AS skills,
-                   COALESCE((
-                       SELECT jsonb_agg(qk.keyword_text ORDER BY qk.sequence_no)
-                       FROM question_keywords qk
-                       WHERE qk.question_id = iq.id
-                   ), '[]'::jsonb) AS keywords,
-                   qe.raw_embedding AS question_embedding
+                   ), '[]'::jsonb) AS roles
             FROM interview_questions iq
             JOIN LATERAL (
                 SELECT source, external_id
@@ -343,7 +269,6 @@ class InterviewQuestionRepository:
                 ORDER BY id
                 LIMIT 1
             ) qs ON TRUE
-            LEFT JOIN question_embeddings qe ON qe.question_id = iq.id
         """
         parameters: dict[str, object] = {"limit": limit}
         if company:
@@ -365,13 +290,9 @@ class InterviewQuestionRepository:
                 difficulty_level=row["difficulty_level"],
                 company=row["company"],
                 collected_at=row["collected_at"],
-                question_embedding=(
-                    list(row["question_embedding"])
-                    if row["question_embedding"] is not None
-                    else None
-                ),
-                skills=list(row["skills"]),
-                keywords=list(row["keywords"]),
+                question_embedding=None,
+                skills=[],
+                keywords=[],
             )
             for row in rows
         ]

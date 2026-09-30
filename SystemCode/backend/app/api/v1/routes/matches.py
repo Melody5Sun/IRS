@@ -15,8 +15,8 @@ from app.services.skill_match_service import SkillMatchService
 
 router = APIRouter()
 skill_match_service = SkillMatchService()
-responsibility_match_service = ResponsibilityMatchService()
-career_intent_match_service = CareerIntentMatchService()
+responsibility_match_service = ResponsibilityMatchService(persist=False)
+career_intent_match_service = CareerIntentMatchService(persist=False)
 
 
 @router.post("/skills", response_model=SkillScoreResponse)

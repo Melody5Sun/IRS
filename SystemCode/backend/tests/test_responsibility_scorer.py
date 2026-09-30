@@ -159,6 +159,29 @@ def test_duplicate_responsibilities_are_scored_once_and_embeddings_are_cached() 
     assert provider.calls.count(["Build APIs"]) == 1
 
 
+def test_prepared_resume_evidence_is_reused_across_jobs() -> None:
+    evidence_text = "Experience: Engineer. Built APIs."
+    provider = FakeEmbeddingProvider(
+        {
+            "Build APIs": [1.0, 0.0],
+            "Design services": [1.0, 0.0],
+            evidence_text: [1.0, 0.0],
+        }
+    )
+    scorer = ResponsibilityScorer(provider)
+    candidate = ResumeDocument(
+        experiences=[
+            Experience(company="Acme", title="Engineer", description="Built APIs.")
+        ]
+    )
+    prepared = scorer.prepare_candidate(candidate)
+
+    scorer.score(candidate, _job(["Build APIs"]), prepared_evidence=prepared)
+    scorer.score(candidate, _job(["Design services"]), prepared_evidence=prepared)
+
+    assert provider.calls.count([evidence_text]) == 1
+
+
 def test_research_summary_can_be_the_best_evidence() -> None:
     research_text = (
         "Research: Fraud Detection. Studied anomaly detection for transaction streams."

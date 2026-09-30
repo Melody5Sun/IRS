@@ -63,16 +63,3 @@ def ensure_role(connection: Connection, role_name: str) -> int:
             {"name": name},
         ).scalar_one()
     )
-
-
-def ensure_single_user(connection: Connection) -> int:
-    connection.execute(
-        text(
-            """
-            INSERT INTO users (id)
-            VALUES (1)
-            ON CONFLICT (id) DO NOTHING
-            """
-        )
-    )
-    return 1
