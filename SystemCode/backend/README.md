@@ -5,8 +5,8 @@ FastAPI backend for the IT CareerPilot IRS project.
 ## What is included
 
 - Health check endpoint
-- Resume PDF parsing endpoint (`POST /api/v1/resumes/parse-pdf`, LLM-based)
-- User profile and job-search constraints (`GET/PUT /api/v1/profile`, persisted for one local user)
+- Resume PDF parsing endpoint (`POST /api/resumes/parse-pdf`, LLM-based)
+- User profile and job-search constraints (`GET/PUT /api/profile`, persisted for one local user)
 - Job analysis endpoint with requirement extraction
 - Job sync/list endpoints backed by PostgreSQL
 - Recommendation endpoint with hard-constraint checks and explainable scoring
@@ -18,7 +18,7 @@ FastAPI backend for the IT CareerPilot IRS project.
 ```text
 backend/
   app/
-    api/v1/          # HTTP routes
+    api/             # HTTP routes
     core/            # settings and shared config
     db/              # PostgreSQL runtime plus explicit SQLite test helpers
     ingestion/       # external job source clients and synchronization
@@ -53,19 +53,19 @@ Open the interactive API docs at:
 http://127.0.0.1:8000/docs
 ```
 
-Use `POST /api/v1/jobs/sync` to fetch supported public job sources into the
-configured runtime database. Use `GET /api/v1/jobs` to list active jobs and
-`POST /api/v1/jobs/{job_id}/analyze-requirements` to create a structured JD.
+Use `POST /api/jobs/sync` to fetch supported public job sources into the
+configured runtime database. Use `GET /api/jobs` to list active jobs and
+`POST /api/jobs/{job_id}/analyze-requirements` to create a structured JD.
 
-Use `POST /api/v1/matches/skills` to calculate the implemented skill-score
+Use `POST /api/matches/skills` to calculate the implemented skill-score
 components from a formatted resume and a structured JD. See
 [`docs/skill-matching-score.md`](docs/skill-matching-score.md) for the formula.
 
-Use `POST /api/v1/rules-screening` with a `UserProfile` body to run the
+Use `POST /api/rules-screening` with a `UserProfile` body to run the
 hard-constraint rule engine over all analysed jobs; it returns the jobs that
 passed as `JobRequirementDocument`s plus per-rule rejection counts. Use
-`POST /api/v1/ranking` with the same body to run the rule engine and then score
-every passed job with `POST /api/v1/matches/skills`, sorted by `partial_score`.
+`POST /api/ranking` with the same body to run the rule engine and then score
+every passed job with `POST /api/matches/skills`, sorted by `partial_score`.
 See [`app/rule_engine/README.md`](app/rule_engine/README.md) for the rules.
 The production runtime does not create or read a database file inside the repository.
 

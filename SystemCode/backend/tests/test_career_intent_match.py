@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.api.v1.routes import matches as matches_route
+from app.api.routes import matches as matches_route
 from app.core.config import settings
 from app.knowledge.role_taxonomy import RoleTaxonomy
 from app.main import app
@@ -76,7 +76,7 @@ def test_career_intent_api(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(matches_route, "career_intent_match_service", service)
 
     response = client.post(
-        "/api/v1/matches/career-intent",
+        "/api/matches/career-intent",
         json={
             "target_roles": ["Backend Developer"],
             "job": {
@@ -96,7 +96,7 @@ def test_career_intent_api(monkeypatch, tmp_path: Path) -> None:
 
 def test_career_intent_api_rejects_unknown_target_role() -> None:
     response = client.post(
-        "/api/v1/matches/career-intent",
+        "/api/matches/career-intent",
         json={
             "target_roles": ["Backend Engineer"],
             "job": {"company": "Example", "title": "Backend Engineer"},

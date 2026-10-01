@@ -2,7 +2,7 @@ import { useState } from "react";
 import { getResumeHistory, saveParsedResume } from "../lib/profileStorage";
 import type { Profile, ResumeDocument } from "../types/profile";
 
-const PARSE_PDF_URL = "http://localhost:8000/api/v1/resumes/parse-pdf";
+const PARSE_PDF_URL = "http://localhost:8000/api/resumes/parse-pdf";
 
 interface Props {
   onParsed: (profile: Profile) => void;

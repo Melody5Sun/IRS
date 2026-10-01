@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from job_db import make_api_profile
 
-URL = "/api/v1/rules-screening"
+URL = "/api/rules-screening"
 
 
 def test_rules_screening_returns_only_passed_jobs_with_stats(screening_client: TestClient) -> None:

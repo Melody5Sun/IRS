@@ -52,7 +52,7 @@ graph-match record, but they count as fully covered in graph coverage.
 ## API
 
 ```http
-POST /api/v1/matches/skills
+POST /api/matches/skills
 Content-Type: application/json
 ```
 

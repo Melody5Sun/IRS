@@ -8,7 +8,7 @@ client = TestClient(app)
 
 def test_skill_match_api_scores_formatted_resume_against_structured_jd() -> None:
     response = client.post(
-        "/api/v1/matches/skills",
+        "/api/matches/skills",
         json={
             "candidate": {
                 "name": "Jane Tan",

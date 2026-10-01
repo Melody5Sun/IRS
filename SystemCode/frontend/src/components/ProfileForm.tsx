@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { saveProfile } from "../lib/profileStorage";
 import type { Profile, ProfileOptions, TargetEmploymentType, WorkMode } from "../types/profile";
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = "http://localhost:8000/api";
 const WORK_MODES: WorkMode[] = ["onsite", "hybrid", "remote"];
 const EMPLOYMENT_TYPES: { value: TargetEmploymentType; label: string }[] = [
   { value: "full_time", label: "正职" },

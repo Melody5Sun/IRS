@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.api.v1.routes import matches as matches_route
+from app.api.routes import matches as matches_route
 from app.main import app
 from app.matching.responsibility_scorer import ResponsibilityScorer
 from app.services.responsibility_match_service import ResponsibilityMatchService
@@ -25,7 +25,7 @@ def test_responsibility_match_api_returns_explainable_score(monkeypatch) -> None
     monkeypatch.setattr(matches_route, "responsibility_match_service", service)
 
     response = client.post(
-        "/api/v1/matches/responsibilities",
+        "/api/matches/responsibilities",
         json={
             "candidate": {
                 "name": "Jane Tan",

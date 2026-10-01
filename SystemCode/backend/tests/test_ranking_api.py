@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
 from job_db import make_api_profile
 
-RANKING_URL = "/api/v1/ranking"
-SCREENING_URL = "/api/v1/rules-screening"
-SKILLS_URL = "/api/v1/matches/skills"
+RANKING_URL = "/api/ranking"
+SCREENING_URL = "/api/rules-screening"
+SKILLS_URL = "/api/matches/skills"
 
 
 def test_ranking_scores_only_screened_jobs_in_descending_order(screening_client: TestClient) -> None:

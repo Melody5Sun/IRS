@@ -10,7 +10,7 @@ ENV_FILE = PROJECT_ROOT / ".env"
 class Settings(BaseSettings):
     app_name: str = "IT CareerPilot API"
     app_version: str = "0.1.0"
-    api_prefix: str = "/api/v1"
+    api_prefix: str = "/api"
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.6-flash"
     mind_skills_path: Path = BACKEND_ROOT / "data" / "mind_ontology" / "skills.json"

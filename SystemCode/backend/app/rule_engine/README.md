@@ -7,7 +7,7 @@
   - `screen_jobs(profile: UserProfile, db_path) -> ScreeningResult`：通过的 `JobRequirementDocument` 列表（按 job_id 升序，读自 `job_analysis.analysis_json`，`industry` 按公司回填）+ `total_jobs` + `rejected_by_rule`；单条 `analysis_json` 解析失败会打 WARNING 并跳过。下游技能评分吃的就是它
 - 学生画像直接用 `app.schemas.profile.UserProfile`
 - 岗位数据：`jobs INNER JOIN job_analysis`（没有分析记录的岗位不输出），行业来自公司级的 `company_industries` 表（按 `normalize_company_name(jobs.company)` 匹配）；数据库以只读方式打开
-- HTTP 接口不在本包里（本包不依赖 FastAPI）：`POST /api/v1/rules-screening`（只筛选）和 `POST /api/v1/ranking`（筛选后接技能评分）在 `app/api/v1/routes/`，请求体都是 `UserProfile`
+- HTTP 接口不在本包里（本包不依赖 FastAPI）：`POST /api/rules-screening`（只筛选）和 `POST /api/ranking`（筛选后接技能评分）在 `app/api/routes/`，请求体都是 `UserProfile`
 
 | 文件 | 作用 |
 |---|---|

@@ -2,9 +2,9 @@ import pytest
 from fastapi.testclient import TestClient
 from job_db import API_JOBS, make_file_db
 
-from app.api.v1.routes import ranking as ranking_route
-from app.api.v1.routes import resumes as resumes_route
-from app.api.v1.routes import rules_screening as rules_screening_route
+from app.api.routes import ranking as ranking_route
+from app.api.routes import resumes as resumes_route
+from app.api.routes import rules_screening as rules_screening_route
 from app.main import app
 from app.services.profile_service import profile_service
 from app.services.ranking_service import RankingService

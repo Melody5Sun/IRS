@@ -4,7 +4,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.v1.routes import resumes as resumes_route
+from app.api.routes import resumes as resumes_route
 from app.main import app
 from app.matching.scorer import calculate_experience_years
 from app.resume.llm_resume_parser import SYSTEM_PROMPT, LLMResumeParser, ResumeParsingError
@@ -110,7 +110,7 @@ def _build_minimal_pdf(text: str) -> bytes:
 
 def _upload_pdf(text: str = "Resume") -> dict:
     response = client.post(
-        "/api/v1/resumes/parse-pdf",
+        "/api/resumes/parse-pdf",
         files={"file": ("resume.pdf", _build_minimal_pdf(text), "application/pdf")},
     )
     assert response.status_code == 200
@@ -118,7 +118,7 @@ def _upload_pdf(text: str = "Resume") -> dict:
 
 
 def test_health_check() -> None:
-    response = client.get("/api/v1/health")
+    response = client.get("/api/health")
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
@@ -206,7 +206,7 @@ def test_llm_parser_raises_after_second_failure() -> None:
 
 def test_parse_resume_pdf_rejects_non_pdf_upload() -> None:
     response = client.post(
-        "/api/v1/resumes/parse-pdf",
+        "/api/resumes/parse-pdf",
         files={"file": ("resume.txt", b"not a pdf", "text/plain")},
     )
 
@@ -223,11 +223,11 @@ def test_profile_flow(monkeypatch: pytest.MonkeyPatch) -> None:
         ],
     )
 
-    assert client.get("/api/v1/profile").status_code == 404
+    assert client.get("/api/profile").status_code == 404
 
     # 上传 PDF 后解析结果自动存入画像，简历里的 about 预填进 notes
     _upload_pdf("Jane Tan")
-    saved = client.get("/api/v1/profile").json()
+    saved = client.get("/api/profile").json()
     assert saved["resume"]["name"] == "Jane Tan"
     assert "about" not in saved["resume"]
     assert saved["constraints"] == {
@@ -239,14 +239,14 @@ def test_profile_flow(monkeypatch: pytest.MonkeyPatch) -> None:
     }
 
     # 解析结果不完整，原样提交会被拒；补全后才能保存
-    assert client.put("/api/v1/profile", json=saved).status_code == 422
-    response = client.put("/api/v1/profile", json=COMPLETE_PROFILE)
+    assert client.put("/api/profile", json=saved).status_code == 422
+    response = client.put("/api/profile", json=COMPLETE_PROFILE)
     assert response.status_code == 200
-    assert client.get("/api/v1/profile").json() == COMPLETE_PROFILE
+    assert client.get("/api/profile").json() == COMPLETE_PROFILE
 
     # 重新上传简历：画像被替换；约束保留，用户写过的 notes 不被新 about 覆盖
     _upload_pdf("Jane Tan v2")
-    reuploaded = client.get("/api/v1/profile").json()
+    reuploaded = client.get("/api/profile").json()
     assert reuploaded["resume"]["name"] == "Jane Tan v2"
     assert reuploaded["resume"]["skills"] == []
     assert reuploaded["constraints"] == COMPLETE_PROFILE["constraints"]
@@ -265,21 +265,21 @@ def test_resume_history_list_and_apply(monkeypatch: pytest.MonkeyPatch) -> None:
     _upload_pdf("Jane Tan v1")
     _upload_pdf("Jane Tan v2")
 
-    history = client.get("/api/v1/resumes/history").json()
+    history = client.get("/api/resumes/history").json()
     # 按上传时间倒序，最新的在前面
     assert [entry["name"] for entry in history] == ["Jane Tan v2", "Jane Tan v1"]
-    assert client.get("/api/v1/profile").json()["resume"]["name"] == "Jane Tan v2"
+    assert client.get("/api/profile").json()["resume"]["name"] == "Jane Tan v2"
 
     # 挑选更早的历史版本套用回当前画像
     older_id = history[1]["id"]
-    applied = client.post(f"/api/v1/resumes/history/{older_id}/apply")
+    applied = client.post(f"/api/resumes/history/{older_id}/apply")
     assert applied.status_code == 200
     assert applied.json()["resume"]["name"] == "Jane Tan v1"
-    assert client.get("/api/v1/profile").json()["resume"]["name"] == "Jane Tan v1"
+    assert client.get("/api/profile").json()["resume"]["name"] == "Jane Tan v1"
 
 
 def test_resume_history_apply_missing_id_returns_404() -> None:
-    response = client.post("/api/v1/resumes/history/999/apply")
+    response = client.post("/api/resumes/history/999/apply")
 
     assert response.status_code == 404
 
@@ -288,23 +288,23 @@ def test_patch_profile_merges_partial_update(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(profile_service, "profile", None)
 
     # 还没有画像时，PATCH 和 GET 一样返回 404
-    assert client.patch("/api/v1/profile", json={"constraints": {"notes": "hi"}}).status_code == 404
+    assert client.patch("/api/profile", json={"constraints": {"notes": "hi"}}).status_code == 404
 
-    client.put("/api/v1/profile", json=COMPLETE_PROFILE)
+    client.put("/api/profile", json=COMPLETE_PROFILE)
 
     # 只传 constraints.notes，其余字段（包括 resume、constraints 里的其他字段）原样保留
-    response = client.patch("/api/v1/profile", json={"constraints": {"notes": "只改这一个字段"}})
+    response = client.patch("/api/profile", json={"constraints": {"notes": "只改这一个字段"}})
     assert response.status_code == 200
     patched = response.json()
     assert patched["constraints"]["notes"] == "只改这一个字段"
     assert patched["constraints"]["target_roles"] == COMPLETE_PROFILE["constraints"]["target_roles"]
     assert patched["resume"] == COMPLETE_PROFILE["resume"]
-    assert client.get("/api/v1/profile").json() == patched
+    assert client.get("/api/profile").json() == patched
 
     # 非法枚举值仍然被拒绝（422），画像不受影响
-    invalid_response = client.patch("/api/v1/profile", json={"constraints": {"work_modes": ["office"]}})
+    invalid_response = client.patch("/api/profile", json={"constraints": {"work_modes": ["office"]}})
     assert invalid_response.status_code == 422
-    assert client.get("/api/v1/profile").json() == patched
+    assert client.get("/api/profile").json() == patched
 
 
 def test_profile_rejects_empty_fields(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -320,7 +320,7 @@ def test_profile_rejects_empty_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     # notes 选填，留空不报错
     profile["constraints"]["notes"] = ""
 
-    response = client.put("/api/v1/profile", json=profile)
+    response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
     assert [error["loc"] for error in response.json()["detail"]] == [
@@ -339,7 +339,7 @@ def test_profile_rejects_unknown_work_mode(monkeypatch: pytest.MonkeyPatch) -> N
     profile = copy.deepcopy(COMPLETE_PROFILE)
     profile["constraints"]["work_modes"] = ["office"]
 
-    response = client.put("/api/v1/profile", json=profile)
+    response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
     assert profile_service.profile is None
@@ -350,7 +350,7 @@ def test_profile_rejects_unknown_employment_type(monkeypatch: pytest.MonkeyPatch
     profile = copy.deepcopy(COMPLETE_PROFILE)
     profile["constraints"]["target_employment_types"] = ["part_time"]
 
-    response = client.put("/api/v1/profile", json=profile)
+    response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
     assert profile_service.profile is None
@@ -362,14 +362,14 @@ def test_profile_rejects_unknown_target_role_or_industry(monkeypatch: pytest.Mon
     profile["constraints"]["target_roles"] = ["Backend Engineer"]
     profile["constraints"]["target_industries"] = ["Fintech"]
 
-    response = client.put("/api/v1/profile", json=profile)
+    response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
     assert profile_service.profile is None
 
 
 def test_profile_options_expose_role_categories_and_industries() -> None:
-    response = client.get("/api/v1/profile/options")
+    response = client.get("/api/profile/options")
 
     assert response.status_code == 200
     body = response.json()
@@ -383,7 +383,7 @@ def test_profile_options_expose_role_categories_and_industries() -> None:
 
 def test_analyze_job_requirements_extracts_structured_document() -> None:
     response = client.post(
-        "/api/v1/jobs/analyze-requirements",
+        "/api/jobs/analyze-requirements",
         json={
             "job_id": "job-1",
             "title": "Software Engineer Intern",
@@ -403,7 +403,7 @@ def test_analyze_job_requirements_extracts_structured_document() -> None:
 
 def test_recommendations_rank_matching_job_first() -> None:
     response = client.post(
-        "/api/v1/recommendations",
+        "/api/recommendations",
         json={
             "candidate": {
                 "name": "Jane Tan",
@@ -465,7 +465,7 @@ def test_parsed_resume_feeds_recommendations(monkeypatch: pytest.MonkeyPatch) ->
         "description": "Build APIs with Python, FastAPI and SQL.",
     }
     response = client.post(
-        "/api/v1/recommendations",
+        "/api/recommendations",
         json={
             "candidate": parsed,
             "jobs": [

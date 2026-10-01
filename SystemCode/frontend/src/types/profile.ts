@@ -49,7 +49,7 @@ export interface Certificate {
   expiry_date: string | null;
 }
 
-// POST /api/v1/resumes/parse-pdf 的响应体形状
+// POST /api/resumes/parse-pdf 的响应体形状
 export interface ResumeDocument {
   name: string | null;
   email: string | null;
@@ -82,7 +82,7 @@ export function emptyConstraints(): JobSearchConstraints {
   return { target_roles: [], target_industries: [], work_modes: [], target_employment_types: [], notes: "" };
 }
 
-// GET /api/v1/profile/options 的响应体形状，供目标岗位/行业下拉框渲染
+// GET /api/profile/options 的响应体形状，供目标岗位/行业下拉框渲染
 export interface ProfileOptions {
   target_role_categories: Record<string, string[]>;
   target_industries: string[];
