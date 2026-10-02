@@ -1,7 +1,7 @@
 import pytest
 
 from app.resume.rewrite_applier import apply_changes
-from app.schemas.resume import Experience, Project, ResumeDocument
+from app.schemas.resume import Experience, Project, ResumeDocument, SkillGroup
 from app.schemas.resume_rewrite import ResumeChange
 
 DESCRIPTION = "Responsible for building REST APIs with Python and FastAPI for 3 internal tools."
@@ -138,3 +138,21 @@ def test_removed_skills_use_llm_alias_match() -> None:
 def test_removed_skills_fall_back_to_string_match_on_bad_llm_output() -> None:
     # 字符串匹配查不出 K8s（skills 列表写的是 Kubernetes），这是退回方案的已知上限
     assert _skills_rewrite("not json") == ["Python"]
+
+
+def _regroup(kafka: bool) -> list[str]:
+    # 原技能栏没有分类；改写后拆成 Languages / Databases，"Databases" 本身是技能词表别名
+    groups = [SkillGroup(category=None, description="Java, MySQL, Redis")]
+    original = ResumeDocument(name="Test Candidate", skills=["Java", "MySQL", "Redis"], skill_groups=groups)
+    value = [
+        SkillGroup(category="Languages", description="Java"),
+        SkillGroup(category="Databases", description="MySQL, Redis" + (", Kafka" if kafka else "")),
+    ]
+    change = _change(section="skills", field="skill_groups", original=groups, value=value)
+    result = apply_changes(original, [change], jd_company="Shopee", client=FakeChatClient('{"removed_skills": []}'))
+    return [r.reason for r in result.rejected_changes]
+
+
+def test_skill_group_category_labels_are_not_new_skills() -> None:
+    assert _regroup(kafka=False) == []
+    assert _regroup(kafka=True) == ["new_skill"]

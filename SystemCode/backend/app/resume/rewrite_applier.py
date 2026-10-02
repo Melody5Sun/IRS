@@ -135,7 +135,9 @@ def _check_skill_groups(
     new_text = groups_text(change.value)
     # skills 列表里的技能允许补进技能栏，它们自带的数字（如 "Vue 3"）也算有依据
     evidence = "\n".join([old_text, *original.skills])
-    return _check_facts(old_text, new_text, evidence, resume_skills, jd_company)
+    # 分类名（"Databases"、"Cloud" 等）会命中技能词表别名，新技能检查只看各组的技能描述
+    descriptions = "\n".join(group.description for group in change.value)
+    return _check_facts(old_text, new_text, evidence, resume_skills, jd_company, skill_text=descriptions)
 
 
 def _check_facts(
@@ -144,14 +146,18 @@ def _check_facts(
     evidence: str,
     resume_skills: set[str],
     jd_company: str,
+    skill_text: str | None = None,
 ) -> tuple[RejectionReason, str] | None:
-    """文本改写共用的事实检查：不能出现依据里没有的数字、原简历没有的技能、目标公司名。"""
+    """文本改写共用的事实检查：不能出现依据里没有的数字、原简历没有的技能、目标公司名。
+
+    skill_text 不为空时只在这段文本里查新技能（技能栏用它排除分类名），数字和公司名仍查整个 value。
+    """
     new_numbers = set(_NUMBER.findall(value)) - set(_NUMBER.findall(evidence))
     if new_numbers:
         return "new_number", f"原文中没有这些数字：{sorted(new_numbers)}"
 
     # ponytail: 只能识别技能词表里的技能，词表外的新技术名词查不出来；接入 MIND 图谱后可扩大覆盖
-    new_skills = set(extract_skills(value)) - resume_skills
+    new_skills = set(extract_skills(value if skill_text is None else skill_text)) - resume_skills
     if new_skills:
         return "new_skill", f"原简历中没有这些技能：{sorted(new_skills)}"
 
