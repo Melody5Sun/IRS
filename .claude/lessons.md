@@ -8,6 +8,9 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-02] | 用 `apply_changes` 规则自检技能栏示例时，加分类标签（"Databases: MySQL"、"Cloud: AWS"、"Networking: TCP/IP"）被判成编造技能 databases / cloud computing / computer networks；"before go-live" 被识别出技能 Go | `_check_skill_groups` 把 `groups_text`（"分类: 描述"）整体送进 `extract_skills`，分类名命中词表别名；知识库 skills-01/skills-10 等条目推荐的分组写法在真实改写中会被拒。写示例时避开 go-live 这类撞词；检查器已改为只对 description 抽技能（见 901d836） | SystemCode/backend/app/resume/rewrite_applier.py
+[2026-10-02] | Git Bash 里 `docker exec 容器 pg_dump -f /tmp/x.dump` 报 `could not open output file "C:/Users/.../Temp/x.dump"` | Git Bash 把参数里的 `/tmp/...` 自动转成 Windows 路径再传给 docker；命令前加 `export MSYS_NO_PATHCONV=1` 关掉路径转换 | 本机环境
+[2026-10-02] | 知识库从 149 条扩到 377 条后，原 42 条评测 hit@3 0.952→0.833，被动语态/空话类用例检索到的是同主题的岗位条目（Excel 报表、测试报告） | all-MiniLM-L6-v2 按主题而不是写法匹配；扩库后先用原标注跑一次评测量化稀释，再只对“新条目同样正确”的用例补标注，两个数字都报，不要只报补标注后的 | SystemCode/backend/scripts/evaluate_guideline_retrieval.py
 [2026-10-02] | 不带 ORDER BY 浏览知识库表时 id 乱序（如 11,124,1,2…），重新导出快照后 pg_restore 出来仍有个别行跳位 | PostgreSQL 表没有固有顺序：`ON CONFLICT DO UPDATE` 会把行的新版本写到表尾，pg_restore 的 COPY 也可能把行塞进前面页的空隙。要物理重排用 `CLUSTER 表 USING 主键索引` 后再 `ALTER TABLE 表 SET WITHOUT CLUSTER`（不把聚簇标记留进 schema）；要稳定的顺序只能靠查询写 `ORDER BY id` | SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump
 
 [2026-10-02] | 运行库迁到 PostgreSQL 后，规则引擎、画像、简历历史都保留了一份只给测试用的 SQLite 代码；测试全绿，但测的是旧 `schema.sql` 的 `jobs/job_analysis`（生产库已没有这两张表），线上真正跑的 `screen_jobs_postgres` 零覆盖 | 一份逻辑只留一条读写路径：把"读库"和"纯逻辑"拆开，测试直接喂数据行（`make_rows`）或注入 Fake 仓库，SQL 本身用真实库跑一遍验证；不要为了测试另养一份数据库实现 | SystemCode/backend/app/rule_engine/engine.py, SystemCode/backend/tests/job_db.py, SystemCode/backend/tests/conftest.py

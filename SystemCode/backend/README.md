@@ -99,7 +99,7 @@ repository therefore includes the current PostgreSQL custom-format dump at
 expected SHA-256 is:
 
 ```text
-2D16F3229D79FD68F7B25A0660DA9C838B106BAC94330C16C95B82F2F51A1C91
+A16ADC4230CDC86B79E6F60E1568464870337B3A0FFB4B98F971C936BCDCC4D3
 ```
 
 ### Recommended: Docker
@@ -145,11 +145,11 @@ docker exec careerpilot-postgres psql -U careerpilot -d careerpilot `
 ```
 
 The current shared snapshot should return `134` jobs, `215` interview
-questions, `149` resume-rewrite guidelines, and `10` test resumes. It already
+questions, `377` resume-rewrite guidelines, and `10` test resumes. It already
 contains migration `20261002_0010`, the 10 hand-parsed test resumes from
 `resume test/parsed/` in `resume_uploads` (no `user_profile` row), all 618 JD responsibility vectors, all 369 JD Top-3 role
-mappings, and all 447 knowledge-base chunk vectors (149 guideline chunks plus
-298 example chunks). Install the Python
+mappings, and all 1508 knowledge-base chunk vectors (377 guideline chunks plus
+1131 example chunks). Install the Python
 dependencies and apply any migrations added after the snapshot:
 
 ```powershell
