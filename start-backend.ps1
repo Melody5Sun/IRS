@@ -68,11 +68,15 @@ function Import-Snapshot($snapshot, $marker) {
         Update-Database
         docker cp $backup "${container}:/tmp/my-data.dump"
         if ($LASTEXITCODE -ne 0) { Fail "备份文件复制进容器失败，备份仍在 $backup" }
+        # 快照里自带的简历记录（团队共享的测试简历）先另存一份，放回你的数据后再合并进去
+        Invoke-Sql "DROP TABLE IF EXISTS _snapshot_resume_uploads; CREATE TABLE _snapshot_resume_uploads AS SELECT id AS snapshot_id, filename, resume_json, uploaded_at FROM resume_uploads" | Out-Null
         Invoke-Sql "TRUNCATE user_profile, resume_uploads" | Out-Null
         docker exec $container pg_restore -U careerpilot -d careerpilot --data-only /tmp/my-data.dump
         if ($LASTEXITCODE -ne 0) { Fail "恢复你的数据失败，备份仍在 $backup" }
-        # 自增 id 对齐到已有最大值，避免下次上传简历时主键冲突
+        # 自增 id 对齐到已有最大值，避免追加快照记录和下次上传简历时主键冲突
         Invoke-Sql "SELECT setval(pg_get_serial_sequence('resume_uploads', 'id'), COALESCE(MAX(id), 1), MAX(id) IS NOT NULL) FROM resume_uploads" | Out-Null
+        # 合并：你已有同名文件的记录以你的为准，其余快照记录追加（重新分配 id）
+        Invoke-Sql "INSERT INTO resume_uploads (filename, resume_json, uploaded_at) SELECT s.filename, s.resume_json, s.uploaded_at FROM _snapshot_resume_uploads s WHERE NOT EXISTS (SELECT 1 FROM resume_uploads r WHERE r.filename IS NOT DISTINCT FROM s.filename) ORDER BY s.snapshot_id; DROP TABLE _snapshot_resume_uploads" | Out-Null
     }
 
     # 在数据库注释里记下导入的是哪个快照，下次启动据此判断是否需要重新导入
