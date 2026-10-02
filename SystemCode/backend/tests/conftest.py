@@ -11,7 +11,7 @@ from app.api.routes import rules_screening as rules_screening_route
 from app.main import app
 from app.rule_engine import engine as rule_engine
 from app.schemas.profile import UserProfile
-from app.schemas.resume import ParsedResume, ResumeHistoryEntry
+from app.schemas.resume import ParsedResume, ResumeDocument, ResumeHistoryEntry, ResumeUpload
 from app.services.career_intent_match_service import CareerIntentMatchService
 from app.services.profile_service import ProfileService
 from app.services.ranking_service import RankingService
@@ -51,8 +51,22 @@ class FakeResumeHistoryRepository:
             for index, (filename, parsed) in reversed(list(enumerate(self.uploads, start=1)))
         ]
 
-    def get(self, history_id: int) -> ParsedResume | None:
-        return self.uploads[history_id - 1][1] if 1 <= history_id <= len(self.uploads) else None
+    def get(self, history_id: int) -> ResumeUpload | None:
+        if not 1 <= history_id <= len(self.uploads):
+            return None
+        filename, parsed = self.uploads[history_id - 1]
+        return ResumeUpload(
+            id=history_id, filename=filename, name=parsed.name, uploaded_at=datetime.now(timezone.utc), resume=parsed
+        )
+
+    def update(self, history_id: int, resume: ResumeDocument) -> bool:
+        # 和真实仓库的 JSONB || 一样：覆盖简历字段，保留 about
+        if not 1 <= history_id <= len(self.uploads):
+            return False
+        filename, parsed = self.uploads[history_id - 1]
+        merged = ParsedResume.model_validate({**parsed.model_dump(), **resume.model_dump()})
+        self.uploads[history_id - 1] = (filename, merged)
+        return True
 
 
 @pytest.fixture
@@ -76,8 +90,9 @@ def screening_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
 
 @pytest.fixture(autouse=True)
 def profile_service(monkeypatch: pytest.MonkeyPatch) -> ProfileService:
-    """画像 / 简历历史两个路由共用的服务换成注入 Fake 仓库的新实例，每个测试从空画像开始，不碰真实 PostgreSQL。"""
+    """画像 / 简历历史 / 排序三个路由共用的服务换成注入 Fake 仓库的新实例，每个测试从空画像开始，不碰真实 PostgreSQL。"""
     service = ProfileService(FakeProfileRepository(), FakeResumeHistoryRepository())
     monkeypatch.setattr(profile_route, "profile_service", service)
     monkeypatch.setattr(resumes_route, "profile_service", service)
+    monkeypatch.setattr(ranking_route, "profile_service", service)
     return service

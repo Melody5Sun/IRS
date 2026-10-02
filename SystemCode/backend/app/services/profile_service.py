@@ -1,6 +1,5 @@
 from app.repositories.resume_history_repository import ProfileRepository, ResumeHistoryRepository
-from app.schemas.profile import JobSearchConstraints, UserProfile
-from app.schemas.resume import ParsedResume, ResumeDocument
+from app.schemas.profile import UserProfile
 
 # 用户提交画像时允许留空的字段，按所在段落区分（同名字段如 start_date 在不同段落规则不同）。
 # 标量字段：可以为 None/空串；列表字段：可以一条都不填，但填了的条目里字段仍要完整
@@ -77,21 +76,15 @@ class ProfileService:
     def get(self) -> UserProfile | None:
         return self.profile_repository.get()
 
-    def save(self, profile: UserProfile) -> None:
+    def save(self, profile: UserProfile) -> bool:
+        """补全后的简历先回写到来源上传记录，再保存画像；上传记录不存在时什么都不写，返回 False。"""
+        if profile.resume_upload_id is None or not self.resume_history.update(
+            profile.resume_upload_id, profile.resume
+        ):
+            return False
         self.profile_repository.save(profile)
-
-    def save_resume(self, parsed: ParsedResume) -> UserProfile:
-        # 重新上传简历时只替换画像，已经填写的求职约束保留
-        current = self.get()
-        constraints = current.constraints if current else JobSearchConstraints()
-        # 简历里的自我介绍合并进补充说明；用户已经写过 notes 就不覆盖
-        if parsed.about and not constraints.notes.strip():
-            constraints = constraints.model_copy(update={"notes": parsed.about})
-        resume = ResumeDocument.model_validate(parsed.model_dump(exclude={"about"}))
-        profile = UserProfile(resume=resume, constraints=constraints)
-        self.save(profile)
-        return profile
+        return True
 
 
-# resumes 和 profile 两个路由共用同一份画像
+# resumes / profile / ranking 路由共用同一份画像
 profile_service = ProfileService()

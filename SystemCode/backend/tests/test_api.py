@@ -75,6 +75,8 @@ COMPLETE_PROFILE = {
         "target_employment_types": ["full_time"],
         "notes": "Available from 2026-06.",
     },
+    # 画像必须来自一条上传记录；用到它的测试先往 Fake 仓库放一条（id=1）
+    "resume_upload_id": 1,
 }
 
 
@@ -185,14 +187,16 @@ def test_parse_resume_pdf_extracts_structured_profile(monkeypatch: pytest.Monkey
 
     body = _upload_pdf("Jane Tan")
 
-    assert body["name"] == "Jane Tan"
-    assert body["experiences"][0]["employment_type"] == "internship"
-    assert body["skills"] == ["Python"]
-    assert body["educations"][0]["entry_type"] == "degree"
-    assert body["research"][0]["title"] == "Federated Learning for Edge Devices"
-    assert body["languages"] == ["English", "Mandarin"]
-    # about 只合并进画像的 notes，不出现在简历响应里
-    assert "about" not in body
+    # 返回整条上传记录，id 供之后 PUT /profile 填 resume_upload_id
+    assert (body["id"], body["filename"], body["name"]) == (1, "resume.pdf", "Jane Tan")
+    resume = body["resume"]
+    assert resume["experiences"][0]["employment_type"] == "internship"
+    assert resume["skills"] == ["Python"]
+    assert resume["educations"][0]["entry_type"] == "degree"
+    assert resume["research"][0]["title"] == "Federated Learning for Edge Devices"
+    assert resume["languages"] == ["English", "Mandarin"]
+    # about 原样返回，前端可以拿它预填 notes
+    assert resume["about"] == "Aspiring backend engineer."
 
 
 def test_system_prompt_covers_every_schema_field() -> None:
@@ -228,45 +232,50 @@ def test_parse_resume_pdf_rejects_non_pdf_upload() -> None:
     assert response.status_code == 400
 
 
-def test_profile_flow(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_profile_flow(monkeypatch: pytest.MonkeyPatch, profile_service: ProfileService) -> None:
     _use_fake_llm(
         monkeypatch,
         [
             json.dumps({"name": "Jane Tan", "about": "Aspiring backend engineer."}),
-            json.dumps({"name": "Jane Tan v2", "about": "Updated summary."}),
+            json.dumps({"name": "Jane Tan v2"}),
         ],
     )
 
+    # 上传只写进上传记录，不建画像
+    upload = _upload_pdf("Jane Tan")
     assert client.get("/api/profile").status_code == 404
 
-    # 上传 PDF 后解析结果自动存入画像，简历里的 about 预填进 notes
-    _upload_pdf("Jane Tan")
-    saved = client.get("/api/profile").json()
-    assert saved["resume"]["name"] == "Jane Tan"
-    assert "about" not in saved["resume"]
-    assert saved["constraints"] == {
-        "target_roles": [],
-        "target_industries": [],
-        "work_modes": [],
-        "target_employment_types": [],
-        "notes": "Aspiring backend engineer.",
-    }
+    # 解析结果不完整，原样提交会被拒，画像仍然没有
+    incomplete = {"resume": upload["resume"], "resume_upload_id": upload["id"]}
+    assert client.put("/api/profile", json=incomplete).status_code == 422
+    assert client.get("/api/profile").status_code == 404
 
-    # 解析结果不完整，原样提交会被拒；补全后才能保存
-    assert client.put("/api/profile", json=saved).status_code == 422
+    # 补全后才能保存；补全后的简历同时回写到来源的上传记录，about 保留
     response = client.put("/api/profile", json=COMPLETE_PROFILE)
     assert response.status_code == 200
     assert client.get("/api/profile").json() == COMPLETE_PROFILE
+    written_back = client.get(f"/api/resumes/history/{upload['id']}").json()["resume"]
+    assert written_back == {**COMPLETE_PROFILE["resume"], "about": "Aspiring backend engineer."}
 
-    # 重新上传简历：画像被替换；约束保留，用户写过的 notes 不被新 about 覆盖
+    # 再上传一份简历：画像不变，直到用户补全后再次保存
     _upload_pdf("Jane Tan v2")
-    reuploaded = client.get("/api/profile").json()
-    assert reuploaded["resume"]["name"] == "Jane Tan v2"
-    assert reuploaded["resume"]["skills"] == []
-    assert reuploaded["constraints"] == COMPLETE_PROFILE["constraints"]
+    assert client.get("/api/profile").json() == COMPLETE_PROFILE
 
 
-def test_resume_history_list_and_apply(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_profile_requires_resume_upload() -> None:
+    # 没有 resume_upload_id：和其他必填字段一样 422
+    profile = copy.deepcopy(COMPLETE_PROFILE)
+    del profile["resume_upload_id"]
+    response = client.put("/api/profile", json=profile)
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "resume_upload_id"]]
+
+    # 指向不存在的上传记录：404，画像不写入
+    assert client.put("/api/profile", json=COMPLETE_PROFILE).status_code == 404
+    assert client.get("/api/profile").status_code == 404
+
+
+def test_resume_history_list_and_get(monkeypatch: pytest.MonkeyPatch) -> None:
     _use_fake_llm(
         monkeypatch,
         [
@@ -281,28 +290,28 @@ def test_resume_history_list_and_apply(monkeypatch: pytest.MonkeyPatch) -> None:
     history = client.get("/api/resumes/history").json()
     # 按上传时间倒序，最新的在前面
     assert [entry["name"] for entry in history] == ["Jane Tan v2", "Jane Tan v1"]
-    assert client.get("/api/profile").json()["resume"]["name"] == "Jane Tan v2"
 
-    # 挑选更早的历史版本套用回当前画像
+    # 查看更早的历史版本：返回整条记录，不改画像
     older_id = history[1]["id"]
-    applied = client.post(f"/api/resumes/history/{older_id}/apply")
-    assert applied.status_code == 200
-    assert applied.json()["resume"]["name"] == "Jane Tan v1"
-    assert client.get("/api/profile").json()["resume"]["name"] == "Jane Tan v1"
+    response = client.get(f"/api/resumes/history/{older_id}")
+    assert response.status_code == 200
+    assert response.json()["resume"]["name"] == "Jane Tan v1"
+    assert client.get("/api/profile").status_code == 404
 
 
-def test_resume_history_apply_missing_id_returns_404() -> None:
-    response = client.post("/api/resumes/history/999/apply")
+def test_resume_history_missing_id_returns_404() -> None:
+    response = client.get("/api/resumes/history/999")
 
     assert response.status_code == 404
 
 
-def test_patch_profile_merges_partial_update() -> None:
+def test_patch_profile_merges_partial_update(profile_service: ProfileService) -> None:
+    profile_service.resume_history.add(ParsedResume(), "seed.pdf")
 
     # 还没有画像时，PATCH 和 GET 一样返回 404
     assert client.patch("/api/profile", json={"constraints": {"notes": "hi"}}).status_code == 404
 
-    client.put("/api/profile", json=COMPLETE_PROFILE)
+    assert client.put("/api/profile", json=COMPLETE_PROFILE).status_code == 200
 
     # 只传 constraints.notes，其余字段（包括 resume、constraints 里的其他字段）原样保留
     response = client.patch("/api/profile", json={"constraints": {"notes": "只改这一个字段"}})
@@ -498,7 +507,7 @@ def test_parsed_resume_feeds_recommendations(monkeypatch: pytest.MonkeyPatch) ->
         }
     )
     _use_fake_llm(monkeypatch, [llm_response])
-    parsed = _upload_pdf("Jane Tan")
+    parsed = _upload_pdf("Jane Tan")["resume"]
 
     job = {
         "title": "Backend Intern",

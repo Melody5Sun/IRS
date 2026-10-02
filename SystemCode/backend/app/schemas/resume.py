@@ -114,3 +114,9 @@ class ResumeHistoryEntry(BaseModel):
     filename: str | None = None
     name: str | None = None
     uploaded_at: datetime
+
+
+class ResumeUpload(ResumeHistoryEntry):
+    """resume_uploads 的一整条记录：上传/查看历史简历时返回，保存画像时把 id 填进 resume_upload_id。"""
+
+    resume: ParsedResume

@@ -72,11 +72,21 @@ hide interactions.
 Use `POST /api/rules-screening` with a `UserProfile` body to run the
 hard-constraint rule engine over all analysed jobs; it returns the jobs that
 passed as `JobRequirementDocument`s plus per-rule rejection counts. Use
-`POST /api/ranking` with the same body to run the rule engine and then score
-every passed job with the complete matching formula. Its lightweight response
+`POST /api/ranking` (no request body) to run the rule engine on the **saved**
+profile and then score every passed job with the complete matching formula; it
+returns 409 until a profile has been saved, and re-ranks on every call, so a
+profile update is reflected immediately. Its lightweight response
 returns the top 30 jobs with rank, basic job metadata, and final score; detailed
 matching evidence for one selected job is returned by
-`POST /api/jobs/{job_id}/match-detail` using the same `UserProfile` body.
+`POST /api/jobs/{job_id}/match-detail` using a `UserProfile` body.
+
+Profile flow: `POST /api/resumes/parse-pdf` only stores the parsed resume in
+`resume_uploads` and returns the whole record (`id` + `resume`);
+`GET /api/resumes/history/{id}` returns any earlier upload the same way.
+Neither touches the profile. `PUT /api/profile` is the only way to create the
+profile: every required field must be filled (422 otherwise), `resume_upload_id`
+must point to an existing upload (404 otherwise), and the completed resume is
+written back to that upload.
 See [`app/rule_engine/README.md`](app/rule_engine/README.md) for the rules.
 The production runtime does not create or read a database file inside the repository.
 

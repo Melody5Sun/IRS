@@ -3,8 +3,7 @@ from io import BytesIO
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pdfminer.high_level import extract_text
 
-from app.schemas.profile import UserProfile
-from app.schemas.resume import ResumeDocument, ResumeHistoryEntry
+from app.schemas.resume import ResumeHistoryEntry, ResumeUpload
 from app.services.profile_service import profile_service
 from app.services.resume_service import ResumeService
 
@@ -12,8 +11,8 @@ router = APIRouter()
 resume_service = ResumeService()
 
 
-@router.post("/parse-pdf", response_model=ResumeDocument)
-def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeDocument:
+@router.post("/parse-pdf", response_model=ResumeUpload)
+def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeUpload:
     if file.content_type not in ("application/pdf", "application/octet-stream") and not (
         file.filename or ""
     ).lower().endswith(".pdf"):
@@ -26,12 +25,9 @@ def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeDocument:
         )
 
     parsed = resume_service.parse_text(text)
-    # 每次上传都留一条历史记录，供之后挑选版本套用
-    profile_service.resume_history.add(parsed, file.filename)
-    # 解析结果先存入画像（about 合并进 notes），用户之后通过 GET /profile 读取并修改
-    profile_service.save_resume(parsed)
-    # response_model 是 ResumeDocument，响应里不带 about
-    return parsed
+    # 只存进上传记录，不动画像：解析结果往往不完整，要用户补全后通过 PUT /profile 保存
+    history_id = profile_service.resume_history.add(parsed, file.filename)
+    return profile_service.resume_history.get(history_id)
 
 
 @router.get("/history", response_model=list[ResumeHistoryEntry])
@@ -39,10 +35,10 @@ def list_resume_history() -> list[ResumeHistoryEntry]:
     return profile_service.resume_history.list()
 
 
-@router.post("/history/{history_id}/apply", response_model=UserProfile)
-def apply_resume_history(history_id: int) -> UserProfile:
-    """把某条历史记录套用为当前画像的简历部分，约束沿用 save_resume 的合并规则。"""
-    parsed = profile_service.resume_history.get(history_id)
-    if parsed is None:
+@router.get("/history/{history_id}", response_model=ResumeUpload)
+def get_resume_history(history_id: int) -> ResumeUpload:
+    """返回某条上传记录的完整简历，不改画像；要换成这份简历，补全后通过 PUT /profile 保存。"""
+    upload = profile_service.resume_history.get(history_id)
+    if upload is None:
         raise HTTPException(status_code=404, detail="未找到该历史版本")
-    return profile_service.save_resume(parsed)
+    return upload

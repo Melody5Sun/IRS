@@ -2,13 +2,23 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.rule_engine import engine as rule_engine
+from app.schemas.profile import UserProfile
+from app.services.profile_service import ProfileService
 from job_db import make_api_profile, make_rows
 
 RANKING_URL = "/api/ranking"
 
 
-def test_ranking_scores_only_screened_jobs_in_descending_order(screening_client: TestClient) -> None:
-    response = screening_client.post(RANKING_URL, json=make_api_profile().model_dump(mode="json"))
+def _rank(client: TestClient, service: ProfileService, profile: UserProfile):
+    # ranking 不收请求体，读库里保存的画像：测试直接写进 Fake 画像仓库
+    service.profile_repository.save(profile)
+    return client.post(RANKING_URL)
+
+
+def test_ranking_scores_only_screened_jobs_in_descending_order(
+    screening_client: TestClient, profile_service: ProfileService
+) -> None:
+    response = _rank(screening_client, profile_service, make_api_profile())
 
     assert response.status_code == 200
     body = response.json()
@@ -29,10 +39,12 @@ def test_ranking_scores_only_screened_jobs_in_descending_order(screening_client:
     }
 
 
-def test_ranking_all_rejected_returns_empty_results(screening_client: TestClient) -> None:
+def test_ranking_all_rejected_returns_empty_results(
+    screening_client: TestClient, profile_service: ProfileService
+) -> None:
     profile = make_api_profile(target_industries=["Cybersecurity"])
 
-    response = screening_client.post(RANKING_URL, json=profile.model_dump(mode="json"))
+    response = _rank(screening_client, profile_service, profile)
 
     assert response.status_code == 200
     body = response.json()
@@ -44,13 +56,26 @@ def test_ranking_all_rejected_returns_empty_results(screening_client: TestClient
     ) == (4, 0, 0, [])
 
 
-def test_ranking_rejects_body_without_resume(screening_client: TestClient) -> None:
-    assert screening_client.post(RANKING_URL, json={"constraints": {}}).status_code == 422
+def test_ranking_without_saved_profile_returns_409(screening_client: TestClient) -> None:
+    # 还没有保存画像就不能进行下一步
+    assert screening_client.post(RANKING_URL).status_code == 409
+
+
+def test_ranking_reranks_after_profile_update(
+    screening_client: TestClient, profile_service: ProfileService
+) -> None:
+    before = _rank(screening_client, profile_service, make_api_profile()).json()
+    # 画像更新（目标行业改了）后再调用，结果按新画像重新计算
+    after = _rank(screening_client, profile_service, make_api_profile(target_industries=["Cybersecurity"])).json()
+
+    assert before["passed_count"] == 2
+    assert after["passed_count"] == 0
 
 
 def test_ranking_returns_only_top_30_with_stable_tie_order(
     monkeypatch: pytest.MonkeyPatch,
     screening_client: TestClient,
+    profile_service: ProfileService,
 ) -> None:
     jobs = tuple(
         {
@@ -65,10 +90,7 @@ def test_ranking_returns_only_top_30_with_stable_tie_order(
     )
     monkeypatch.setattr(rule_engine, "load_job_rows", lambda: make_rows(*jobs))
 
-    response = screening_client.post(
-        RANKING_URL,
-        json=make_api_profile().model_dump(mode="json"),
-    )
+    response = _rank(screening_client, profile_service, make_api_profile())
 
     assert response.status_code == 200
     body = response.json()

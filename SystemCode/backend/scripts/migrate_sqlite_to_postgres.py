@@ -528,7 +528,8 @@ def run_migration(source_path: Path, target_url: str) -> dict[str, int]:
         raise FileNotFoundError(source_path)
     alembic_config = Config(str(BACKEND_ROOT / "alembic.ini"))
     alembic_config.set_main_option("sqlalchemy.url", target_url)
-    command.upgrade(alembic_config, "head")
+    # 旧 SQLite 的画像没有 resume_upload_id：先升到 0011 复制数据，再由 0012 把画像存成一条上传记录并关联
+    command.upgrade(alembic_config, "20261002_0011")
 
     source = sqlite3.connect(source_path.resolve().as_uri() + "?mode=ro", uri=True)
     source.row_factory = sqlite3.Row
@@ -560,6 +561,7 @@ def run_migration(source_path: Path, target_url: str) -> dict[str, int]:
             ),
         )
     source.close()
+    command.upgrade(alembic_config, "head")
     return legacy_counts
 
 
