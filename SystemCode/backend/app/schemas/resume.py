@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -77,4 +78,4 @@ class ResumeHistoryEntry(BaseModel):
     id: int
     filename: str | None = None
     name: str | None = None
-    uploaded_at: str
+    uploaded_at: datetime

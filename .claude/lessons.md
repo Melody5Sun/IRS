@@ -8,6 +8,8 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-02] | 运行库迁到 PostgreSQL 后，规则引擎、画像、简历历史都保留了一份只给测试用的 SQLite 代码；测试全绿，但测的是旧 `schema.sql` 的 `jobs/job_analysis`（生产库已没有这两张表），线上真正跑的 `screen_jobs_postgres` 零覆盖 | 一份逻辑只留一条读写路径：把"读库"和"纯逻辑"拆开，测试直接喂数据行（`make_rows`）或注入 Fake 仓库，SQL 本身用真实库跑一遍验证；不要为了测试另养一份数据库实现 | SystemCode/backend/app/rule_engine/engine.py, SystemCode/backend/tests/job_db.py, SystemCode/backend/tests/conftest.py
+
 [2026-10-02] | 含中文注释的 `.ps1` 脚本在 Windows PowerShell 5.1 里报 `UnexpectedToken '}'`、`EmptyPipeElement`，代码本身没问题 | PowerShell 5.1 把无 BOM 的 UTF-8 文件按系统代码页（GBK）读，中文被读乱并吞掉相邻字符；`.ps1` 一律存成 **UTF-8 with BOM**。检查语法：`[System.Management.Automation.Language.Parser]::ParseFile(...)` | start-backend.ps1
 
 [2026-10-02] | 按旧记录把 `DATABASE_URL`/`LLM_*` 写进 `SystemCode/backend/.env`，后端却读不到（下面 2026-09-17 那条已过时） | PostgreSQL 迁移后 `config.py` 改为 `ENV_FILE = PROJECT_ROOT / ".env"`，只读**仓库根目录**的 `.env`；`SystemCode/backend/.env` 已不生效。验证：在 `SystemCode/backend` 下运行 `python -c "from app.core.config import settings, ENV_FILE; print(ENV_FILE); print(settings.database_url); print(bool(settings.llm_api_key))"`（不打印密钥） | .env, SystemCode/backend/app/core/config.py

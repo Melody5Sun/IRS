@@ -1,33 +1,83 @@
+from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
-from job_db import API_JOBS, make_file_db
+from job_db import API_JOBS, make_rows
 
+from app.api.routes import profile as profile_route
 from app.api.routes import ranking as ranking_route
 from app.api.routes import resumes as resumes_route
 from app.api.routes import rules_screening as rules_screening_route
 from app.main import app
-from app.services.profile_service import profile_service
+from app.rule_engine import engine as rule_engine
+from app.schemas.profile import UserProfile
+from app.schemas.resume import ParsedResume, ResumeHistoryEntry
+from app.services.career_intent_match_service import CareerIntentMatchService
+from app.services.profile_service import ProfileService
 from app.services.ranking_service import RankingService
+from app.services.responsibility_match_service import ResponsibilityMatchService
 from app.services.rules_screening_service import RulesScreeningService
 from app.services.skill_match_service import SkillMatchService
 
 
+class FakeProfileRepository:
+    """代替 user_profile 表：只存一份画像。"""
+
+    def __init__(self) -> None:
+        self.profile: UserProfile | None = None
+
+    def get(self) -> UserProfile | None:
+        return self.profile
+
+    def save(self, profile: UserProfile) -> None:
+        self.profile = profile
+
+
+class FakeResumeHistoryRepository:
+    """代替 resume_uploads 表：按上传顺序存解析结果，id 从 1 开始。"""
+
+    def __init__(self) -> None:
+        self.uploads: list[tuple[str | None, ParsedResume]] = []
+
+    def add(self, parsed: ParsedResume, filename: str | None) -> int:
+        self.uploads.append((filename, parsed))
+        return len(self.uploads)
+
+    def list(self) -> list[ResumeHistoryEntry]:
+        return [
+            ResumeHistoryEntry(
+                id=index, filename=filename, name=parsed.name, uploaded_at=datetime.now(timezone.utc)
+            )
+            for index, (filename, parsed) in reversed(list(enumerate(self.uploads, start=1)))
+        ]
+
+    def get(self, history_id: int) -> ParsedResume | None:
+        return self.uploads[history_id - 1][1] if 1 <= history_id <= len(self.uploads) else None
+
+
 @pytest.fixture
-def screening_client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> TestClient:
-    """把 rules-screening / ranking 两个接口指向 tmp_path 里的库（API_JOBS），不碰被 git 跟踪的 careerpilot.db。"""
-    rules_service = RulesScreeningService(make_file_db(tmp_path, *API_JOBS))
+def screening_client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    """rules-screening / ranking 读的岗位换成 API_JOBS，JD 语义不落库，不碰真实 PostgreSQL。"""
+    monkeypatch.setattr(rule_engine, "load_job_rows", lambda: make_rows(*API_JOBS))
+    rules_service = RulesScreeningService()
     monkeypatch.setattr(rules_screening_route, "rules_screening_service", rules_service)
-    monkeypatch.setattr(ranking_route, "ranking_service", RankingService(rules_service, SkillMatchService()))
+    monkeypatch.setattr(
+        ranking_route,
+        "ranking_service",
+        RankingService(
+            rules_service,
+            SkillMatchService(),
+            ResponsibilityMatchService(persist=False),
+            CareerIntentMatchService(persist=False),
+        ),
+    )
     return TestClient(app)
 
 
 @pytest.fixture(autouse=True)
-def _isolate_profile_db(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
-    """profile_service / resume_history 是全局单例，测试期间指向 tmp_path 里的库，不碰被 git 跟踪的 careerpilot.db。"""
-    db_path = tmp_path / "profile.db"
-    monkeypatch.setattr(profile_service, "db_path", db_path)
-    monkeypatch.setattr(profile_service, "_initialized", False)
-    monkeypatch.setattr(profile_service, "_loaded", False)
-    monkeypatch.setattr(profile_service, "_profile", None)
-    monkeypatch.setattr(resumes_route.resume_history, "db_path", db_path)
-    monkeypatch.setattr(resumes_route.resume_history, "_initialized", False)
+def profile_service(monkeypatch: pytest.MonkeyPatch) -> ProfileService:
+    """画像 / 简历历史两个路由共用的服务换成注入 Fake 仓库的新实例，每个测试从空画像开始，不碰真实 PostgreSQL。"""
+    service = ProfileService(FakeProfileRepository(), FakeResumeHistoryRepository())
+    monkeypatch.setattr(profile_route, "profile_service", service)
+    monkeypatch.setattr(resumes_route, "profile_service", service)
+    return service
