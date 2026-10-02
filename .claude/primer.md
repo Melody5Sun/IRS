@@ -41,7 +41,7 @@
 - 简历解析 → 推荐已打通：`/recommendations` 的 `candidate` 直接接收 `ResumeDocument`。技能用 JD 同一套词表归一化；经验年限按 experiences 日期的月份并集计算，重叠不重复算
 - 代码结构整理（PR #8，已合并到 main）：OpenAI 兼容客户端（`ChatClient`/`OpenAICompatibleClient`）从 `llm_resume_parser.py` 拆到 `app/services/openai_client_service.py`；简历解析文件（`llm_resume_parser.py`、`resume_parser.py`）从 `app/parsers/` 提到顶层 `app/resume/`，和 `api`/`core`/`knowledge`/`parsers`/`services` 平级；合并后 `python -m pytest tests/ -q` 全量 27 个测试通过
 - GitHub Actions CI 运行 backend pytest（PR #2，只对目标为 main 的 PR 和 push 触发）；当前共 94 个测试
-- `launch.json` 配置好后端启动（PR #5，已合并）；`config.py` 固定读取 `SystemCode/backend/.env`，从任何目录启动都能读到
+- `launch.json` 配置好后端启动（PR #5，已合并）；`config.py` 固定读取**仓库根目录**的 `.env`（PostgreSQL 迁移后从 `SystemCode/backend/.env` 改过来），从任何目录启动都能读到
 - `settings.json` 的 deny 规则禁止 Claude 读取 `.env`、打印环境变量
 - `PATCH /api/profile`：局部更新画像，只传要改的字段（类似 JSON Merge Patch，`profile_service.merge_patch`），不跑 `PUT` 的“非空”校验，但仍跑 pydantic 字段校验（枚举范围等），非法值 422；无画像时和 `GET` 一样 404
 - 新增 `SystemCode/frontend/` 最小 Vite + React + TypeScript 工程（原来只有一个打包过的静态 demo.html，两者共存不冲突）：
@@ -74,7 +74,7 @@
 - 前端最小工程已打通“上传简历→解析→localStorage 缓存→编辑求职约束→PUT 保存画像”全链路，但没有接 `PATCH /profile`（只用 `PUT` 整体保存），也没有登录态/多用户概念；`SystemCode/frontend/IT CareerPilot demo.html` 仍是独立的静态打包文件，两者未打通
 - 仓库里没有样例简历，prompt 效果只能靠各自本地的真实简历人工验证
 - 后端使用 Conda 环境 `careerpilot-backend`；依赖安装命令为 `conda activate careerpilot-backend` 后执行 `python -m pip install -r SystemCode/backend/requirements.txt`
-- 各自机器要在 `SystemCode/backend/.env` 里填入真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）
+- 各自机器要在仓库根目录 `.env` 里填入 `DATABASE_URL`（本地 Docker 为 `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`）和真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）
 - 禁止 Co-Authored-By 行，PR 描述里也不加 "Generated with Claude Code"。由 `.claude/hooks/commit-msg` 钩子强制检查，新克隆的仓库需要运行一次 `git config core.hooksPath .claude/hooks`
 - 允许直接 push 到 main，不强制走 PR（Claude 已获得 `git push` 免确认权限，见 `.claude/settings.json`）
 
@@ -85,6 +85,7 @@ cd SystemCode/backend
 python -m pytest tests/ -q          # 跑测试
 python -m uvicorn app.main:app --reload   # 启动后端，文档在 /docs
 ```
+- 一键启动：仓库根目录运行 `.\start-backend.ps1`——自动拉起 Docker Desktop 和数据库容器；仓库里的团队快照 `.dump` 比库里记录的新时询问是否重新导入（保留 `user_profile`/`resume_uploads`，导入的快照记在数据库注释里）；数据库版本落后时 `alembic upgrade head`；最后启动后端并打开 `/docs`
 - 也可以用 `.claude/launch.json` 里的 `backend` 配置启动（端口 8000，要先关掉占用该端口的进程）。
 
 ## 🗓️ 关键日期

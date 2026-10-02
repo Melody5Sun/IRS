@@ -8,6 +8,10 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-02] | 含中文注释的 `.ps1` 脚本在 Windows PowerShell 5.1 里报 `UnexpectedToken '}'`、`EmptyPipeElement`，代码本身没问题 | PowerShell 5.1 把无 BOM 的 UTF-8 文件按系统代码页（GBK）读，中文被读乱并吞掉相邻字符；`.ps1` 一律存成 **UTF-8 with BOM**。检查语法：`[System.Management.Automation.Language.Parser]::ParseFile(...)` | start-backend.ps1
+
+[2026-10-02] | 按旧记录把 `DATABASE_URL`/`LLM_*` 写进 `SystemCode/backend/.env`，后端却读不到（下面 2026-09-17 那条已过时） | PostgreSQL 迁移后 `config.py` 改为 `ENV_FILE = PROJECT_ROOT / ".env"`，只读**仓库根目录**的 `.env`；`SystemCode/backend/.env` 已不生效。验证：在 `SystemCode/backend` 下运行 `python -c "from app.core.config import settings, ENV_FILE; print(ENV_FILE); print(settings.database_url); print(bool(settings.llm_api_key))"`（不打印密钥） | .env, SystemCode/backend/app/core/config.py
+
 [2026-10-02] | 知识库检索用"标题 + 建议 + 一句示例"整体向量化时，用户的弱要点和条目相似度只有 0.15–0.5，42 条评测用例 hit@3 只有 0.714 | 检索 query 是简历原句，应该和"改写前"原句比，而不是和说明文字比：知识层与向量层分表，每个示例单独成块（`resume_guideline_chunks`），每条取最相近的块，hit@3 升到 0.952。改检索方式前后都用 `scripts/evaluate_guideline_retrieval.py` 量化对比 | SystemCode/backend/app/repositories/resume_guideline_repository.py
 [2026-10-02] | 导出团队快照时，Claude Code 的 Bash（Git Bash）报 `docker: command not found`，`wsl -e docker` 也报"不能在 docker-desktop 发行版里调用 docker CLI" | docker CLI 在 `C:/Users/melod/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe`，用完整路径调用；容器内路径（如 `/tmp/x.dump`）作参数时预防性地先 `export MSYS_NO_PATHCONV=1`，避免 Git Bash 把它改写成 Windows 路径 | 本机环境
 
