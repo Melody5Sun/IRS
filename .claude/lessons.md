@@ -8,6 +8,11 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-02] | 知识库检索用"标题 + 建议 + 一句示例"整体向量化时，用户的弱要点和条目相似度只有 0.15–0.5，42 条评测用例 hit@3 只有 0.714 | 检索 query 是简历原句，应该和"改写前"原句比，而不是和说明文字比：知识层与向量层分表，每个示例单独成块（`resume_guideline_chunks`），每条取最相近的块，hit@3 升到 0.952。改检索方式前后都用 `scripts/evaluate_guideline_retrieval.py` 量化对比 | SystemCode/backend/app/repositories/resume_guideline_repository.py
+[2026-10-02] | 导出团队快照时，Claude Code 的 Bash（Git Bash）报 `docker: command not found`，`wsl -e docker` 也报"不能在 docker-desktop 发行版里调用 docker CLI" | docker CLI 在 `C:/Users/melod/AppData/Local/Programs/DockerDesktop/resources/bin/docker.exe`，用完整路径调用；容器内路径（如 `/tmp/x.dump`）作参数时预防性地先 `export MSYS_NO_PATHCONV=1`，避免 Git Bash 把它改写成 Windows 路径 | 本机环境
+
+[2026-10-02] | 用改写检查器（`apply_changes` 的 new_skill 规则）自检知识库示例时，合理改写被判成"编造技能"：`Google Cloud Platform` 命中别名 cloud → `cloud computing`，`Docker containers` 命中 containers → `containerization`，"两周冲刺 + 每日站会"改写成 `Agile Scrum` 命中 `agile` | 技能词表的宽泛别名会让 new_skill 检查误拒同义展开；由已有经历推断出的技能（Scrum→agile）在加上蕴含关系前一律会被拒。写知识库示例和 LLM prompt 时避开这些措辞，导入前用同一套检查跑一遍"改写后只用改写前事实"；以后可用 MIND 的 `impliesKnowingSkills` 放行蕴含技能 | SystemCode/backend/app/resume/rewrite_applier.py, SystemCode/backend/app/parsers/skill_lexicon.py
+
 [2026-09-24] | 跑 `pytest tests/` 在收集阶段就报 `ModuleNotFoundError: No module named 'numpy'`，连不相关的测试文件也跑不了（`.venv` 和 conda `careerpilot-backend` 两个环境都缺） | `tests/conftest.py` 导入了 ranking 路由 → `career_intent_scorer` → numpy，任何测试都会先加载它；`requirements.txt` 新增依赖后要重新 `pip install -r requirements.txt`。临时只跑某个不依赖这条链的测试文件可加 `--noconftest` | SystemCode/backend/tests/conftest.py, requirements.txt
 
 [2026-09-22] | agent-interview-hub 导入的 83 条面试题里有 8 条 `standard_answer` 结尾拼进了下一个小节的 markdown 标题（如 "...兜底机制\n\n---\n\n## 二、大模型基础"），原始导入脚本没保留、事后无法复现问题根因，只能推测是按 "### Q:" 分块时把最后一题一路吃到了下一个 `##` 大标题 | 用markdown 做数据导入时，每题的正文边界不能只用"下一个同级标题"兜底，要同时按更高级的标题（如 `##`/`---`分隔线）做二次截断；批量导入后应抽样或全量 grep 一下 `---`、`^##` 这类章节标记有没有混进正文字段，而不是假设解析器一定按预期切好了 | SystemCode/backend/data/careerpilot.db（interview_questions 表）

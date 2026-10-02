@@ -81,13 +81,14 @@ migration and archive procedure.
 ## Team database setup
 
 Alembic creates the PostgreSQL schema, but it does not include the shared job,
-interview-question, responsibility-vector, and JD-role ranking data. The
+interview-question, responsibility-vector, JD-role ranking, and resume-rewrite
+knowledge-base data. The
 repository therefore includes the current PostgreSQL custom-format dump at
-`SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump`. Its
+`SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump`. Its
 expected SHA-256 is:
 
 ```text
-7C82ED51A81E3C53329EA19262B75A4E83E77F50900F170A7FEEEDE0071606BF
+00099A021E92330409E0FE4EA0A9AB94A815CBD1F86CDF15B6D5ADEA5A1C4061
 ```
 
 ### Recommended: Docker
@@ -98,9 +99,9 @@ Run these commands from the repository root:
 docker compose up -d postgres
 docker compose ps
 Get-FileHash `
-  "SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump" `
+  "SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump" `
   -Algorithm SHA256
-docker cp "SystemCode/backend/data/database/careerpilot-postgresql-20260930.dump" `
+docker cp "SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump" `
   careerpilot-postgres:/tmp/careerpilot.dump
 docker exec careerpilot-postgres pg_restore `
   -U careerpilot `
@@ -126,11 +127,15 @@ docker exec careerpilot-postgres psql -U careerpilot -d careerpilot `
   -c "SELECT COUNT(*) AS jobs FROM job_postings;"
 docker exec careerpilot-postgres psql -U careerpilot -d careerpilot `
   -c "SELECT COUNT(*) AS questions FROM interview_questions;"
+docker exec careerpilot-postgres psql -U careerpilot -d careerpilot `
+  -c "SELECT COUNT(*) AS guidelines FROM resume_guidelines;"
 ```
 
-The current shared snapshot should return `134` jobs and `215` interview
-questions. It already contains migration `20260930_0007`, all 618 JD
-responsibility vectors, and all 369 JD Top-3 role mappings. Install the Python
+The current shared snapshot should return `134` jobs, `215` interview
+questions, and `149` resume-rewrite guidelines. It already contains migration
+`20261002_0008`, all 618 JD responsibility vectors, all 369 JD Top-3 role
+mappings, and all 447 knowledge-base chunk vectors (149 guideline chunks plus
+298 example chunks). Install the Python
 dependencies and apply any migrations added after the snapshot:
 
 ```powershell
@@ -141,6 +146,9 @@ python -m alembic upgrade head
 
 `python -m scripts.backfill_job_semantics` remains available and idempotent if
 the JD analysis data is later replaced or imported without its semantic cache.
+`python -m scripts.backfill_resume_guideline_embeddings` likewise re-embeds only
+knowledge-base chunks that are new, edited, or embedded with another model, and
+`python -m scripts.evaluate_guideline_retrieval` reports retrieval hit@3 and MRR.
 
 Then start the API and open the Swagger page:
 

@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     career_intent_top_k: int = 3
     career_intent_similarity_floor: float = 0.40
     career_intent_similarity_full: float = 0.85
+    # 简历改写专家知识库的检索向量；改写时用户原句用同一个模型向量化
+    resume_guideline_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding="utf-8",
