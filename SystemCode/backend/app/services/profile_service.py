@@ -1,11 +1,4 @@
-from datetime import datetime, timezone
-from pathlib import Path
-import sqlite3
-
-from sqlalchemy import text
-
-from app.db.postgres import get_postgres_engine
-from app.db.sqlite import connect, initialize_database
+from app.repositories.resume_history_repository import ProfileRepository, ResumeHistoryRepository
 from app.schemas.profile import JobSearchConstraints, UserProfile
 from app.schemas.resume import ParsedResume, ResumeDocument
 
@@ -57,101 +50,33 @@ def find_empty_fields(data: dict[str, object], loc: Loc | None = None) -> list[L
 
 
 class ProfileService:
-    """本地部署只有一个用户，只保存一份画像，持久化在 user_profile 表的单行（id 固定为 1）。"""
+    """画像相关的业务规则；持久化交给仓库（默认 PostgreSQL，测试注入 Fake 仓库）。"""
 
-    def __init__(self, db_path: Path | None = None) -> None:
-        self.db_path = db_path
-        # 延迟到第一次真正访问数据库时才建表/迁移，避免 import app 时就改写 data/careerpilot.db
-        self._initialized = False
-        self._profile: UserProfile | None = None
-        self._loaded = False
+    def __init__(
+        self,
+        profile_repository: ProfileRepository | None = None,
+        resume_history: ResumeHistoryRepository | None = None,
+    ) -> None:
+        self.profile_repository = profile_repository or ProfileRepository()
+        self.resume_history = resume_history or ResumeHistoryRepository()
 
-    @property
-    def _use_postgres(self) -> bool:
-        return self.db_path is None
+    def get(self) -> UserProfile | None:
+        return self.profile_repository.get()
 
-    def _connect(self) -> sqlite3.Connection:
-        if self.db_path is None:
-            raise RuntimeError("SQLite is available only with an explicit test database path.")
-        if not self._initialized:
-            initialize_database(self.db_path)
-            self._initialized = True
-        return connect(self.db_path)
+    def save(self, profile: UserProfile) -> None:
+        self.profile_repository.save(profile)
 
-    @property
-    def profile(self) -> UserProfile | None:
-        if not self._loaded:
-            if self._use_postgres:
-                with get_postgres_engine().connect() as connection:
-                    payload = connection.execute(
-                        text("SELECT profile_json FROM user_profile WHERE id = 1")
-                    ).scalar_one_or_none()
-                self._profile = UserProfile.model_validate_json(payload) if payload else None
-            else:
-                with self._connect() as connection:
-                    row = connection.execute(
-                        "SELECT profile_json FROM user_profile WHERE id = 1"
-                    ).fetchone()
-                self._profile = UserProfile.model_validate_json(row["profile_json"]) if row else None
-            self._loaded = True
-        return self._profile
-
-    @profile.setter
-    def profile(self, value: UserProfile | None) -> None:
-        if self._use_postgres:
-            self._save_postgres_profile(value)
-            self._profile = value
-            self._loaded = True
-            return
-        with self._connect() as connection:
-            if value is None:
-                connection.execute("DELETE FROM user_profile WHERE id = 1")
-            else:
-                connection.execute(
-                    """
-                    INSERT INTO user_profile (id, profile_json, updated_at)
-                    VALUES (1, ?, ?)
-                    ON CONFLICT(id) DO UPDATE SET
-                        profile_json = excluded.profile_json,
-                        updated_at = excluded.updated_at
-                    """,
-                    (value.model_dump_json(), datetime.now(timezone.utc).isoformat()),
-                )
-        self._profile = value
-        self._loaded = True
-
-    @staticmethod
-    def _save_postgres_profile(value: UserProfile | None) -> None:
-        with get_postgres_engine().begin() as connection:
-            if value is None:
-                connection.execute(
-                    text("DELETE FROM user_profile WHERE id = 1")
-                )
-                return
-            connection.execute(
-                text(
-                    """
-                    INSERT INTO user_profile (id, profile_json, updated_at)
-                    VALUES (1, :profile_json, :updated_at)
-                    ON CONFLICT (id) DO UPDATE SET
-                        profile_json = EXCLUDED.profile_json,
-                        updated_at = EXCLUDED.updated_at
-                    """
-                ),
-                {
-                    "profile_json": value.model_dump_json(),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                },
-            )
-
-    def save_resume(self, parsed: ParsedResume) -> None:
+    def save_resume(self, parsed: ParsedResume) -> UserProfile:
         # 重新上传简历时只替换画像，已经填写的求职约束保留
-        constraints = self.profile.constraints if self.profile else JobSearchConstraints()
+        current = self.get()
+        constraints = current.constraints if current else JobSearchConstraints()
         # 简历里的自我介绍合并进补充说明；用户已经写过 notes 就不覆盖
         if parsed.about and not constraints.notes.strip():
             constraints = constraints.model_copy(update={"notes": parsed.about})
         resume = ResumeDocument.model_validate(parsed.model_dump(exclude={"about"}))
-        self.profile = UserProfile(resume=resume, constraints=constraints)
+        profile = UserProfile(resume=resume, constraints=constraints)
+        self.save(profile)
+        return profile
 
 
 # resumes 和 profile 两个路由共用同一份画像

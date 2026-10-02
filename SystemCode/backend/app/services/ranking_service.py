@@ -25,14 +25,11 @@ class RankingService:
     ) -> None:
         self.rules_screening_service = rules_screening_service
         self.skill_match_service = skill_match_service
-        persist_job_semantics = rules_screening_service.db_path is None
         self.responsibility_match_service = (
-            responsibility_match_service
-            or ResponsibilityMatchService(persist=persist_job_semantics)
+            responsibility_match_service or ResponsibilityMatchService()
         )
         self.career_intent_match_service = (
-            career_intent_match_service
-            or CareerIntentMatchService(persist=persist_job_semantics)
+            career_intent_match_service or CareerIntentMatchService()
         )
         self.overall_scorer = overall_scorer or OverallScorer()
 

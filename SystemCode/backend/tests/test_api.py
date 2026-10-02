@@ -10,7 +10,7 @@ from app.matching.scorer import calculate_experience_years
 from app.resume.llm_resume_parser import SYSTEM_PROMPT, LLMResumeParser, ResumeParsingError
 from app.resume.resume_parser import ResumeParser
 from app.schemas.resume import Experience, ParsedResume
-from app.services.profile_service import profile_service
+from app.services.profile_service import ProfileService
 from app.services.resume_service import ResumeService
 
 client = TestClient(app)
@@ -214,7 +214,6 @@ def test_parse_resume_pdf_rejects_non_pdf_upload() -> None:
 
 
 def test_profile_flow(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
     _use_fake_llm(
         monkeypatch,
         [
@@ -253,7 +252,6 @@ def test_profile_flow(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_resume_history_list_and_apply(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
     _use_fake_llm(
         monkeypatch,
         [
@@ -284,8 +282,7 @@ def test_resume_history_apply_missing_id_returns_404() -> None:
     assert response.status_code == 404
 
 
-def test_patch_profile_merges_partial_update(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
+def test_patch_profile_merges_partial_update() -> None:
 
     # 还没有画像时，PATCH 和 GET 一样返回 404
     assert client.patch("/api/profile", json={"constraints": {"notes": "hi"}}).status_code == 404
@@ -307,8 +304,7 @@ def test_patch_profile_merges_partial_update(monkeypatch: pytest.MonkeyPatch) ->
     assert client.get("/api/profile").json() == patched
 
 
-def test_profile_rejects_empty_fields(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
+def test_profile_rejects_empty_fields(profile_service: ProfileService) -> None:
     profile = copy.deepcopy(COMPLETE_PROFILE)
     resume = profile["resume"]
     resume["email"] = None
@@ -331,33 +327,30 @@ def test_profile_rejects_empty_fields(monkeypatch: pytest.MonkeyPatch) -> None:
         ["body", "resume", "languages", 0],
         ["body", "constraints", "work_modes"],
     ]
-    assert profile_service.profile is None
+    assert profile_service.get() is None
 
 
-def test_profile_rejects_unknown_work_mode(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
+def test_profile_rejects_unknown_work_mode(profile_service: ProfileService) -> None:
     profile = copy.deepcopy(COMPLETE_PROFILE)
     profile["constraints"]["work_modes"] = ["office"]
 
     response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
-    assert profile_service.profile is None
+    assert profile_service.get() is None
 
 
-def test_profile_rejects_unknown_employment_type(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
+def test_profile_rejects_unknown_employment_type(profile_service: ProfileService) -> None:
     profile = copy.deepcopy(COMPLETE_PROFILE)
     profile["constraints"]["target_employment_types"] = ["part_time"]
 
     response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
-    assert profile_service.profile is None
+    assert profile_service.get() is None
 
 
-def test_profile_rejects_unknown_target_role_or_industry(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(profile_service, "profile", None)
+def test_profile_rejects_unknown_target_role_or_industry(profile_service: ProfileService) -> None:
     profile = copy.deepcopy(COMPLETE_PROFILE)
     profile["constraints"]["target_roles"] = ["Backend Engineer"]
     profile["constraints"]["target_industries"] = ["Fintech"]
@@ -365,7 +358,7 @@ def test_profile_rejects_unknown_target_role_or_industry(monkeypatch: pytest.Mon
     response = client.put("/api/profile", json=profile)
 
     assert response.status_code == 422
-    assert profile_service.profile is None
+    assert profile_service.get() is None
 
 
 def test_profile_options_expose_role_categories_and_industries() -> None:

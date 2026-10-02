@@ -462,8 +462,13 @@ def migrate_users(
         target.execute(
             text(
                 """
-                INSERT INTO user_profile (id, profile_json, updated_at)
-                VALUES (:id, :profile_json, :updated_at)
+                INSERT INTO user_profile (id, resume, constraints, updated_at)
+                VALUES (
+                    :id,
+                    CAST(:profile_json AS JSONB) -> 'resume',
+                    CAST(:profile_json AS JSONB) -> 'constraints',
+                    CAST(:updated_at AS TIMESTAMPTZ)
+                )
                 """
             ),
             {
@@ -477,7 +482,9 @@ def migrate_users(
             text(
                 """
                 INSERT INTO resume_uploads (id, filename, resume_json, uploaded_at)
-                VALUES (:id, :filename, :resume_json, :uploaded_at)
+                VALUES (
+                    :id, :filename, CAST(:resume_json AS JSONB), CAST(:uploaded_at AS TIMESTAMPTZ)
+                )
                 """
             ),
             {

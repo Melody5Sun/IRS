@@ -124,6 +124,15 @@ by the profile/resume team: `user_profile(id, profile_json, updated_at)` and
 normalized user, target, resume-evidence, and resume-skill tables were empty and
 were removed.
 
+Migration `20261002_0009` refactors those two tables in place (same names):
+`resume_uploads.resume_json` becomes `JSONB` and `uploaded_at` becomes
+`TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP`; `user_profile.profile_json` is split into
+`resume JSONB` (every `ResumeDocument` field) and `constraints JSONB` (job-search
+constraints), and `updated_at` becomes `TIMESTAMPTZ`. Existing rows are converted
+with `USING`, and the downgrade merges the two columns back. The API still returns
+the complete `{resume, constraints}` profile. SQLite is no longer used for these
+tables or the rule engine; tests inject fake repositories / job rows instead.
+
 ## Recovery
 
 Keep the verified SQLite archive and PostgreSQL dump outside the repository.

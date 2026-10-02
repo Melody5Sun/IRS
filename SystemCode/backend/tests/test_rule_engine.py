@@ -1,17 +1,15 @@
 import logging
-import sqlite3
 
 import pytest
-from job_db import make_db, make_file_db, make_profile
+from job_db import make_profile, make_rows
 
-from app.rule_engine import filter_jobs, screen_jobs
-from app.rule_engine.engine import count_rejections, evaluate
+from app.rule_engine import screen_rows
+from app.rule_engine.engine import count_rejections
 from app.schemas.profile import UserProfile
 
 
 def kept_ids(profile: UserProfile, *jobs: dict) -> list[int]:
-    kept, _ = evaluate(profile, make_db(*jobs))
-    return kept
+    return [document.job_id for document in screen_rows(profile, make_rows(*jobs)).documents]
 
 
 # ---------- 规则 1：状态 ----------
@@ -110,30 +108,8 @@ def test_industry_empty_student_list_is_unconstrained() -> None:
     assert kept_ids(make_profile(), {"industry": "Gaming"}, {"industry": "Internet"}) == [1, 2]
 
 
-def test_industry_is_looked_up_by_normalized_company_name() -> None:
-    # 行业按公司存在 company_industries；jobs.company 的大小写/标点和规范化名不同也要匹配上
-    connection = make_db({"company": "SHOP-BACK"}, {"company": "Grab"})
-    connection.execute("insert into company_industries values ('shop back', 'Shop Back', 'E-commerce')")
-    connection.execute("insert into company_industries values ('grab', 'Grab', 'Internet')")
-    kept, rejections = evaluate(make_profile(target_industries=["E-commerce"]), connection)
-    assert kept == [1]
-    assert rejections == {2: {"industry"}}
-
-
 def test_company_without_industry_record_is_unconstrained() -> None:
     assert kept_ids(make_profile(target_industries=["Gaming"]), {"company": "Unknown Co"}) == [1]
-
-
-def test_missing_company_industries_table_warns_instead_of_silently_skipping(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    # 回归：schema 改动删掉行业来源后，规则 6 曾经静默失效且测试全绿；现在读不到行业来源必须有告警
-    connection = make_db({"industry": "Internet"})
-    connection.execute("drop table company_industries")
-    with caplog.at_level(logging.WARNING, logger="app.rule_engine.engine"):
-        kept, _ = evaluate(make_profile(target_industries=["Gaming"]), connection)
-    assert kept == [1]
-    assert "company_industries" in caplog.text
 
 
 # ---------- 通用原则 ----------
@@ -162,42 +138,22 @@ def test_blank_job_value_is_unconstrained() -> None:
     assert kept_ids(profile, {"industry": " ", "remote_policy": ""}) == [1]
 
 
-def test_job_without_analysis_is_excluded() -> None:
-    assert kept_ids(make_profile(), {}, {"analysis": False}) == [1]
-
-
 def test_rejections_record_every_failed_rule() -> None:
     profile = make_profile(("bachelor",), target_industries=["Gaming"])
-    _, rejections = evaluate(profile, make_db({"status": "inactive", "degree_required": "phd", "industry": "Internet"}))
-    assert rejections == {1: {"status", "degree", "industry"}}
+    result = screen_rows(profile, make_rows({"status": "inactive", "degree_required": "phd", "industry": "Internet"}))
+    assert result.documents == []
+    assert result.rejected_by_rule == {"degree": 1, "industry": 1, "status": 1}
 
 
-# ---------- 入口函数：文件库 + 只读连接 ----------
+# ---------- screen_rows：输出通过筛选的岗位文档 ----------
 
-def test_filter_jobs_reads_file_database(tmp_path) -> None:
-    db_path = tmp_path / "jobs.db"
-    connection = make_db({}, {"status": "inactive"}, connection=sqlite3.connect(db_path))
-    connection.commit()
-    connection.close()
-    assert filter_jobs(make_profile(), str(db_path)) == {"job_ids": [1]}
-
-
-def test_filter_jobs_does_not_create_missing_database(tmp_path) -> None:
-    with pytest.raises(sqlite3.OperationalError):
-        filter_jobs(make_profile(), str(tmp_path / "missing.db"))
-    assert not (tmp_path / "missing.db").exists()
-
-
-# ---------- screen_jobs：输出通过筛选的岗位文档 ----------
-
-def test_screen_jobs_returns_documents_of_kept_jobs_with_stats(tmp_path) -> None:
-    db_path = make_file_db(
-        tmp_path,
+def test_screen_rows_returns_documents_of_kept_jobs_with_stats() -> None:
+    rows = make_rows(
         {"title": "Keep", "company": "Alpha", "industry": "Gaming", "required_skills": ["python"]},
         {"industry": "Internet"},
         {"status": "inactive", "industry": "Gaming"},
     )
-    result = screen_jobs(make_profile(target_industries=["Gaming"]), db_path)
+    result = screen_rows(make_profile(target_industries=["Gaming"]), rows)
     assert [document.job_id for document in result.documents] == [1]
     document = result.documents[0]
     assert (document.title, document.company, document.industry, document.required_skills) == (
@@ -210,18 +166,17 @@ def test_screen_jobs_returns_documents_of_kept_jobs_with_stats(tmp_path) -> None
     assert result.rejected_by_rule == {"industry": 1, "status": 1}
 
 
-def test_screen_jobs_fills_industry_from_company_not_from_analysis_json(tmp_path) -> None:
-    # analysis_json 里不再带 industry，文档上的行业要按公司回填；没有行业记录时保持文档默认值
-    documents = screen_jobs(make_profile(), make_file_db(tmp_path, {"industry": "Cybersecurity"}, {})).documents
+def test_screen_rows_fills_industry_from_company_not_from_analysis_json() -> None:
+    # 文档上的行业以公司表为准；公司没有行业时保持文档默认值
+    documents = screen_rows(make_profile(), make_rows({"industry": "Cybersecurity"}, {})).documents
     assert [document.industry for document in documents] == ["Cybersecurity", "Software & IT Services"]
 
 
-def test_screen_jobs_skips_unparseable_analysis_json_with_warning(
-    tmp_path, caplog: pytest.LogCaptureFixture
-) -> None:
-    db_path = make_file_db(tmp_path, {"analysis_json": "not json"}, {})
+def test_screen_rows_skips_unparseable_analysis_json_with_warning(caplog: pytest.LogCaptureFixture) -> None:
+    # 缺 title 等必填字段的 raw_analysis 还原不成 JobRequirementDocument
+    rows = make_rows({"analysis_json": {"required_skills": ["python"]}}, {})
     with caplog.at_level(logging.WARNING, logger="app.rule_engine.engine"):
-        result = screen_jobs(make_profile(), db_path)
+        result = screen_rows(make_profile(), rows)
     assert [document.job_id for document in result.documents] == [2]
     assert result.total_jobs == 2
     assert "无法解析" in caplog.text

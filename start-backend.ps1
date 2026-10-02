@@ -26,11 +26,21 @@ function Invoke-Sql($sql) {
     return $result
 }
 
+# 数据库迁移到最新版本（已是最新时什么都不做）；需要先激活 conda 环境
+function Update-Database {
+    Push-Location "$PSScriptRoot/SystemCode/backend"
+    try { python -m alembic upgrade head }
+    finally { Pop-Location }
+    if ($LASTEXITCODE -ne 0) { Fail "数据库迁移失败，见上方输出" }
+}
+
 # 导入快照前先备份单用户数据（画像 + 简历上传记录），导入后放回，其余数据全部换成快照内容
 function Import-Snapshot($snapshot, $marker) {
     $backup = $null
     $hasUserTables = Invoke-Sql "SELECT to_regclass('public.user_profile') IS NOT NULL AND to_regclass('public.resume_uploads') IS NOT NULL"
     if ($hasUserTables -eq "t") {
+        # 备份是 --data-only，只有表结构一致才能放回：先把当前库迁到最新，导入快照后也迁到最新再放回
+        Update-Database
         # 备份放在系统临时目录而不是仓库里，避免把简历内容误提交
         $backup = Join-Path $env:TEMP "careerpilot-my-data-$(Get-Date -Format yyyyMMdd-HHmmss).dump"
         docker exec $container pg_dump -U careerpilot -d careerpilot --data-only -t user_profile -t resume_uploads -Fc -f /tmp/my-data.dump
@@ -55,6 +65,7 @@ function Import-Snapshot($snapshot, $marker) {
 
     if ($backup) {
         Write-Host "放回你的用户画像和简历记录……"
+        Update-Database
         docker cp $backup "${container}:/tmp/my-data.dump"
         if ($LASTEXITCODE -ne 0) { Fail "备份文件复制进容器失败，备份仍在 $backup" }
         Invoke-Sql "TRUNCATE user_profile, resume_uploads" | Out-Null
@@ -96,7 +107,11 @@ if ($LASTEXITCODE -ne 0) { Fail "数据库容器启动失败，见上方 docker 
 Wait-Database
 Write-Host "数据库容器已就绪（healthy）"
 
-# 3. 团队数据快照：取仓库里文件名最新的 .dump（文件名带日期），和数据库注释里记录的快照比较
+# 3. 激活后端环境：导入快照时也要跑数据库迁移，所以放在快照检查之前
+if ($env:CONDA_DEFAULT_ENV -ne "careerpilot-backend") { conda activate careerpilot-backend }
+if ($env:CONDA_DEFAULT_ENV -ne "careerpilot-backend") { Fail "无法激活 conda 环境 careerpilot-backend" }
+
+# 4. 团队数据快照：取仓库里文件名最新的 .dump（文件名带日期），和数据库注释里记录的快照比较
 Step "检查团队数据快照"
 $snapshot = Get-ChildItem "$PSScriptRoot/SystemCode/backend/data/database/*.dump" | Sort-Object Name | Select-Object -Last 1
 if (-not $snapshot) {
@@ -136,10 +151,6 @@ else {
         }
     }
 }
-
-# 4. 激活后端环境
-if ($env:CONDA_DEFAULT_ENV -ne "careerpilot-backend") { conda activate careerpilot-backend }
-if ($env:CONDA_DEFAULT_ENV -ne "careerpilot-backend") { Fail "无法激活 conda 环境 careerpilot-backend" }
 
 Push-Location "$PSScriptRoot/SystemCode/backend"
 try {
