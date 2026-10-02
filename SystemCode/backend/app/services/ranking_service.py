@@ -4,12 +4,15 @@ from app.schemas.match import (
     ResponsibilityScoreRequest,
     SkillScoreRequest,
 )
+from app.schemas.job import JobRequirementDocument
 from app.schemas.profile import UserProfile
 from app.schemas.ranking import RankedJob, RankingResponse
 from app.services.career_intent_match_service import CareerIntentMatchService
 from app.services.responsibility_match_service import ResponsibilityMatchService
 from app.services.rules_screening_service import RulesScreeningService
 from app.services.skill_match_service import SkillMatchService
+
+RANKING_RESULT_LIMIT = 30
 
 
 class RankingService:
@@ -35,7 +38,7 @@ class RankingService:
 
     def run(self, profile: UserProfile) -> RankingResponse:
         screened = self.rules_screening_service.run(profile)
-        results = []
+        scored_jobs: list[tuple[float, JobRequirementDocument]] = []
         prepared_evidence = self.responsibility_match_service.prepare_candidate(
             profile.resume
         )
@@ -53,26 +56,40 @@ class RankingService:
                     job=job,
                 )
             )
-            results.append(
-                RankedJob(
-                    job_id=job.job_id,
-                    company=job.company,
-                    title=job.title,
-                    skill_score=skill_score,
-                    responsibility_score=responsibility_score,
-                    career_intent_score=career_intent_score,
-                    overall_score=self.overall_scorer.combine(
-                        skill_score,
-                        responsibility_score,
-                        career_intent_score,
-                    ),
-                )
+            overall_score = self.overall_scorer.combine(
+                skill_score,
+                responsibility_score,
+                career_intent_score,
             )
-        # 稳定排序：分数相同的岗位保持 job_id 升序
-        results.sort(key=lambda item: item.overall_score.final_score, reverse=True)
+            scored_jobs.append((overall_score.final_score, job))
+
+        # 稳定排序：分数相同的岗位按 job_id 升序，前端翻页时顺序不会漂移。
+        scored_jobs.sort(
+            key=lambda item: (
+                -item[0],
+                item[1].job_id if item[1].job_id is not None else float("inf"),
+            )
+        )
+        results = [
+            RankedJob(
+                rank=index,
+                job_id=job.job_id,
+                company=job.company,
+                title=job.title,
+                location=job.location,
+                employment_type=job.employment_type,
+                final_score=final_score,
+            )
+            for index, (final_score, job) in enumerate(
+                scored_jobs[:RANKING_RESULT_LIMIT],
+                start=1,
+            )
+            if job.job_id is not None
+        ]
         return RankingResponse(
             total_jobs=screened.total_jobs,
             passed_count=screened.passed_count,
+            returned_count=len(results),
             rejected_by_rule=screened.rejected_by_rule,
             results=results,
         )

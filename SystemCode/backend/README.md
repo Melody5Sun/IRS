@@ -61,11 +61,22 @@ Use `POST /api/matches/skills` to calculate the implemented skill-score
 components from a formatted resume and a structured JD. See
 [`docs/skill-matching-score.md`](docs/skill-matching-score.md) for the formula.
 
+Use `POST /api/jobs/{job_id}/interview-questions/sample` to sample a
+repeatable interview set from the stored JD Top-3 role matches. The default
+response contains 10 questions, including 3 basic programming questions, with
+a 4 easy / 4 medium / 2 hard distribution. The request accepts an optional
+`seed`, custom count and difficulty mix, and question IDs to exclude. Both
+Chinese and English questions and answers are returned for frontend reveal and
+hide interactions.
+
 Use `POST /api/rules-screening` with a `UserProfile` body to run the
 hard-constraint rule engine over all analysed jobs; it returns the jobs that
 passed as `JobRequirementDocument`s plus per-rule rejection counts. Use
 `POST /api/ranking` with the same body to run the rule engine and then score
-every passed job with `POST /api/matches/skills`, sorted by `partial_score`.
+every passed job with the complete matching formula. Its lightweight response
+returns the top 30 jobs with rank, basic job metadata, and final score; detailed
+matching evidence for one selected job is returned by
+`POST /api/jobs/{job_id}/match-detail` using the same `UserProfile` body.
 See [`app/rule_engine/README.md`](app/rule_engine/README.md) for the rules.
 The production runtime does not create or read a database file inside the repository.
 

@@ -1,9 +1,10 @@
 from fastapi.testclient import TestClient
-from job_db import make_api_profile
+import pytest
+
+from app.rule_engine import engine as rule_engine
+from job_db import make_api_profile, make_rows
 
 RANKING_URL = "/api/ranking"
-SCREENING_URL = "/api/rules-screening"
-SKILLS_URL = "/api/matches/skills"
 
 
 def test_ranking_scores_only_screened_jobs_in_descending_order(screening_client: TestClient) -> None:
@@ -11,14 +12,21 @@ def test_ranking_scores_only_screened_jobs_in_descending_order(screening_client:
 
     assert response.status_code == 200
     body = response.json()
-    assert (body["total_jobs"], body["passed_count"]) == (4, 2)
+    assert (body["total_jobs"], body["passed_count"], body["returned_count"]) == (4, 2, 2)
     assert body["rejected_by_rule"] == {"industry": 1, "status": 1}
     # 被规则剔除的 3、4 号不会进入技能评分；候选人有 Python/SQL，1 号全命中，分数更高
     assert [item["job_id"] for item in body["results"]] == [1, 2]
-    scores = [item["overall_score"]["final_score"] for item in body["results"]]
+    scores = [item["final_score"] for item in body["results"]]
     assert scores[0] > scores[1]
-    assert body["results"][0]["overall_score"]["active_core_weight"] == 60.0
-    assert (body["results"][0]["company"], body["results"][0]["title"]) == ("Alpha", "Backend Engineer")
+    assert body["results"][0] == {
+        "rank": 1,
+        "job_id": 1,
+        "company": "Alpha",
+        "title": "Backend Engineer",
+        "location": None,
+        "employment_type": "not_stated",
+        "final_score": scores[0],
+    }
 
 
 def test_ranking_all_rejected_returns_empty_results(screening_client: TestClient) -> None:
@@ -28,24 +36,42 @@ def test_ranking_all_rejected_returns_empty_results(screening_client: TestClient
 
     assert response.status_code == 200
     body = response.json()
-    assert (body["total_jobs"], body["passed_count"], body["results"]) == (4, 0, [])
+    assert (
+        body["total_jobs"],
+        body["passed_count"],
+        body["returned_count"],
+        body["results"],
+    ) == (4, 0, 0, [])
 
 
 def test_ranking_rejects_body_without_resume(screening_client: TestClient) -> None:
     assert screening_client.post(RANKING_URL, json={"constraints": {}}).status_code == 422
 
 
-def test_ranking_skill_score_equals_direct_skills_api_result(screening_client: TestClient) -> None:
-    # 契约一致性：把 rules-screening 筛出的文档原样交给 POST /matches/skills，结果必须和 ranking 里的 skill_score 完全相同
-    payload = make_api_profile().model_dump(mode="json")
-    ranked = {
-        item["job_id"]: item["skill_score"]
-        for item in screening_client.post(RANKING_URL, json=payload).json()["results"]
-    }
-    screened_jobs = screening_client.post(SCREENING_URL, json=payload).json()["jobs"]
-    assert set(ranked) == {job["job_id"] for job in screened_jobs}
+def test_ranking_returns_only_top_30_with_stable_tie_order(
+    monkeypatch: pytest.MonkeyPatch,
+    screening_client: TestClient,
+) -> None:
+    jobs = tuple(
+        {
+            "id": job_id,
+            "title": f"Backend Engineer {job_id}",
+            "company": f"Company {job_id}",
+            "industry": "Gaming",
+            "employment_type": "internship",
+            "required_skills": ["python"],
+        }
+        for job_id in range(1, 36)
+    )
+    monkeypatch.setattr(rule_engine, "load_job_rows", lambda: make_rows(*jobs))
 
-    for job in screened_jobs:
-        direct = screening_client.post(SKILLS_URL, json={"candidate": payload["resume"], "job": job})
-        assert direct.status_code == 200
-        assert ranked[job["job_id"]] == direct.json()
+    response = screening_client.post(
+        RANKING_URL,
+        json=make_api_profile().model_dump(mode="json"),
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["passed_count"], body["returned_count"]) == (35, 30)
+    assert [item["job_id"] for item in body["results"]] == list(range(1, 31))
+    assert [item["rank"] for item in body["results"]] == list(range(1, 31))

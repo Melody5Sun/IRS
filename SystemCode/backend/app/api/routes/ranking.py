@@ -19,5 +19,5 @@ ranking_service = RankingService(
 
 @router.post("", response_model=RankingResponse)
 def rank_jobs(profile: UserProfile) -> RankingResponse:
-    # 入口：规则初筛 -> 四项核心评分 + 加分技能 -> 按最终分降序
+    # 入口：规则初筛 -> 四项核心评分 + 加分技能 -> 返回轻量 Top 30。
     return ranking_service.run(profile)

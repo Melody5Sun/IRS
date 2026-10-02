@@ -235,6 +235,32 @@ class JobSemanticRepository:
             documents.append(JobRequirementDocument.model_validate(payload))
         return documents
 
+    def get_analyzed_job(self, job_id: int) -> JobRequirementDocument | None:
+        with get_postgres_engine().connect() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT jp.id AS job_id, ja.raw_analysis,
+                           COALESCE(industry.name, 'Software & IT Services') AS industry
+                    FROM job_postings jp
+                    JOIN job_analyses ja ON ja.job_id = jp.id
+                    JOIN companies c ON c.id = jp.company_id
+                    LEFT JOIN industries industry ON industry.id = c.industry_id
+                    WHERE jp.id = :job_id
+                    """
+                ),
+                {"job_id": job_id},
+            ).mappings().one_or_none()
+        if row is None:
+            return None
+        payload = row["raw_analysis"]
+        if isinstance(payload, str):
+            payload = json.loads(payload)
+        payload = dict(payload)
+        payload["job_id"] = row["job_id"]
+        payload["industry"] = row["industry"]
+        return JobRequirementDocument.model_validate(payload)
+
     @staticmethod
     def _require_analyzed_job(connection, job_id: int) -> None:
         found = connection.execute(
