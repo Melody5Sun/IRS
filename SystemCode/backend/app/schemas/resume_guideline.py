@@ -13,6 +13,9 @@ ResumeSection = Literal["experience", "project", "research", "skills"]
 # 每一类都标明检测来源，保证"为什么给这条建议"可以追溯
 IssueType = Literal[
     "weak_action_verb",          # 规则：要点以 "Responsible for" / "Helped" / "Worked on" 等弱动词开头
+    # 下面两类从 weak_action_verb 拆出：向量检索按主题匹配、分不出写法问题，只能靠规则检测后用标签直接定位条目
+    "passive_voice",             # 规则：被动语态（be 动词 + 过去分词，或 "by me"）
+    "buzzword",                  # 规则：命中空话/自夸词表（leveraged、spearheaded、cutting-edge、AI-powered、successfully 等）
     "missing_quantification",    # 规则：要点里没有任何数字、百分比或规模描述
     "missing_outcome",           # 规则：只写了做什么，没写结果/影响（STAR 缺 Result）
     "unclear_tech_stack",        # 规则：project/experience 没有提到任何技术名词
