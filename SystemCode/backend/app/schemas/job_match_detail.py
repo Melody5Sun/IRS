@@ -22,6 +22,8 @@ GapType = Literal[
     "intent_gap",
 ]
 GapImportance = Literal["required", "preferred", "responsibility", "career_intent"]
+MatchLevel = Literal["excellent", "strong", "moderate", "developing"]
+ImprovementPriorityLevel = Literal["high", "medium", "low"]
 
 
 class JobMatchDetailJob(BaseModel):
@@ -69,6 +71,8 @@ class JobMatchEvidence(BaseModel):
 
 
 class JobMatchRecommendation(BaseModel):
+    level: MatchLevel
+    level_label: str
     summary: str
     highlights: list[str] = Field(default_factory=list)
     evidence: list[JobMatchEvidence] = Field(default_factory=list)
@@ -83,6 +87,19 @@ class JobMatchGap(BaseModel):
     suggestion: str
 
 
+class JobImprovementPriority(BaseModel):
+    priority: ImprovementPriorityLevel
+    title: str
+    items: list[str] = Field(default_factory=list)
+    advice: str
+
+
+class JobImprovementPlan(BaseModel):
+    summary: str
+    priorities: list[JobImprovementPriority] = Field(default_factory=list)
+    next_action: str
+
+
 class JobMatchDetailMeta(BaseModel):
     algorithm_version: str
     generated_at: datetime
@@ -92,5 +109,6 @@ class JobMatchDetailResponse(BaseModel):
     job: JobMatchDetailJob
     match: JobMatchDetailScore
     recommendation: JobMatchRecommendation
+    improvement_plan: JobImprovementPlan
     gaps: list[JobMatchGap] = Field(default_factory=list)
     meta: JobMatchDetailMeta

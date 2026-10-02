@@ -11,6 +11,8 @@ from app.schemas.job_match_detail import (
     JobMatchDetailScore,
     JobMatchEvidence,
     JobMatchGap,
+    JobImprovementPlan,
+    JobImprovementPriority,
     JobMatchRecommendation,
 )
 from app.schemas.match import (
@@ -36,7 +38,7 @@ class JobMatchDetailAnalysisUnavailableError(RuntimeError):
 
 
 class JobMatchDetailService:
-    ALGORITHM_VERSION = "job-match-detail-v1"
+    ALGORITHM_VERSION = "job-match-detail-v3"
 
     def __init__(
         self,
@@ -86,6 +88,12 @@ class JobMatchDetailService:
             career_intent_score,
         )
 
+        gaps = self._gaps(
+            skill_score,
+            responsibility_score,
+            career_intent_score,
+        )
+
         return JobMatchDetailResponse(
             job=JobMatchDetailJob(
                 job_id=job_id,
@@ -124,11 +132,10 @@ class JobMatchDetailService:
                 responsibility_score,
                 career_intent_score,
             ),
-            gaps=self._gaps(
-                skill_score,
-                responsibility_score,
-                career_intent_score,
+            improvement_plan=self._improvement_plan(
+                gaps,
             ),
+            gaps=gaps,
             meta=JobMatchDetailMeta(
                 algorithm_version=self.ALGORITHM_VERSION,
                 generated_at=datetime.now(timezone.utc),
@@ -146,36 +153,46 @@ class JobMatchDetailService:
         highlights: list[str] = []
         evidence: list[JobMatchEvidence] = []
 
-        required_total = (
-            len(skill.direct_required_matches)
-            + len(skill.graph_required_matches)
-            + len(skill.missing_required_skills)
+        direct_required = self._unique_names(
+            item.candidate_skill for item in skill.direct_required_matches
         )
-        if skill.required_skills_calculable:
-            direct_count = len(skill.direct_required_matches)
-            highlights.append(f"直接满足 {direct_count}/{required_total} 项必须技能")
-        if skill.graph_required_matches:
+        if direct_required:
             highlights.append(
-                f"另有 {len(skill.graph_required_matches)} 项必须技能可通过相关技能迁移"
+                f"Your {self._join_names(direct_required)} skills meet required skill expectations."
+            )
+        if skill.graph_required_matches:
+            candidate_skills = self._unique_names(
+                item.candidate_skill for item in skill.graph_required_matches
+            )
+            required_skills = self._unique_names(
+                item.jd_skill for item in skill.graph_required_matches
+            )
+            highlights.append(
+                f"Your {self._join_names(candidate_skills)} experience provides a transferable "
+                f"foundation for the required {self._join_names(required_skills)} skills."
             )
         if responsibility.responsibilities_calculable:
-            matched_count = sum(
-                item.status != "missing" for item in responsibility.matches
+            evidence_labels = self._responsibility_evidence_labels(
+                responsibility
             )
-            highlights.append(
-                f"{matched_count}/{responsibility.responsibility_count} 项岗位职责能够找到简历证据"
-            )
+            if evidence_labels:
+                highlights.append(
+                    f"Your resume evidence from {self._join_names(evidence_labels)} is relevant "
+                    "to this role's responsibilities."
+                )
         if career_intent.intent_calculable and career_intent.best_target_role:
-            highlights.append(
-                f"求职意向 {career_intent.best_target_role} 与该岗位的方向匹配度为 "
-                f"{career_intent.intent_coverage:.0f}%"
-            )
-        preferred_count = (
-            len(skill.direct_preferred_matches) + len(skill.graph_preferred_matches)
+            highlights.append(self._intent_highlight(career_intent))
+        preferred_skills = self._unique_names(
+            item.candidate_skill
+            for item in [
+                *skill.direct_preferred_matches,
+                *skill.graph_preferred_matches,
+            ]
         )
-        if skill.preferred_skills_available:
+        if preferred_skills:
             highlights.append(
-                f"匹配 {preferred_count} 项加分技能，获得 {skill.preferred_bonus:.1f} 分加分"
+                f"Your {self._join_names(preferred_skills)} skills align with the role's "
+                "preferred skills."
             )
 
         for item in skill.direct_required_matches:
@@ -245,11 +262,10 @@ class JobMatchDetailService:
                 )
             )
 
-        level = self._match_level(final_score)
-        summary = f"该岗位与你当前画像的匹配度{level}，最终得分为 {final_score:.1f} 分。"
-        if highlights:
-            summary += highlights[0] + "。"
+        level, level_label, summary = self._match_assessment(final_score)
         return JobMatchRecommendation(
+            level=level,
+            level_label=level_label,
             summary=summary,
             highlights=highlights,
             evidence=evidence,
@@ -269,8 +285,14 @@ class JobMatchDetailService:
                     gap_type="transferable",
                     importance="required",
                     current_evidence=item.candidate_skill,
-                    reason=f"没有直接技能证据，但知识图谱识别到相关技能 {item.candidate_skill}。",
-                    suggestion="可以说明可迁移能力和学习基础，但不要表述为直接项目经验。",
+                    reason=(
+                        "No direct skill evidence was found, but the knowledge graph identified "
+                        f"{item.candidate_skill} as a related skill."
+                    ),
+                    suggestion=(
+                        "Present this as transferable knowledge and a learning foundation, "
+                        "not as direct project experience."
+                    ),
                 )
             )
         for skill_name in skill.missing_required_skills:
@@ -279,8 +301,11 @@ class JobMatchDetailService:
                     name=skill_name,
                     gap_type="hard_gap",
                     importance="required",
-                    reason="简历技能中没有直接匹配，也没有找到知识图谱关联技能。",
-                    suggestion="这是必须技能，应优先补充学习或可验证的实践。",
+                    reason="No direct or knowledge-graph-related skill evidence was found in the resume.",
+                    suggestion=(
+                        "This is a required skill. Prioritize foundational learning and build "
+                        "verifiable practical evidence."
+                    ),
                 )
             )
         for skill_name in skill.missing_preferred_skills:
@@ -289,8 +314,8 @@ class JobMatchDetailService:
                     name=skill_name,
                     gap_type="optional_gap",
                     importance="preferred",
-                    reason="该加分技能没有匹配，但不影响核心匹配分。",
-                    suggestion="时间允许时补充，优先级低于必须技能。",
+                    reason="This preferred skill was not matched, but it does not affect the core match.",
+                    suggestion="Consider adding it after the required skills have been addressed.",
                 )
             )
         for responsibility_text in responsibility.unmatched_responsibilities:
@@ -299,29 +324,232 @@ class JobMatchDetailService:
                     name=responsibility_text,
                     gap_type="experience_gap",
                     importance="responsibility",
-                    reason="工作、项目和研究经历中没有找到足够相似的证据。",
-                    suggestion="检查是否有相关经历尚未写入简历；没有时不要虚构。",
+                    reason=(
+                        "No sufficiently similar evidence was found in the candidate's work, "
+                        "project, or research experience."
+                    ),
+                    suggestion=(
+                        "Check whether relevant experience is missing from the resume. "
+                        "Do not invent experience that did not occur."
+                    ),
                 )
             )
         if career_intent.intent_calculable and career_intent.intent_coverage < 60:
             gaps.append(
                 JobMatchGap(
-                    name="岗位方向",
+                    name="Role direction",
                     gap_type="intent_gap",
                     importance="career_intent",
                     current_evidence=career_intent.best_target_role,
-                    reason="该岗位与当前求职意向的方向匹配度较低。",
-                    suggestion="确认是否愿意扩大目标岗位范围，再决定是否投入准备时间。",
+                    reason="This role has limited alignment with the candidate's current target role.",
+                    suggestion=(
+                        "Confirm whether broadening the target role is acceptable before investing "
+                        "significant preparation time."
+                    ),
                 )
             )
         return gaps
 
+    @classmethod
+    def _improvement_plan(cls, gaps: list[JobMatchGap]) -> JobImprovementPlan:
+        hard_gaps = [gap for gap in gaps if gap.gap_type == "hard_gap"]
+        transferable = [gap for gap in gaps if gap.gap_type == "transferable"]
+        experience_gaps = [gap for gap in gaps if gap.gap_type == "experience_gap"]
+        optional_gaps = [gap for gap in gaps if gap.gap_type == "optional_gap"]
+        intent_gaps = [gap for gap in gaps if gap.gap_type == "intent_gap"]
+
+        summary_parts: list[str] = []
+        priorities: list[JobImprovementPriority] = []
+
+        if hard_gaps:
+            names = [gap.name for gap in hard_gaps]
+            summary_parts.append(
+                f"Prioritize the required skills {cls._join_names(names)} and build verifiable "
+                "evidence through coursework, personal projects, or internship tasks"
+            )
+            priorities.append(
+                JobImprovementPriority(
+                    priority="high",
+                    title="Build required skills",
+                    items=names,
+                    advice=(
+                        "Learn the core concepts, then complete a project that demonstrates how "
+                        "the skills were applied and what resulted. Do not add keywords without evidence."
+                    ),
+                )
+            )
+
+        if transferable:
+            targets = [gap.name for gap in transferable]
+            foundations = cls._unique_names(
+                gap.current_evidence for gap in transferable
+            )
+            summary_parts.append(
+                f"Your existing {cls._join_names(foundations)} experience provides a transferable "
+                f"foundation for {cls._join_names(targets)}. Explain the connection and actual "
+                "usage context in the resume without presenting related experience as direct mastery"
+            )
+            priorities.append(
+                JobImprovementPriority(
+                    priority="medium",
+                    title="Strengthen transferable evidence",
+                    items=targets,
+                    advice=(
+                        f"Use your existing {cls._join_names(foundations)} experience to explain the "
+                        "learning foundation, then add direct evidence through a focused practical task."
+                    ),
+                )
+            )
+
+        if experience_gaps:
+            responsibilities = [gap.name for gap in experience_gaps]
+            summary_parts.append(
+                "The resume does not yet provide sufficient evidence for responsibilities such as "
+                f"{cls._join_names(responsibilities)}. Review existing projects, internships, and "
+                "research for omitted evidence, then describe the technologies used, personal "
+                "contribution, and verifiable outcomes"
+            )
+            priorities.append(
+                JobImprovementPriority(
+                    priority="high",
+                    title="Add responsibility evidence",
+                    items=responsibilities,
+                    advice=(
+                        "Improve existing truthful experience first. If no relevant experience exists, "
+                        "build it through a new project rather than inventing evidence."
+                    ),
+                )
+            )
+
+        if optional_gaps:
+            names = [gap.name for gap in optional_gaps]
+            summary_parts.append(
+                f"The preferred skills {cls._join_names(names)} can be addressed after the core "
+                "requirements and responsibility evidence are stronger"
+            )
+            priorities.append(
+                JobImprovementPriority(
+                    priority="medium",
+                    title="Add preferred skills",
+                    items=names,
+                    advice=(
+                        "Address these after the core requirements, prioritizing skills that can be "
+                        "integrated into an existing project."
+                    ),
+                )
+            )
+
+        if intent_gaps:
+            summary_parts.append(
+                "This role differs from your current target direction. Confirm whether you are willing "
+                "to broaden the target role before deciding how much preparation time to invest"
+            )
+            priorities.append(
+                JobImprovementPriority(
+                    priority="low",
+                    title="Confirm role direction",
+                    items=[gap.current_evidence or gap.name for gap in intent_gaps],
+                    advice=(
+                        "Compare the role's day-to-day responsibilities with your longer-term direction "
+                        "before beginning focused preparation."
+                    ),
+                )
+            )
+
+        if not summary_parts:
+            return JobImprovementPlan(
+                summary=(
+                    "The resume already covers the role's main requirements. Strengthen measurable "
+                    "outcomes and individual contributions to make the existing evidence more persuasive."
+                ),
+                priorities=[],
+                next_action=(
+                    "Review each relevant experience and confirm that it clearly states the technologies "
+                    "used, individual contribution, and verifiable outcome."
+                ),
+            )
+
+        if hard_gaps:
+            next_action = (
+                f"Start with {hard_gaps[0].name}: learn the fundamentals, complete one demonstrable "
+                "practical task, and add the truthful process and outcome to the resume."
+            )
+        elif experience_gaps:
+            next_action = (
+                f"First check whether existing experience can support '{experience_gaps[0].name}'. "
+                "If not, plan a small project that genuinely covers this responsibility."
+            )
+        elif transferable:
+            next_action = (
+                f"Complete one direct practical task involving {transferable[0].name}, then accurately "
+                "explain how the existing skill transferred to it."
+            )
+        elif optional_gaps:
+            next_action = (
+                f"Add {optional_gaps[0].name} to an existing project and produce demonstrable usage evidence."
+            )
+        else:
+            next_action = (
+                "Confirm that the role fits the longer-term career direction before continuing preparation."
+            )
+
+        return JobImprovementPlan(
+            summary="; ".join(summary_parts) + ".",
+            priorities=priorities,
+            next_action=next_action,
+        )
+
     @staticmethod
-    def _match_level(score: float) -> str:
+    def _match_assessment(score: float) -> tuple[str, str, str]:
         if score >= 80:
-            return "较高"
+            return "excellent", "Excellent match", "This role is an excellent match for your current profile."
         if score >= 60:
-            return "良好"
+            return "strong", "Strong match", "This role is a strong match for your current profile."
         if score >= 40:
-            return "一般"
-        return "较低"
+            return "moderate", "Moderate match", "Your profile has a useful foundation for this role."
+        return (
+            "developing",
+            "More preparation needed",
+            "Additional skills and evidence would strengthen your readiness for this role.",
+        )
+
+    @staticmethod
+    def _unique_names(names) -> list[str]:
+        return list(dict.fromkeys(name.strip() for name in names if name and name.strip()))
+
+    @staticmethod
+    def _join_names(names: list[str], limit: int = 3) -> str:
+        visible = names[:limit]
+        if len(names) > limit:
+            return ", ".join(visible) + ", and others"
+        if len(visible) == 1:
+            return visible[0]
+        if len(visible) == 2:
+            return " and ".join(visible)
+        return ", ".join(visible[:-1]) + f", and {visible[-1]}"
+
+    @classmethod
+    def _responsibility_evidence_labels(
+        cls,
+        responsibility: ResponsibilityScoreResponse,
+    ) -> list[str]:
+        labels: list[str] = []
+        suffixes = {
+            "experience": " experience",
+            "project": " project",
+            "research": " research",
+        }
+        for item in responsibility.matches:
+            if item.status == "missing" or not item.evidence_title or not item.evidence_type:
+                continue
+            labels.append(f"{item.evidence_title}{suffixes[item.evidence_type]}")
+        return cls._unique_names(labels)
+
+    @staticmethod
+    def _intent_highlight(career_intent: CareerIntentScoreResponse) -> str:
+        role = career_intent.best_target_role
+        if career_intent.intent_coverage >= 75:
+            return f"This role is strongly aligned with your target role: {role}."
+        if career_intent.intent_coverage >= 50:
+            return f"This role has some alignment with your target role: {role}."
+        return f"This role has limited alignment with your target role: {role}."

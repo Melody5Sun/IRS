@@ -168,6 +168,22 @@ def test_detail_returns_job_score_recommendation_evidence_and_gaps() -> None:
         "career_intent": 8.0,
     }
     assert response.recommendation.highlights
+    assert response.recommendation.level == "moderate"
+    assert response.recommendation.level_label == "Moderate match"
+    assert response.recommendation.summary == "Your profile has a useful foundation for this role."
+    assert response.recommendation.highlights == [
+        "Your Python skills meet required skill expectations.",
+        "Your Docker experience provides a transferable foundation for the required Kubernetes skills.",
+        "Your resume evidence from Backend Intern experience is relevant to this role's responsibilities.",
+        "This role is strongly aligned with your target role: Backend Developer.",
+        "Your AWS skills align with the role's preferred skills.",
+    ]
+    recommendation_text = " ".join(
+        [response.recommendation.summary, *response.recommendation.highlights]
+    )
+    assert "56.5" not in recommendation_text
+    assert "/" not in recommendation_text
+    assert "%" not in recommendation_text
     assert {item.match_type for item in response.recommendation.evidence} == {
         "direct_skill",
         "knowledge_graph",
@@ -181,6 +197,17 @@ def test_detail_returns_job_score_recommendation_evidence_and_gaps() -> None:
         "optional_gap",
         "experience_gap",
     }
+    assert "SQL" in response.improvement_plan.summary
+    assert "Docker" in response.improvement_plan.summary
+    assert "Operate Kubernetes workloads" in response.improvement_plan.summary
+    assert "Terraform" in response.improvement_plan.summary
+    assert [item.title for item in response.improvement_plan.priorities] == [
+        "Build required skills",
+        "Strengthen transferable evidence",
+        "Add responsibility evidence",
+        "Add preferred skills",
+    ]
+    assert response.improvement_plan.next_action.startswith("Start with SQL")
 
 
 def test_detail_raises_not_found_for_unknown_job() -> None:
