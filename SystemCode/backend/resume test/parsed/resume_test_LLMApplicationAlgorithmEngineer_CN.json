@@ -1,0 +1,146 @@
+{
+  "name": "Li Mingxuan",
+  "email": "limingxuan@outlook.com",
+  "phone": "138-0000-0000",
+  "about": "Job intent: LLM application algorithm engineer.",
+  "experiences": [
+    {
+      "company": "Xingqiao Power Technology Co., Ltd.",
+      "title": "Simulation Engineer",
+      "employment_type": null,
+      "start_date": "2023-07",
+      "end_date": "2025-08",
+      "description": "Built an automated data processing pipeline in Python, cutting manual configuration time on the Simulink/Amesim platforms by about 70% and greatly improving work efficiency.\nBuilt regression neural network models for thermal management and brake disc temperature, optimizing the engineering simulation workflow and improving simulation analysis efficiency and prediction accuracy.\nDeveloped data extraction and automatic report generation plugins based on the NX/UG API, standardizing engineering data management.",
+      "country": null
+    }
+  ],
+  "projects": [
+    {
+      "title": "EvalRAG: A Trustworthy RAG Evaluation System for Multi-Hop QA and Financial Reports",
+      "summary": "Built an end-to-end RAG system covering HotpotQA and FinanceBench, implementing financial report PDF parsing, in-page chunking, embedding, FAISS indexing, evidence retrieval, structured generation and page-number citations, supporting BM25, Dense, Hybrid RRF and a Cross-Encoder reranker.\nCompared retrieval schemes on a fixed HotpotQA Dev/Test split; the Cross-Encoder reached Recall@10 90.94%, Complete@10 80.00% and MRR 93.78%, quantified a CPU reranking cost of 427.8ms per question, and corrected inflated metrics by evaluating generation and citation separately.\nIntegrated the real FinanceBench financial report corpus, parsing and aligning evidence for 62 PDFs, 114 covered questions, 8,987 pages and 18,975 in-page chunks, and verified zero index data leakage; Dense reached GlobalDocumentHit@10 97.37% and EvidencePageHit@10 59.65%.\nDesigned a structured QA flow of 'LLM selects financial definitions and line items - generates a calculation plan - PythonCalculator verifies and executes', built item-by-item evaluation and error attribution covering answers, citations, refusals, structural anomalies, latency and token consumption, and delivered a FastAPI demo with 75 automated tests.",
+      "technologies": [
+        "FAISS",
+        "BM25",
+        "RRF",
+        "Cross-Encoder Reranker",
+        "FastAPI",
+        "HotpotQA",
+        "FinanceBench"
+      ],
+      "role": null
+    },
+    {
+      "title": "Medical LLM Fine-Tuning: Low-Resource Domain Adaptation with Llama-3-8B + QLoRA",
+      "summary": "Built a medical QA SFT data pipeline on MedQuAD with exact/near-duplicate deduplication, data leakage control and Train/Validation/Test isolation; fine-tuned Llama-3-8B-Instruct with 4-bit QLoRA, training only 0.92% of parameters, with peak GPU memory of 6.37 GiB on a Tesla T4 and about 2.9h per epoch.\nDesigned a paired Base vs Fine-tuned evaluation framework, assessing fine-tuning gains on a fixed 300-item test set with ROUGE, BERTScore and Paired Bootstrap 95% CI; BERTScore F1 0.586 to 0.682, ROUGE-L 0.190 to 0.333, with 82.3% of samples improved.\nRan a safety audit, LoRA rank ablation and PubMedQA transfer experiments, identifying the safety trade-off introduced by domain SFT; rank 8 kept similar validation loss with 50% fewer parameters, and PubMedQA accuracy went from 0.73 to 0.79.\nEngineered the training and evaluation workflow and experiment asset management, supporting checkpoint recovery, experiment config/result tracking and independent adapter persistence; hosted the QLoRA adapter on Hugging Face and verified recoverability of model artifacts via SHA256 and deterministic inference.",
+      "technologies": [
+        "Llama-3-8B-Instruct",
+        "QLoRA",
+        "MedQuAD",
+        "ROUGE",
+        "BERTScore",
+        "PubMedQA",
+        "Hugging Face"
+      ],
+      "role": null
+    }
+  ],
+  "research": [],
+  "skills": [
+    "Python",
+    "C++",
+    "Linux",
+    "Git",
+    "Docker",
+    "FastAPI",
+    "Model Training",
+    "Data Processing",
+    "Model Deployment",
+    "PyTorch",
+    "Hugging Face Transformers",
+    "scikit-learn",
+    "Supervised Learning",
+    "Model Evaluation",
+    "Transformer",
+    "RAG",
+    "BM25",
+    "Dense Retrieval",
+    "Hybrid Retrieval",
+    "Cross-Encoder Reranker",
+    "LoRA",
+    "QLoRA",
+    "Recall@K",
+    "MRR",
+    "NDCG",
+    "EM/F1",
+    "ROUGE",
+    "BERTScore",
+    "FAISS",
+    "RRF",
+    "Embedding",
+    "Llama-3",
+    "SFT",
+    "Simulink",
+    "Amesim",
+    "NX/UG API",
+    "Neural Networks"
+  ],
+  "skill_groups": [
+    {
+      "category": "Programming and Engineering",
+      "description": "Python, C++, Linux, Git, Docker, FastAPI; experienced in model training, data processing and service deployment"
+    },
+    {
+      "category": "Machine Learning and Deep Learning",
+      "description": "PyTorch, Hugging Face Transformers, scikit-learn; familiar with supervised learning, model evaluation and experiment reproduction"
+    },
+    {
+      "category": "LLM/NLP",
+      "description": "Transformer, RAG, BM25/Dense/Hybrid Retrieval, Cross-Encoder Reranker, LoRA/QLoRA"
+    },
+    {
+      "category": "Evaluation and Retrieval",
+      "description": "Recall@K, MRR, NDCG, EM/F1, ROUGE, BERTScore"
+    },
+    {
+      "category": "Language Skills",
+      "description": "CET-6 (score 580); reads English technical materials and papers fluently"
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Huaqing University of Science and Technology",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Computer Science and Technology",
+      "start_date": "2025-09",
+      "end_date": "2026-10",
+      "country": null,
+      "school_tier": "QS 52"
+    },
+    {
+      "institution": "Dongjiang University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Information and Computing Science",
+      "start_date": "2019-09",
+      "end_date": "2023-06",
+      "country": null,
+      "school_tier": "985"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": "580"
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "additional_info": [
+    "English proficiency: reads English technical materials and papers fluently"
+  ]
+}

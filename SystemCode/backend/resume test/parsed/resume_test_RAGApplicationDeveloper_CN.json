@@ -1,0 +1,133 @@
+{
+  "name": null,
+  "email": null,
+  "phone": null,
+  "about": "Solid foundation in mathematics and the major, with strong self-learning ability and self-motivation; able to think independently about a project's technical architecture, implementation and possible optimizations. Good communication and teamwork, a rigorous attitude and a strong sense of quality; handles pressure well and adapts quickly to team work.",
+  "experiences": [],
+  "projects": [
+    {
+      "title": "RAG-Based Intelligent Q&A System for Postgraduate Entrance Exam Knowledge",
+      "summary": "Background: integrated a computer science postgraduate entrance exam knowledge base (official textbooks, past papers, etc.) with LLM and RAG technology to build a locally deployable intelligent Q&A system for students, improving the efficiency and accuracy of LLM retrieval of key knowledge while reducing hallucinations and helping exam candidates review efficiently.\nOffline indexing: used the Qwen3-Embedding-8b model with multi-representation and other representation techniques to vectorize the cleaned data, built an efficient hierarchical vector index and stored it distributed in the ChromaDB vector database.\nQuestion handling: based on conversation history, used Qwen3-8b deployed locally with Ollama for context compression and semantic understanding, turning ambiguous natural-language queries into structured instructions through question rewriting and logical analysis.\nRetrieval: used Adaptive-RAG for subject-aware logical routing and dynamic scheduling of retrieval strategies, combining BM25 (keyword matching) and vector retrieval (semantic similarity) for hybrid retrieval to suit questions from different subjects.\nPost-retrieval processing: built a multi-round retrieval strategy based on Self-RAG and optimized ranking with two rounds of post-processing: first fusing and deduplicating multi-source heterogeneous results with the RRF algorithm, then calling a Cohere model for semantics-aware fine-grained reranking to ensure the accuracy of the RAG context.\nGeneration: used prompt templates and the LLM's CoT reasoning to guide the model to produce clearly structured, logically rigorous professional answers, with a citation mechanism so key details of answers can be traced and verified against retrieval sources.\nResults: in end-to-end evaluation on a self-built sample set, key-information answer accuracy rose from 74% to 92% compared with LLM answers without RAG.",
+      "technologies": [
+        "LangChain",
+        "LangSmith",
+        "ChromaDB",
+        "Agentic RAG",
+        "Cohere",
+        "BM25",
+        "RRF",
+        "Qwen3",
+        "Python",
+        "Ollama",
+        "Adaptive-RAG",
+        "Self-RAG"
+      ],
+      "role": "Personal Project",
+      "start_date": "2025-07",
+      "end_date": "2025-09"
+    },
+    {
+      "title": "Campus Service Intelligent Assistant (in testing and development)",
+      "summary": "Developed an intelligent Agent for students on campus that combines free-classroom lookup, class auditing assistant, canteen dish recommendations, flea market and other campus life services, addressing the inefficiency of repeated verification and manual lookup across separate services; in testing it has cut service time by 40% and supports personalized features.\nMemory architecture: designed a 'short-term cache + long-term vector retrieval' memory architecture that uses student conversations and service data to automatically extract student profiles and key queries, with periodic refresh and personalized answer configuration (e.g. frequently used classrooms, library seat booking).\nModular MCP servers: wrapped tools such as classroom lookup and dish recommendation and split them by service type into query, recommendation and review MCP servers, with Agent scheduling for automatic tool routing, supporting quick extension with new services (e.g. library borrowing, campus shuttle lookup).\nMultimodal interaction: integrated the Doubao multimodal model to support voice queries and spoken results (convenient on the move) and image feedback (e.g. a map of free classrooms to help students choose), strengthening interaction in voice and visual scenarios.\nPlanning and reasoning: implemented intent recognition based on GPT-4o and combined ReAct, CoT and self-consistency strategies for multi-turn reasoning and action planning, significantly improving task execution accuracy and logical consistency.",
+      "technologies": [
+        "LangChain",
+        "RAG",
+        "OpenAI API",
+        "ChromaDB",
+        "ReAct",
+        "CoT",
+        "MCP",
+        "Doubao",
+        "Python",
+        "GPT-4o"
+      ],
+      "role": "Team project; mainly responsible for the architecture and development of the Agent part",
+      "start_date": "2025-12",
+      "end_date": "2026-02"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "C++",
+    "Python",
+    "Data Structures and Algorithms",
+    "RAG",
+    "Prompt Engineering",
+    "AI Agents",
+    "ReAct",
+    "Reflexion",
+    "TRAE",
+    "Cursor",
+    "LangChain",
+    "LangSmith",
+    "ChromaDB",
+    "Agentic RAG",
+    "Cohere",
+    "BM25",
+    "RRF",
+    "Qwen3",
+    "Ollama",
+    "OpenAI API",
+    "CoT",
+    "MCP",
+    "Doubao",
+    "GPT-4o"
+  ],
+  "skill_groups": [
+    {
+      "category": "Programming",
+      "description": "Familiar with the language features of C++ and Python and with common libraries; good foundation in data structures and algorithms; able to write well-structured, standard program code"
+    },
+    {
+      "category": "RAG",
+      "description": "Familiar with RAG principles and workflow; knows optimization techniques for key parts such as Indexing, Retrieval and Generation; knows prompt engineering"
+    },
+    {
+      "category": "Agent",
+      "description": "Familiar with the core parts of an Agent (LLM+Planing+Memory+Function); familiar with common architecture patterns such as ReAct and Reflexion"
+    },
+    {
+      "category": "Other",
+      "description": "Passed CET-4 and CET-6; able to read English project documentation; able to use AI tools such as TRAE and Cursor for assisted development"
+    }
+  ],
+  "educations": [],
+  "certificates": [
+    {
+      "name": "CET-4",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    },
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "awards": [
+    {
+      "name": "Komatsu China-Japan Scholarship",
+      "date": null
+    },
+    {
+      "name": "Second-Class Academic Scholarship",
+      "date": null
+    },
+    {
+      "name": "Third-Class Academic Scholarship",
+      "date": null
+    }
+  ],
+  "additional_info": [
+    "GPA: 3.41/5.0 (top 40%)",
+    "Relevant coursework: C++, Python, Data Structures and Algorithms, Operating Systems, Computer Organization, Computer Networks, Machine Learning, Intelligent Robotics Practice",
+    "English proficiency: able to read English project documentation"
+  ]
+}

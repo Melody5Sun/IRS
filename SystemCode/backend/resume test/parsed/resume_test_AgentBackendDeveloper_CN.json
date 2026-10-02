@@ -1,0 +1,102 @@
+{
+  "name": null,
+  "email": null,
+  "phone": null,
+  "about": null,
+  "experiences": [],
+  "projects": [
+    {
+      "title": "xcode Agent",
+      "summary": "Built an AI coding-assistant Agent framework in Python supporting multi-Agent parallel delegation, RAG long-term memory recall, declarative Skills loading and MCP tool extension, enabling decomposition, execution, memory consolidation and capability reuse for complex programming tasks.\nMulti-Agent parallel delegation architecture: to address the low efficiency of serial single-Agent execution and long contexts easily exceeding limits, implemented parallel sub-Agent delegation based on ThreadPoolExecutor, using heartbeat liveness probing and stale-state downgrade to handle stuck sub-Agents. Limited recursive delegation through leaf / orchestrator role tiers plus a nesting-depth guard, narrowed sub-Agent toolsets to a whitelist of the parent set, and injected an approval callback for dangerous commands via the thread-pool initializer to avoid TUI deadlocks; used a cross-Agent file-state registry to detect concurrent conflicts where a sub-Agent rewrites files already read by the parent Agent and to send back re-read reminders, ensuring consistency under parallel writes. Parallel delegation of multiple independent subtasks reduced end-to-end time by 77.6% compared with serial execution.\nLong-term conversation memory recall: to solve cross-session memory loss and long conversations exceeding the context window, implemented a historical-session retrieval pipeline based on SQLite FTS5, with an additional trigram index for Chinese retrieval; hits are summarized by a lightweight auxiliary model and only focused summaries (not raw transcripts) are injected back, restoring cross-session long-term memory while keeping the main Agent's context window lean.\nSkills and MCP extension mechanism: to address poor reusability of Agent tool capabilities and high cost of scenario extension, designed a declarative skill-loading mechanism based on SKILL.md, describing skill metadata with YAML frontmatter and combining platform filtering and disable configuration for on-demand, lightweight loading without heavy dependencies; dynamically connected external toolchains via the MCP protocol so the Agent can declaratively combine code analysis, file operations, terminal execution and browser automation per task, improving system extensibility and engineering reuse.",
+      "technologies": [
+        "Python",
+        "ThreadPoolExecutor",
+        "SQLite",
+        "FTS5",
+        "MCP",
+        "YAML",
+        "Subprocess"
+      ],
+      "role": null,
+      "start_date": "2026-04",
+      "end_date": "2026-06"
+    },
+    {
+      "title": "Lifepulse Smart Life Platform",
+      "summary": "A life-services platform focused on user review analysis and intelligent merchant information services, implementing merchant information query, coupon flash sales, proactive message push and other modules, with an intelligent customer service providing accurate answers and personalized service while balancing system performance and user experience.\nMerchant caching with Redis: adopted the Cache Aside update strategy, ensuring data consistency through timeout eviction plus updating the database before deleting the cache.\nMulti-level cache: built a two-level cache architecture with Caffeine local cache and Redis, speeding up hot-data access and reducing Redis load; QPS increased from 12494 req/s to 26686 req/s and average latency dropped from 79.75ms to 35.37ms.\nFlash-sale overselling prevention and one order per person: stored inventory and orders in Redis and used Lua scripts for atomic order-eligibility checks, guaranteeing no overselling and one order per person.\nCache optimization: used logical expiration to solve cache breakdown of hot keys and cached null values to handle cache penetration, keeping the cache service stable.\nData consistency: ensured cache-database consistency through updating the database before deleting the cache, message-queue compensating retries and TTL as a fallback.",
+      "technologies": [
+        "Spring Boot",
+        "Caffeine",
+        "Redis",
+        "MySQL",
+        "Nginx",
+        "MyBatis",
+        "MCP",
+        "Lua"
+      ],
+      "role": null,
+      "start_date": "2026-01",
+      "end_date": "2026-03"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "ReAct",
+    "MCP",
+    "Context Compression",
+    "Context Window Management",
+    "Agent Memory Management",
+    "RAG",
+    "Spring",
+    "Spring Boot",
+    "MyBatis",
+    "Spring IoC",
+    "Spring AOP",
+    "MySQL",
+    "SQL Optimization",
+    "Redis",
+    "Python",
+    "ThreadPoolExecutor",
+    "SQLite",
+    "FTS5",
+    "YAML",
+    "Subprocess",
+    "Caffeine",
+    "Nginx",
+    "Lua",
+    "Token Budget Management",
+    "Message Queue"
+  ],
+  "skill_groups": [
+    {
+      "category": "Agent Frameworks and LLM Engineering",
+      "description": "Familiar with the ReAct tool-calling Agent main loop and the MCP tool protocol"
+    },
+    {
+      "category": "Context and Memory Engineering",
+      "description": "Proficient in context compression (structured summaries), Token budget and context window management, short-term / long-term memory layering, RAG session retrieval, and declarative Skills loading (SKILL.md + YAML frontmatter)"
+    },
+    {
+      "category": "Frameworks and Backend",
+      "description": "Familiar with open-source frameworks such as Spring, SpringBoot and MyBatis; understands the IOC and AOP mechanisms"
+    },
+    {
+      "category": "Databases and Caching",
+      "description": "Familiar with MySQL database and table design and SQL optimization; understands transactions, indexes and locks; knows Redis data structures and persistence; understands cache penetration, avalanche and breakdown"
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Beijing University of Posts and Telecommunications",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2024-09",
+      "end_date": "2028-06",
+      "country": "China",
+      "school_tier": "211, Double First-Class"
+    }
+  ],
+  "certificates": [],
+  "languages": []
+}

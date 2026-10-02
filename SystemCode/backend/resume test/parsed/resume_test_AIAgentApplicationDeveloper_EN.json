@@ -1,0 +1,117 @@
+{
+  "name": "Lin Zeyu",
+  "email": "linzeyu2027@163.com",
+  "phone": "138-0000-0000",
+  "about": "Job Intent: AI Agent Application Development",
+  "experiences": [
+    {
+      "company": "Yunshu Data Technology Co., Ltd.",
+      "title": "AI Development Position",
+      "employment_type": "internship",
+      "start_date": "2026-07",
+      "end_date": "2026-09",
+      "description": "Project Introduction: For the scenario where business personnel can 'query enterprise operating data without knowing SQL', built a natural-language data-query Agent, connecting the complete chain of user question, intent recognition, enterprise entity resolution, semantic recall, SQL generation/validation/correction and result return, and built a Trace logging and offline evaluation system.\nMulti-stage Agent Orchestration: Using LangGraph, decomposed the task into nodes for intent routing, keyword extraction, enterprise identification, P-code confirmation, field/field-value recall, table filtering, time parsing, SQL generation, SQL validation, SQL correction and execution, with the orchestration layer uniformly controlling state transitions.\nEnterprise Entity Resolution: For complex phrasings such as abbreviations, region + abbreviation and branch offices, designed an enterprise candidate resolution chain, combining the database, SQLite FTS5, bigram features and regional filtering for Top-20 recall, with interactive confirmation of ambiguous items; enterprise resolution Top-20 hit rate improved to 97.53%; P95 latency 57.91ms.\nSemantic Recall-Enhanced SQL Generation: Integrated MySQL metadata, Elasticsearch, Qdrant and BGE Embedding to narrow the LLM context and stabilize SQL generation quality for complex questions.\nSQL Security Validation & Correction: Implemented SQL security validation and an automatic correction mechanism, validating syntax and query scope and intercepting risky SQL to reduce the risk of erroneous queries.\nMulti-turn Context & Observability Loop: Based on session_id, saves the most recent 5 turns of successful context and supports elliptical follow-up questions; also records QUERY_TRACE, request_id, stage status and timing, supporting request-based replay for troubleshooting.\nEvaluation Results: Built a 1000-item simulated set of real data queries and a 120-item end-to-end SQL preview test set. Evaluated intent accuracy at 96.9%; in high-frequency wide-table query scenarios, the SQL semantic pass rate is > 85%.",
+      "country": null
+    }
+  ],
+  "projects": [
+    {
+      "title": "Diet Butler Agent",
+      "summary": "Project Introduction: For the everyday dining-decision dilemma of 'not knowing what to eat', built an intelligent diet recommendation Agent that combines multi-dimensional dynamic information such as the user's real-time mood, scenario and health needs. Through orchestrated multi-Agent collaboration, it realizes a complete conversational recommendation chain of intent recognition, slot clarification, tag retrieval and reranking, and LLM recommendation-reason generation, and a Trace full-link monitoring and offline evaluation system was designed.\nComplete Product Design: The user side supports dual-data-source conversational recommendation and personal menu maintenance, and the R&D side supports Trace troubleshooting, annotation and batch evaluation; covering four capabilities (conversational recommendation, personal dining-library management, Trace annotation and batch evaluation), closing the engineering loop of use, feedback, annotation, evaluation and iteration.\nBackend Multi-Agent Collaboration Architecture: Adopted a layered pattern of orchestration hub + dedicated Workers, decoupling intent understanding, slot clarification, recommendation generation and quality evaluation into independent reasoning Agent units; the LLM is only responsible for structured reasoning output, while session flow and state transitions are uniformly controlled by the orchestration layer.\nFull-Link Observability Design: To address the uncertainty of the LLM black box, collect Trace events of core metrics such as input and output at key business nodes, persist them to the database for traceability, support online troubleshooting with step-by-step replay, and provide full-link observability for every user dialogue.\nEvaluation System Design & Evaluation Loop: By batch-parsing Trace for offline evaluation, use a weighted combination of backend rules, LLM Judge and user feedback to output a 100-point scoring report, covering metrics such as intent recognition accuracy, Token consumption and end-to-end latency, with low-score samples flowing back to feed system design optimization, forming a complete loop of Trace annotation, batch evaluation and metric-driven iterative optimization.\nIntent Recognition & Rule Fallback: The intent recognition Agent identifies 6 categories of intents and 7-dimensional slots, layering intent-state correction, low-confidence downgrade and keyword fallback as a three-layer safety net to avoid misrouting and low-quality recommendations; slot extraction is constrained by a dictionary to avoid hallucination.",
+      "technologies": [],
+      "role": "Project Lead",
+      "start_date": "2026-03",
+      "end_date": "2026-07"
+    },
+    {
+      "title": "Huixiang Life",
+      "summary": "Project Introduction: Huixiang Life provides users with features such as merchant information query, flash-sale coupons and intelligent customer service, while also helping merchants promote discount information.\nFlash-sale Overselling Prevention & One Order per Person: Use Redis to store inventory and order information and Lua to determine users' ordering eligibility, ensuring no overselling and one order per person.\nFlash-sale Flow Optimization: Modified the synchronous flow so that after a user places an order, a message queue asynchronously handles inventory deduction and order generation, improving concurrency in flash-sale scenarios.\nCache Optimization: Use a logical-expiration scheme to prevent cache breakdown of hot Redis Keys; use a null-value caching scheme to solve cache penetration of Redis Keys.\nIntelligent Customer Service: Integrated Alibaba Cloud Bailian platform LLMs, use Redis to support conversational memory, and implement information queries and store-visit reservations based on Function Calling.",
+      "technologies": [
+        "Redis",
+        "Lua",
+        "Message Queue",
+        "Alibaba Cloud Bailian",
+        "Function Calling"
+      ],
+      "role": "Project Lead",
+      "start_date": "2025-12",
+      "end_date": "2026-03"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "Java",
+    "Python",
+    "Git",
+    "Docker",
+    "Spring Boot",
+    "FastAPI",
+    "JPA",
+    "JWT",
+    "AOP",
+    "MySQL",
+    "Redis",
+    "LangGraph",
+    "LangChain4j",
+    "RAG",
+    "Tool Calling",
+    "Function Calling",
+    "Prompt Engineering",
+    "SQLite",
+    "FTS5",
+    "Elasticsearch",
+    "Qdrant",
+    "BGE Embedding",
+    "Lua",
+    "Message Queue",
+    "Alibaba Cloud Bailian",
+    "LLM-as-Judge"
+  ],
+  "skill_groups": [
+    {
+      "category": "English",
+      "description": "CET-4, CET-6, able to read English technical documents"
+    },
+    {
+      "category": "Backend Development Fundamentals",
+      "description": "Java, Python; Git, Docker; familiar with development practices such as Spring Boot, FastAPI, JPA, JWT and AOP; familiar with MySQL and Redis."
+    },
+    {
+      "category": "AI Agent & LLM Applications",
+      "description": "LangGraph, LangChain4j, RAG, Tool/Function Calling, Prompt."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Jiangnan University of Science and Technology",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Software Engineering",
+      "start_date": "2023-09",
+      "end_date": "2027-06",
+      "country": null
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-4",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    },
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "additional_info": [
+    "English proficiency: able to read English technical documents"
+  ]
+}

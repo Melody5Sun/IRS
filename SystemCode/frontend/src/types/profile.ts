@@ -1,16 +1,19 @@
 // 与后端 Pydantic schema 手动保持一致：
 // SystemCode/backend/app/schemas/resume.py、SystemCode/backend/app/schemas/profile.py
 
-export type EmploymentType = "internship" | "full_time" | "part_time" | "contract" | "freelance" | "not_stated";
+// 简历经历的工作类型
+export type EmploymentType = "full_time" | "part_time" | "internship";
 export type Degree = "bachelor" | "master" | "phd" | "diploma" | "not_applicable";
 export type EducationEntryType = "degree" | "exchange";
+export type ResearchType = "paper" | "patent" | "software_copyright" | "thesis" | "research_project" | "other";
 export type WorkMode = "onsite" | "hybrid" | "remote";
 export type TargetEmploymentType = "full_time" | "internship";
 
 export interface Experience {
   company: string;
   title: string;
-  employment_type: EmploymentType;
+  // null = 解析时没判断出来；保存画像前必须由用户选择
+  employment_type: EmploymentType | null;
   start_date: string | null;
   end_date: string | null;
   description: string;
@@ -22,9 +25,12 @@ export interface Project {
   summary: string;
   technologies: string[];
   role: string | null;
+  start_date: string | null;
+  end_date: string | null;
 }
 
 export interface Research {
+  type: ResearchType;
   title: string;
   institution: string | null;
   summary: string;
@@ -40,6 +46,11 @@ export interface Education {
   start_date: string | null;
   end_date: string | null;
   country: string | null;
+  school_tier: string | null;
+  research_direction: string | null;
+  gpa: string | null;
+  ranking: string | null;
+  courses: string[];
 }
 
 export interface Certificate {
@@ -47,6 +58,18 @@ export interface Certificate {
   issuer: string | null;
   issue_date: string | null;
   expiry_date: string | null;
+  score: string | null;
+}
+
+// 技能栏原文的一行，供简历改写使用；匹配用扁平的 skills
+export interface SkillGroup {
+  category: string | null;
+  description: string;
+}
+
+export interface Award {
+  name: string;
+  date: string | null;
 }
 
 // POST /api/resumes/parse-pdf 的响应体形状
@@ -58,9 +81,13 @@ export interface ResumeDocument {
   projects: Project[];
   research: Research[];
   skills: string[];
+  skill_groups: SkillGroup[];
   educations: Education[];
   certificates: Certificate[];
   languages: string[];
+  awards: Award[];
+  // 没有专门字段的简历内容，"Label: value" 形式
+  additional_info: string[];
 }
 
 // 画像专属、简历里没有的求职约束字段

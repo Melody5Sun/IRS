@@ -84,7 +84,7 @@ def test_employment_type(types: list[str], employment_type: str, kept: bool) -> 
     ("experience_types", "candidate_type", "kept"),
     [
         ((), "experienced", False),  # experiences 为空：剔除（本规则不放行学生侧缺失）
-        (("not_stated",), "experienced", False),
+        ((None,), "experienced", False),  # 解析时没判断出类型（用户还没填）：不算全职经历
         (("internship",), "experienced", False),  # 只有实习经历
         (("internship", "full_time"), "experienced", True),
         ((), "student", True),
@@ -92,7 +92,7 @@ def test_employment_type(types: list[str], employment_type: str, kept: bool) -> 
         ((), "not_stated", True),
     ],
 )
-def test_candidate_type(experience_types: tuple[str, ...], candidate_type: str, kept: bool) -> None:
+def test_candidate_type(experience_types: tuple[str | None, ...], candidate_type: str, kept: bool) -> None:
     profile = make_profile(experience_types=experience_types)
     assert (kept_ids(profile, {"candidate_type": candidate_type}) == [1]) is kept
 

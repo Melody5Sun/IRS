@@ -1,0 +1,154 @@
+{
+  "name": "Chen Yuhang",
+  "email": "chenyuhang2027@163.com",
+  "phone": "138-0000-0000",
+  "about": "Job Intent: Agent Development Engineer",
+  "experiences": [
+    {
+      "company": "Hengxin Financial Technology Co., Ltd.",
+      "title": "Agent Development",
+      "employment_type": "internship",
+      "start_date": "2026-03",
+      "end_date": "2026-06",
+      "description": "Project: Smart Non-Performing Asset Disposal AI Agent Platform. Core technologies: Python, FastAPI, Java, Spring Boot, ReAct, Plan-and-Execute, MCP, Redis, MySQL, RRF, SSE, Multi-Agent, MinIO.\nProject Description: Addressing pain points in non-performing asset disposal at financial institutions, asset management companies and law firms (scattered and siloed data, lengthy due-diligence processes, valuation and recovery paths that rely on personal experience, and strict compliance traceability requirements), developed a smart non-performing asset disposal platform based on a dual-engine architecture of 'Java foundation + Python agent'.\nIntent Recognition & Agent Dispatch: Responsible for designing a multi-level intent recognition chain of 'explicit Tab priority + main-model semantic classification + fallback model downgrade + hard-rule safety net', combining regex entity extraction, confidence verification and cross-turn coreference resolution to identify business intents such as enterprise queries, legal Q&A, asset analysis and report generation; completed offline evaluation based on 200 manually annotated samples, with intent recognition accuracy above 92%; low-confidence requests are automatically routed to clarification interaction.\nAgent Harness & Reliability Governance: Participated in the architecture design and research of the Agent Harness layer, establishing a unified governance mechanism around execution boundaries, context quality, result verification and failure recovery, turning open-ended Agent execution into an engineering loop that is constrainable, observable, verifiable and recoverable.\nHybrid RAG & Graph Search: Designed a three-way recall of Milvus vectors, BM25 and MySQL exact query, completing Top-50 candidate deduplication and fusion via RRF, and combining knowledge-graph N-degree relationship path augmentation to strengthen complex-entity retrieval.\nEntity-level Multi-Agent Orchestration: Participated in designing an Orchestrator-Worker multi-Agent architecture, where the main Agent completes task decomposition according to the number of query entities and task complexity, dynamically creating one-off SubAgents for entities such as enterprises, natural persons and assets; each Worker loads its corresponding Skill, Tool whitelist and Token budget in an isolated context, independently completes information retrieval and analysis via ReAct, and returns a standardized TaskResult to the main Agent for deduplication, comparison and consolidation, supporting parallel execution of multi-entity tasks and unified result output.\nSession Memory & User Memory: Participated in designing a five-layer memory system; Session Memory maintains the last 20 turns of dialogue and entity anchors with 90-day persistence support; User Memory uses composite isolation by tenant, user, memory type and Key, combined with a Redis 24-hour time window and long-term storage to support cross-session recall of user role, analysis preferences and output format.",
+      "country": null
+    },
+    {
+      "company": "Anxin Home Services Technology Co., Ltd.",
+      "title": "Agent Development",
+      "employment_type": "internship",
+      "start_date": "2026-06",
+      "end_date": "2026-09",
+      "description": "Project: WeCom To-B Home Services Annual Cleaning Package Booking and Rescheduling Agent System. Tech stack: Java, Spring Boot, Prompt, RESTful API, MySQL.\nProject Description: For the scenario where B-side salespeople in WeCom make annual cleaning package bookings on behalf of customers, designed and implemented a booking Agent flow that parses customer chat content into structured business intents and booking parameters, connects the order, address, service provider and capacity APIs, and generates an AI booking draft which, after review by the salesperson, is sent out as a WeCom confirmation card.\nIntent Recognition & Slot Extraction: Designed business intent recognition and slot extraction modules to recognize intents such as annual cleaning booking, rescheduling and knowledge consultation, and to extract key fields such as customer, order, address, and booking date and time; combined JSON Schema with missing-field validation, and verified on 500 mock data samples with accuracy reaching 96%.\nBusiness API Adaptation & Field Mapping: Based on the API documentation, sorted out the order, address, service provider and capacity API contracts, encapsulated a unified HTTP Client to complete request assembly, status-code validation and response parsing, and mapped external order numbers, address codes, service provider codes, bookable dates and time slots to internal business models.\nBooking Flow & AI Draft Review: Designed a booking Session and state transition mechanism, orchestrating AI draft generation, salesperson review, field validation and confirmation card generation; supports salespeople in supplementing and modifying booking information, and records pre- and post-modification snapshots and field changes to prevent flow skipping.\nBackend Validation & Security Control: Implemented deterministic checks on order eligibility, address scope, booking time and capacity, forcibly using real backend business fields; combined confirmation token, customer UID, idempotency key and audit logs to safeguard business security under API exceptions, illegal requests and repeated submissions.",
+      "country": null
+    }
+  ],
+  "projects": [
+    {
+      "title": "Design and Implementation of a Dynamic Key Node Discovery System for Social Networks",
+      "summary": "Project Description: For X social media user analysis scenarios, centering on seed user cold start, user topic pool expansion, user profile analysis, construction of four types of graphs and knowledge-graph Q&A, designed and implemented a unified Agent Runtime, achieving an analysis loop from data collection and graph modeling to intelligent Q&A.\nAgent Runtime & State Recovery: Referencing the dual-loop design of PiAgent, implemented an outer Lifecycle Loop and an inner Model-Tool Loop; manages user messages and control events through InteractionQueue, supporting Continue, Retry, Cancel and task queuing within the same Session.\nTool & Harness Reliability Governance: Designed a unified Tool protocol and a Registry-HookPipeline-Executor call chain, implementing desensitization, permission, state, idempotency and failure-recovery controls through Redactor, PolicyHook, StateGuard, IdempotencyGuard and RetryPolicy; based on Tool DAG, supports parallel reads and serial writes.\nSkill Packaging & Business Orchestration: Packaged seed-node cold start, topic pool expansion, user profile analysis, multi-dimensional graph display and intelligent Q&A into five categories of Skills, with unified natural-language and page-button entry points, supporting linear execution of multiple Skills.\nCold start completes seed discovery through three rounds of human confirmation, reducing search divergence and seed misselection. Topic expansion and profile analysis: topic expansion discovers candidate users from three dimensions and screens them by combining activity, authenticity and bridging coverage gain; user profile analysis extracts 18 types of features such as location, occupation, role and interest topics, building a social relationship graph, a full-attribute graph, a topic graph and a heat map, and has cumulatively processed 200+ users and 250,000+ posts.\nGraphQA five-route Q&A: Routes Q&A requests to five paths (Simple query, vector retrieval, BM25 keyword retrieval, Neo4j knowledge-graph retrieval and Hybrid mixed retrieval): mixed retrieval recalls multi-route results in parallel and merges them via RRF deduplication; after evidence merging and deterministic verification, generates answers carrying EvidenceRef; when there is no valid evidence, refuses to generate conclusions without evidence.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "Agent Runtime",
+        "Agent Harness",
+        "Skills",
+        "Neo4j",
+        "Qdrant",
+        "Hybrid RAG",
+        "Vue 3",
+        "Cytoscape.js"
+      ],
+      "role": "Project Lead",
+      "start_date": "2025-11",
+      "end_date": "2026-06"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "ReAct",
+    "Plan-and-Execute",
+    "Agent Runtime",
+    "Agent Harness",
+    "Skill Packaging",
+    "MCP",
+    "Hybrid RAG",
+    "GraphRAG",
+    "Milvus",
+    "Qdrant",
+    "BM25",
+    "MySQL",
+    "Neo4j",
+    "RRF",
+    "Python",
+    "FastAPI",
+    "Docker",
+    "Git",
+    "Redis",
+    "Java",
+    "Spring Boot",
+    "SSE",
+    "Multi-Agent Systems",
+    "MinIO",
+    "Prompt Engineering",
+    "RESTful API",
+    "JSON Schema",
+    "Vue 3",
+    "Cytoscape.js"
+  ],
+  "skill_groups": [
+    {
+      "category": "Agent Systems & Orchestration",
+      "description": "Proficient in Agent patterns such as ReAct and Plan-and-Execute; familiar with Agent Runtime, Agent Harness, Skill packaging, MCP tool integration and related capabilities."
+    },
+    {
+      "category": "RAG & Knowledge Graph",
+      "description": "Command of Hybrid RAG and GraphRAG; familiar with Milvus/Qdrant, BM25, MySQL exact query, Neo4j graphs and RRF."
+    },
+    {
+      "category": "Python & Backend Development",
+      "description": "Proficient in Python, FastAPI, MySQL, Neo4j, Docker, Git, Redis, Milvus and Qdrant."
+    },
+    {
+      "category": "English Proficiency",
+      "description": "Passed College English Test Band 6 (CET-6), with the ability to read English technical documents, papers and open-source project materials."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Communication University of China",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Big Data Technology and Applications",
+      "start_date": "2025-09",
+      "end_date": "2027-06",
+      "country": "China",
+      "school_tier": "211"
+    },
+    {
+      "institution": "Qiqihar University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2021-09",
+      "end_date": "2025-06",
+      "country": "China"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "awards": [
+    {
+      "name": "Project Lead, National-level College Student Innovation and Entrepreneurship Training Program",
+      "date": null
+    },
+    {
+      "name": "Provincial Bronze Award, 'Internet+' College Students' Innovation and Entrepreneurship Competition",
+      "date": null
+    },
+    {
+      "name": "Heilongjiang Province Three-Good Student",
+      "date": null
+    },
+    {
+      "name": "Heilongjiang Province Outstanding Graduate",
+      "date": null
+    }
+  ],
+  "additional_info": [
+    "Age: 22",
+    "Political Affiliation: Communist Youth League member",
+    "Graduation Date: 2027-07",
+    "English proficiency: able to read English technical documents, papers and open-source project materials"
+  ]
+}

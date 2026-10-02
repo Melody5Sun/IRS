@@ -11,9 +11,12 @@ function fakeResume(name: string): ResumeDocument {
     projects: [],
     research: [],
     skills: [],
+    skill_groups: [],
     educations: [],
     certificates: [],
     languages: [],
+    awards: [],
+    additional_info: [],
   };
 }
 

@@ -33,10 +33,18 @@ COMPLETE_PROFILE = {
             }
         ],
         "projects": [
-            {"title": "Job Matcher", "summary": "Matching web app.", "technologies": ["Python"], "role": None}
+            {
+                "title": "Job Matcher",
+                "summary": "Matching web app.",
+                "technologies": ["Python"],
+                "role": None,
+                "start_date": "2024-03",
+                "end_date": "2024-06",
+            }
         ],
         "research": [],
         "skills": ["Python", "SQL"],
+        "skill_groups": [{"category": None, "description": "Python, SQL"}],
         "educations": [
             {
                 "institution": "NUS",
@@ -46,12 +54,19 @@ COMPLETE_PROFILE = {
                 "start_date": "2024-09",
                 "end_date": "2024-12",
                 "country": "Singapore",
+                "school_tier": None,
+                "research_direction": None,
+                "gpa": None,
+                "ranking": None,
+                "courses": [],
             }
         ],
         "certificates": [
-            {"name": "AWS Cloud Practitioner", "issuer": "AWS", "issue_date": "2025-03", "expiry_date": None}
+            {"name": "AWS Cloud Practitioner", "issuer": "AWS", "issue_date": "2025-03", "expiry_date": None, "score": None}
         ],
         "languages": ["English"],
+        "awards": [],
+        "additional_info": [],
     },
     "constraints": {
         "target_roles": ["Backend Developer"],
@@ -308,8 +323,16 @@ def test_profile_rejects_empty_fields(profile_service: ProfileService) -> None:
     profile = copy.deepcopy(COMPLETE_PROFILE)
     resume = profile["resume"]
     resume["email"] = None
-    resume["experiences"][0]["employment_type"] = "not_stated"
+    resume["experiences"][0]["employment_type"] = None
+    resume["experiences"][0]["start_date"] = None
     resume["experiences"][0]["country"] = " "
+    # 同名字段按段落区分：项目日期选填，经历日期必填
+    resume["projects"][0]["start_date"] = None
+    resume["projects"][0]["end_date"] = None
+    # 研究的机构/日期、证书的颁发机构/日期都是选填
+    resume["research"] = [{"type": "patent", "title": "Cache scheduling", "institution": None,
+                           "summary": "A patent.", "start_date": None, "end_date": None}]
+    resume["certificates"][0].update(issuer=None, issue_date=None)
     resume["skills"] = []
     resume["languages"] = [""]
     profile["constraints"]["work_modes"] = []
@@ -322,11 +345,36 @@ def test_profile_rejects_empty_fields(profile_service: ProfileService) -> None:
     assert [error["loc"] for error in response.json()["detail"]] == [
         ["body", "resume", "email"],
         ["body", "resume", "experiences", 0, "employment_type"],
+        ["body", "resume", "experiences", 0, "start_date"],
         ["body", "resume", "experiences", 0, "country"],
         ["body", "resume", "skills"],
         ["body", "resume", "languages", 0],
         ["body", "constraints", "work_modes"],
     ]
+    assert profile_service.get() is None
+
+
+def test_profile_rejects_unknown_research_type(profile_service: ProfileService) -> None:
+    profile = copy.deepcopy(COMPLETE_PROFILE)
+    profile["resume"]["research"] = [
+        {"type": "blog_post", "title": "x", "institution": "NUS", "summary": "x",
+         "start_date": "2024-01", "end_date": "2024-02"}
+    ]
+
+    response = client.put("/api/profile", json=profile)
+
+    assert response.status_code == 422
+    assert profile_service.get() is None
+
+
+def test_profile_rejects_unknown_employment_type(profile_service: ProfileService) -> None:
+    profile = copy.deepcopy(COMPLETE_PROFILE)
+    # 简历经历的工作类型只有 full_time / part_time / internship
+    profile["resume"]["experiences"][0]["employment_type"] = "other"
+
+    response = client.put("/api/profile", json=profile)
+
+    assert response.status_code == 422
     assert profile_service.get() is None
 
 

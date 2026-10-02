@@ -1,0 +1,165 @@
+{
+  "name": null,
+  "email": null,
+  "phone": null,
+  "about": "Available for internships of six months or longer.",
+  "experiences": [],
+  "projects": [
+    {
+      "title": "Geek Select: Intelligent Digital-Product E-commerce Customer Service",
+      "summary": "Agent Orchestration: Independently developed a decoupled front-end/back-end AI customer service Agent, using LangGraph to build a looping orchestration of model and tools (StateGraph), covering the full flow of product consultation, order inquiry, after-sales review and human handoff.\nStreaming Chat: Designed an SSE-based streaming chat protocol (text chunks + tool progress + session snapshot push), with serial processing per session, atomic rollback on failure, and recovery after service restart.\nSecurity & Concurrency: Order ownership security: buyer_id is injected into tools by server-side runtime configuration and cannot be overridden by the model; unauthorized queries uniformly return a non-queryable result; after-sales submissions use idempotency keys to prevent duplicates, and reviews use version numbers to control concurrent conflicts.\nData & Authentication: Based on SQLAlchemy + Alembic (4 migration versions) + SQLite, persisting 7 types of tables: products / sessions / messages / orders / logistics / after-sales / users; Argon2 password hashing + short-lived Bearer token + rotatable refresh token.\nTesting & Stability: Wrote 148 automated backend tests (model stand-in isolation, no model quota consumed) and 3 Playwright E2E suites; tool-round limits and error isolation keep long conversations stable.",
+      "technologies": [
+        "React",
+        "TypeScript",
+        "Vite",
+        "Tailwind CSS",
+        "FastAPI",
+        "SQLAlchemy",
+        "Alembic",
+        "SQLite",
+        "LangChain",
+        "LangGraph",
+        "OpenAI",
+        "SSE",
+        "Argon2",
+        "Playwright"
+      ],
+      "role": "Personal Full-Stack AI Agent Project",
+      "start_date": "2026-07",
+      "end_date": "2026-10"
+    },
+    {
+      "title": "Code Maintenance Assistant Based on the Claude Code Source Architecture",
+      "summary": "Long-Range Structured Memory: Modeled on Claude Code's hot/cold memory architecture, using two kinds of MD files (a global index + fine-grained archives); in each conversation turn, MemoryTool archives high-value information such as user corrections and anticipated future needs and synchronously updates the index; new sessions read only the lightweight index and load archive fragments on demand, saving over 50% of context usage at a retrieval cost of <5 ms.\nOn-Demand Exploration & Restricted Execution: For complex project code maintenance, designed code exploration tools and, following the JIT (Just-in-Time) principle, invoke file-system access on demand; a Subprocess whitelist mechanism blocks unauthorized operations, closing the loop of 'code exploration, problem discovery, plan generation' to ensure execution safety and process coherence.\nAdaptive Context Engineering: Drawing on Claude Code, designed a four-layer compression mechanism; large files use AST (Abstract Syntax Tree) to extract code skeletons; progressive handling by context token ratio: early summarization above 60%, structured archiving of non-latest conversation above 85%, full compression above 95%, reducing context redundancy while retaining key information.",
+      "technologies": [
+        "Python",
+        "Subprocess",
+        "AST",
+        "Function Calling"
+      ],
+      "role": "Personal AI Project",
+      "start_date": "2026-01",
+      "end_date": "2026-04"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "Prompt Engineering",
+    "CoT",
+    "ReAct",
+    "Plan-and-Execute",
+    "Reflection",
+    "LangChain",
+    "LangGraph",
+    "OpenAI SDK",
+    "Tool Calling",
+    "Function Calling",
+    "MCP",
+    "Agent Memory Management",
+    "Multi-Agent Systems",
+    "Human-in-the-loop",
+    "RAG",
+    "Semantic Chunking",
+    "Embedding",
+    "Vector Retrieval",
+    "Hybrid Retrieval",
+    "Reranking",
+    "Milvus",
+    "Python",
+    "FastAPI",
+    "Codex",
+    "Doubao",
+    "React",
+    "TypeScript",
+    "Vite",
+    "Tailwind CSS",
+    "SQLAlchemy",
+    "Alembic",
+    "SQLite",
+    "SSE",
+    "Playwright",
+    "AST",
+    "Subprocess",
+    "Document Parsing",
+    "Parent-Child Chunking",
+    "Keyword Retrieval",
+    "State Management",
+    "Task Orchestration"
+  ],
+  "skill_groups": [
+    {
+      "category": "LLM Principles & Reasoning Paradigms",
+      "description": "Proficient in Prompt Engineering, CoT, ReAct, Plan-and-Execute, Reflection and other reasoning and Agent design paradigms"
+    },
+    {
+      "category": "Agent Development",
+      "description": "Proficient in LangChain, LangGraph and the OpenAI SDK; experienced in Tool Calling, Function Calling, MCP tool integration, multi-turn conversation memory, state management, task orchestration, multi-agent collaboration and Human-in-the-loop development"
+    },
+    {
+      "category": "RAG & Vector Databases",
+      "description": "Proficient in full-pipeline RAG development, including document parsing, semantic chunking, parent-child chunking, Embedding, vector retrieval, keyword retrieval, hybrid recall, reranking and answer evaluation; familiar with the Milvus vector database"
+    },
+    {
+      "category": "Engineering & AI Development Tools",
+      "description": "Proficient in Python, FastAPI, etc.; familiar with AI coding tools such as Codex and Doubao, and able to use AI to assist with code generation, debugging, refactoring, testing and engineering iteration"
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Beihai University",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Artificial Intelligence",
+      "start_date": "2026-09",
+      "end_date": "2029-06",
+      "country": null,
+      "school_tier": "985"
+    },
+    {
+      "institution": "Donghai University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2022-09",
+      "end_date": "2026-06",
+      "country": null
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-4",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    },
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "awards": [
+    {
+      "name": "Provincial Silver Medal, ICPC",
+      "date": null
+    },
+    {
+      "name": "Provincial Silver Medal, CCPC",
+      "date": null
+    },
+    {
+      "name": "National Scholarship",
+      "date": null
+    },
+    {
+      "name": "Second Prize (national level), Higher Education Press Cup Mathematical Modeling Contest",
+      "date": null
+    }
+  ]
+}

@@ -2,17 +2,30 @@ from app.repositories.resume_history_repository import ProfileRepository, Resume
 from app.schemas.profile import JobSearchConstraints, UserProfile
 from app.schemas.resume import ParsedResume, ResumeDocument
 
-# 用户提交画像时允许留空的字段（补充说明选填、证书永久有效、交换项目没有专业、个人项目没有角色）
-OPTIONAL_FIELDS = {"notes", "expiry_date", "major", "role"}
-# 可以一条都不填的列表（学生可能没有）；但只要填了条目，条目里的字段仍要完整
-OPTIONAL_LISTS = {"experiences", "projects", "research", "certificates"}
+# 用户提交画像时允许留空的字段，按所在段落区分（同名字段如 start_date 在不同段落规则不同）。
+# 标量字段：可以为 None/空串；列表字段：可以一条都不填，但填了的条目里字段仍要完整
+OPTIONAL_FIELDS: dict[str, set[str]] = {
+    # 学生可能没有经历/项目/研究/证书/奖项，也可能没有零散补充信息
+    "resume": {"experiences", "projects", "research", "certificates", "awards", "additional_info", "skill_groups"},
+    # 技能栏原文的某一行可以没有分类标题
+    "skill_groups": {"category"},
+    "constraints": {"notes"},
+    # 个人项目没有角色；很多简历不写项目时间
+    "projects": {"role", "start_date", "end_date"},
+    # 专利、软著、论文常常没有起止时间和所属机构
+    "research": {"institution", "start_date", "end_date"},
+    # 交换项目没有专业；学校层次、研究方向、GPA、排名、课程是简历里有才填的补充信息
+    "educations": {"major", "school_tier", "research_direction", "gpa", "ranking", "courses"},
+    # 证书可以永久有效；CET 这类考试常不写颁发机构和日期；成绩只有考试类证书才有
+    "certificates": {"issuer", "issue_date", "expiry_date", "score"},
+    "awards": {"date"},
+}
 
 Loc = list[str | int]
 
 
 def _is_blank(value: object) -> bool:
-    # not_stated 是 LLM 解析不出来时的占位，用户手动提交时视同没填
-    return value is None or value == "not_stated" or (isinstance(value, str) and not value.strip())
+    return value is None or (isinstance(value, str) and not value.strip())
 
 
 def merge_patch(base: dict[str, object], patch: dict[str, object]) -> dict[str, object]:
@@ -29,22 +42,23 @@ def merge_patch(base: dict[str, object], patch: dict[str, object]) -> dict[str, 
 def find_empty_fields(data: dict[str, object], loc: Loc | None = None) -> list[Loc]:
     """返回不允许为空却为空的字段位置，比如 ["resume", "experiences", 0, "country"]。"""
     loc = loc or []
+    # 所在段落 = loc 里最后一个字段名，如 ["resume", "projects", 0] -> "projects"
+    section = next((part for part in reversed(loc) if isinstance(part, str)), "")
+    optional = OPTIONAL_FIELDS.get(section, set())
     empty: list[Loc] = []
     for key, value in data.items():
-        if key in OPTIONAL_FIELDS:
-            continue
         field_loc = [*loc, key]
         if isinstance(value, dict):
             empty += find_empty_fields(value, field_loc)
         elif isinstance(value, list):
-            if not value and key not in OPTIONAL_LISTS:
+            if not value and key not in optional:
                 empty.append(field_loc)
             for index, item in enumerate(value):
                 if isinstance(item, dict):
                     empty += find_empty_fields(item, [*field_loc, index])
                 elif _is_blank(item):
                     empty.append([*field_loc, index])
-        elif _is_blank(value):
+        elif _is_blank(value) and key not in optional:
             empty.append(field_loc)
     return empty
 

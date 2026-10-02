@@ -1,0 +1,167 @@
+{
+  "name": "Wang Zhiyuan",
+  "email": "wangzhiyuan@zju.edu.cn",
+  "phone": "138-0000-0000",
+  "about": null,
+  "experiences": [
+    {
+      "company": "Huawei",
+      "title": "AI Infra",
+      "employment_type": "internship",
+      "start_date": "2026-07",
+      "end_date": "present",
+      "description": "Responsible for speculative decoding deployment and performance optimization of DeepSeek-V4-Flash-DSpark on the Ascend 910/950 NPU platform: For the critical path of the Proposal stage, carried out multi-Stream parallel optimization and enabled the fused Attention operator. Designed and implemented splitting the Metadata preparation, Q and KV projections across different Streams, with Event synchronization guaranteeing data dependencies before the fused Attention; among them, the Metadata Stream overlaps with the Embedding and TargetHidden projections, and the MLA Stream executes the Target Context/Draft Block KV projection in parallel, reducing Proposal latency. Compared with MTP1, equivalent latency decreased by 54.3%, corresponding to about 2.19x equivalent generation efficiency.\nMigrated the overlap scheme of sglang's scheduler: During speculative decoding, assumes full acceptance in the verify stage, triggers the asynchronous device-to-host result copy-back in advance, and achieves parallelism between D2H and draft-model decoding computation, as well as between next-stage scheduling and forward computation. This eliminated the hardware idle bubbles caused in traditional speculative decoding by having to wait for verification to finish before starting data copy-back, and eliminated the serial dependency of CPU scheduling having to wait for GPU execution to complete. End-to-end TPOT performance improved by 5%.",
+      "country": null
+    }
+  ],
+  "projects": [
+    {
+      "title": "High-Performance GPU Operator Development & Optimization",
+      "summary": "Developed and optimized CUDA operators such as LayerNorm, RMSNorm, FC, Softmax and Reduce, supporting multiple Shapes and dtypes, and connected the PyTorch interface to achieve Native/PyTorch accuracy alignment; based on the Roofline model and Nsight Compute to analyze bottlenecks, combined with techniques such as Tiling, vectorized memory access, Shared Memory optimization and Warp-level Reduce, raising operator compute/bandwidth utilization to 70%+.",
+      "technologies": [
+        "CUDA",
+        "PyTorch",
+        "Nsight Compute"
+      ],
+      "role": null
+    },
+    {
+      "title": "Profiling-Based End-to-End Model Performance Optimization",
+      "summary": "Based on torch.profiler, analyzed the model execution Trace to locate bottlenecks in Kernel Launch, Stream idle bubbles and communication-computation overlap; by eliminating synchronization points and introducing Pinned Memory and a Non-blocking asynchronous transfer mechanism, the Trace shows the synchronization points and the corresponding stream idle bubbles eliminated, achieving a 1.5% end-to-end inference speedup; integrated fused operators such as APEX LayerNorm, RMSNorm, RoPE and AdamW, improving end-to-end model performance by 13%.",
+      "technologies": [
+        "torch.profiler",
+        "APEX"
+      ],
+      "role": null
+    },
+    {
+      "title": "Int8 KV Cache Quantization Optimization Validation",
+      "summary": "For Qwen models, conducted a KV Cache quantization feasibility analysis, systematically evaluating the per-token/per-channel/per-head distribution characteristics and determining a per-channel quantization granularity; implemented the pre-Attention KV Cache quantization/dequantization flow and Page Attention INT8 GEMM simulation validation, achieving near-lossless accuracy on tasks such as Human and GPQA, providing a validation basis for the performance optimization of static KV Cache quantization.",
+      "technologies": [
+        "Qwen",
+        "KV Cache Quantization",
+        "INT8 GEMM"
+      ],
+      "role": null
+    }
+  ],
+  "research": [
+    {
+      "title": "Diffusion Transformer Inference Acceleration & Cache Optimization System R&D",
+      "institution": "Zhejiang University",
+      "summary": "Against the background of high inference latency caused by the iterative denoising of Diffusion Transformers, existing Cache-then-Forecast methods rely on feature trajectory prediction and suffer from error accumulation and degraded generation quality at high acceleration ratios. Studied a training-free acceleration method based on Feature Cache, specifically proposing the DriftCache diffusion-model acceleration framework, which replaces layer-level feature caching with a Global Drift aligned by predicting the ODE, avoiding the accumulation of deep-layer Transformer errors; designed a parameter-free Barycentric Lagrange extrapolator and a Phase Mapping mechanism to improve the stability of cache skip-step prediction and achieve high-ratio inference acceleration. Validated on A100 GPUs with FLUX.1-dev and HunyuanVideo, achieving up to about 5x inference acceleration; at 4.97x acceleration, FLUX.1-dev improves ImageReward by 64%, reduces LPIPS by 52%, and reduces FID on the ImageNet generation task by 58%. The related algorithms have been integrated into the open-source inference repository cann-recipes-infer, achieving deployment optimization of FLUX.1-dev and HunyuanVideo on the Ascend NPU platform. The related results were published as first author at the top conference ECCV 2026.",
+      "start_date": null,
+      "end_date": null,
+      "type": "paper"
+    },
+    {
+      "title": "Multimodal Diffusion Model Soft-Hardware Co-Acceleration System Development",
+      "institution": "Zhejiang University",
+      "summary": "Multimodal diffusion models (DMLLMs) with fixed-length generation lead to substantial repeated computation on [EOS] Padding tokens, causing serious inference overhead; meanwhile, dynamic sequence trimming breaks the static execution efficiency of CUDA Graph, limiting actual deployment performance. Proposed a soft-hardware co-acceleration framework which, by analyzing the MLP activation sparsity of early layers at Step-0, automatically locates the effective generation length and prunes redundant Padding tokens; designed Padding Waste-aware Hybrid Execution, dynamically selecting among Static Graph, Varlen Graph and Eager execution paths according to sequence length, balancing computation reduction with high-throughput inference. Validated on A100 GPUs with mainstream Diffusion MLLMs such as LaViDa-LLaDA and MMaDA, with throughput improving by up to about 31x; model performance is maintained across 9 multimodal tasks such as MME, MMMU, DocVQA and ChartQA, and cross-modal noise interference is reduced by cutting redundant suffix tokens. The related results were published as first author at the top conference ACM MM 2026.",
+      "start_date": null,
+      "end_date": null,
+      "type": "paper"
+    },
+    {
+      "type": "patent",
+      "title": "",
+      "institution": "Wuhan University of Technology",
+      "summary": "",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "software_copyright",
+      "title": "",
+      "institution": "Wuhan University of Technology",
+      "summary": "",
+      "start_date": null,
+      "end_date": null
+    }
+  ],
+  "skills": [
+    "Python",
+    "CUDA",
+    "Triton",
+    "Operator Fusion",
+    "LLM Inference",
+    "Diffusion Models",
+    "PyTorch",
+    "Multi-Stream Parallelism",
+    "CUDA Graph",
+    "torch.profiler",
+    "vLLM",
+    "SGLang",
+    "Distributed Parallelism",
+    "Data Parallelism",
+    "Tensor Parallelism",
+    "Expert Parallelism",
+    "MoE",
+    "KV Cache",
+    "Quantization",
+    "Prefix Cache",
+    "Chunked Prefill",
+    "Speculative Decoding",
+    "Ascend NPU",
+    "Nsight Compute",
+    "APEX"
+  ],
+  "skill_groups": [
+    {
+      "category": "Languages & Frameworks",
+      "description": "Python, CUDA operator development, Triton operator development, operator fusion"
+    },
+    {
+      "category": "LLM Inference",
+      "description": "Familiar with LLM/Diffusion Model architectures and inference workflows"
+    },
+    {
+      "category": "PyTorch Framework",
+      "description": "Multi-Stream parallelism, CUDA Graph and Eager, torch.profile end-to-end performance analysis"
+    },
+    {
+      "category": "vllm/sglang",
+      "description": "Distributed parallelism DP, TP, EP; MoE, KVcache, quantization, CUDA Graph, Prefix Cache and Chunked Prefill, speculative decoding."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Zhejiang University",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Computer Science and Technology",
+      "start_date": "2024-09",
+      "end_date": "present",
+      "country": "China"
+    },
+    {
+      "institution": "Wuhan University of Technology",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2020-10",
+      "end_date": "2024-06",
+      "country": "China"
+    }
+  ],
+  "certificates": [],
+  "languages": [],
+  "awards": [
+    {
+      "name": "Corporate Scholarship (Zhejiang University)",
+      "date": null
+    },
+    {
+      "name": "Outstanding Graduate Student (Zhejiang University)",
+      "date": null
+    },
+    {
+      "name": "University Second-Class Scholarship (Wuhan University of Technology)",
+      "date": null
+    },
+    {
+      "name": "College Merit Student (Wuhan University of Technology)",
+      "date": null
+    }
+  ]
+}

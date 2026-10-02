@@ -1,0 +1,169 @@
+{
+  "name": null,
+  "email": null,
+  "phone": null,
+  "about": null,
+  "experiences": [],
+  "projects": [
+    {
+      "title": "Zhixiaotong: Campus Knowledge Base Q&A Agent Assistant",
+      "summary": "An LLM-based campus knowledge base Q&A platform integrating fine-grained intent recognition, intent-triggered RAG knowledge augmentation, structured main/auxiliary Agent routing, dynamic Skills injection, three-tier Redis + ChromaDB memory and LLM-as-Judge end-to-end evaluation, providing intelligent Q&A for campus visitors.\nFine-grained intent recognition: fused three routes (LLM few-shot semantic understanding, embedding similarity and pattern keyword matching) and output the intent class via dynamically weighted voting, together with confidence and structured entities, supporting fine-grained classes such as query, complaint and transfer to a human. Overall intent recognition accuracy reached 93.1%, 5.7% higher than any single method, effectively reducing misjudgment risk.\nRAG retrieval optimization: for complex or ambiguous queries, split and rewrote the query into multi-angle sub-queries, recalled from the ChromaDB knowledge base in parallel, merged and deduplicated by content hash, and reranked recall results with an LLM. Recall@5 improved by 7.8%, MRR@5 by 12.4% and Hit@5 by 10.4%.\nMulti-Agent: implemented structured multi-Agent orchestration, routing requests by intent, keywords and entities to study, dining, travel and other sub-agents; composite questions such as dining + travel are handled in parallel by main/auxiliary agents with merged results, with emergency escalation and a general fallback.\nSkills: implemented dynamic Skills loading from Markdown/JSON files containing business handling rules, injected into the system prompt by Agent type and user-message keywords, reducing the risk of unauthorized replies and script drift.\nMemory: designed a three-tier memory architecture of working memory, episodic memory and user profile on Redis + ChromaDB, managing current-session working memory with async Redis, storing historical conversation summaries and user profiles in ChromaDB, and moving synchronous vector-store operations into a thread pool to reduce blocking on the main path.\nEvaluation: implemented an LLM-as-Judge evaluation framework that calls the Orchestrator to generate replies and scores them on relevance, accuracy, completeness and usefulness, covering intent recognition accuracy, end-to-end reply quality, regression detection and optimization suggestions.",
+      "technologies": [
+        "Python",
+        "FastAPI",
+        "Claude",
+        "DeepSeek Compatible API",
+        "Redis",
+        "ChromaDB",
+        "Docker"
+      ],
+      "role": "Core Member",
+      "start_date": "2026-03",
+      "end_date": "2026-06"
+    },
+    {
+      "title": "Miao Shou Ke Tou: LLM Platform Token Package Flash-Sale System",
+      "summary": "A high-concurrency token-package purchase system for LLM platform promotions, supporting multi-level caching of token package details, ScopeCaching in-request backfill, Lua atomic purchasing, Stream asynchronous issuance, Redisson distributed-lock idempotency control and binlog-driven Memcache synchronization.\nFive-level cache architecture: built a ScopeCaching - JVM LoadingCache - Memcache - Redis - MySQL five-level cache to absorb hot read traffic for activity pages and SKUs; hits in lower cache levels are backfilled into ScopeCaching to reduce repeated queries within the same request.\nCache synchronization: designed a binlog-driven cache synchronization scheme that proactively syncs detail data to Memcache, deletes aggregate data to invalidate it, and broadcasts JVM local cache invalidation, avoiding multi-level cache double writes in business code.\nCache problems and solutions: wrapped a Redis cache utility, using a Bloom filter and null-value caching against cache penetration for non-existent SKUs, mutex locks and logical expiration against cache breakdown of hot token package details, and random TTLs, multi-level caching and rate limiting/degradation to reduce cache avalanche risk.\nAtomic operations: implemented stock checks, one order per person, stock deduction and Stream writes atomically with Redis Lua, preventing concurrent overselling and duplicate purchases.\nConsumer groups: used Redis Stream consumer groups to process token issuance orders asynchronously, compensating unacknowledged messages via the pending list.",
+      "technologies": [
+        "Java",
+        "Spring Boot",
+        "MyBatis-Plus",
+        "MySQL",
+        "Redis",
+        "Redisson",
+        "Redis Lua",
+        "Redis Stream",
+        "Memcache"
+      ],
+      "role": "Core Member",
+      "start_date": "2025-12",
+      "end_date": "2026-03"
+    }
+  ],
+  "research": [],
+  "skills": [
+    "Java",
+    "Spring Boot",
+    "Spring IoC",
+    "Spring AOP",
+    "MySQL",
+    "MVCC",
+    "JUC",
+    "JVM",
+    "Redis",
+    "LLM",
+    "Query Rewriting",
+    "Chunking",
+    "Rerank",
+    "Embedding",
+    "RAG",
+    "MCP",
+    "Agent Memory Management",
+    "Multi-Agent Systems",
+    "LangChain",
+    "LangGraph",
+    "Codex",
+    "Prompt Engineering",
+    "Linux",
+    "Git",
+    "Python",
+    "FastAPI",
+    "Claude",
+    "DeepSeek Compatible API",
+    "ChromaDB",
+    "Docker",
+    "LLM-as-Judge",
+    "MyBatis-Plus",
+    "Redisson",
+    "Redis Lua",
+    "Redis Stream",
+    "Memcache",
+    "Bloom Filter"
+  ],
+  "skill_groups": [
+    {
+      "category": "Backend Development Fundamentals",
+      "description": "Familiar with Java; proficient in the SpringBoot framework and understands IOC/AOP; understands MySQL transactions, MVCC, indexes and locks; familiar with JUC and the JVM; knows Redis data types and persistence, and understands backend fundamentals such as cache penetration, avalanche and breakdown."
+    },
+    {
+      "category": "LLM and Agent Development",
+      "description": "Knows LLM fundamentals; proficient in RAG techniques such as Query Rewriting, Chunking, Rerank and Embedding; understands on-demand Skills loading, the MCP protocol, Memory layering and Multi-Agent; familiar with Agent frameworks such as LangChain/LangGraph."
+    },
+    {
+      "category": "AI Applications",
+      "description": "Familiar with AI tools such as Codex; able to break down tasks and write and tune prompts; follows frontier developments."
+    },
+    {
+      "category": "Other Skills",
+      "description": "CET-4: 586, CET-6: 527; familiar with using Linux and Git."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Dongjiang University",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Software Engineering",
+      "start_date": "2024-09",
+      "end_date": "2027-06",
+      "country": null,
+      "school_tier": "985",
+      "gpa": "3.68/4.00",
+      "ranking": "90/224",
+      "research_direction": "LLM Applications and Agent Systems (Algorithm Design and System Development)"
+    },
+    {
+      "institution": "Dongjiang University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2020-09",
+      "end_date": "2024-06",
+      "country": null,
+      "school_tier": "985",
+      "gpa": "3.92/4.00",
+      "ranking": "4/64"
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-4",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": "586"
+    },
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": "527"
+    }
+  ],
+  "languages": [
+    "English"
+  ],
+  "awards": [
+    {
+      "name": "Huawei Scholarship",
+      "date": null
+    },
+    {
+      "name": "National Scholarship",
+      "date": null
+    },
+    {
+      "name": "University First-Class Scholarship (2 times)",
+      "date": null
+    },
+    {
+      "name": "Third Prize (Jiangsu Province), National College Student Mathematics Competition",
+      "date": null
+    }
+  ],
+  "additional_info": [
+    "Department (both degrees): School of Computer Science and Engineering",
+    "Master's admission: recommended for exemption from the entrance examination"
+  ]
+}

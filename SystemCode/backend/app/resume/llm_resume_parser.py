@@ -9,11 +9,11 @@ from app.services.openai_client_service import ChatClient, OpenAICompatibleClien
 SYSTEM_PROMPT = """You are a resume parser. Convert the resume text into ONE JSON object following the schema below. Output raw JSON only: no markdown, no comments, no extra text.
 
 Rules:
-1. No fabrication: use only what the resume states. If absent or unclear: "string|null" -> null, list -> [], enum -> "not_stated" (or "not_applicable" where listed), required "string" -> "".
+1. No fabrication: use only what the resume states. If absent or unclear: "string|null" -> null, list -> [], employment_type -> null, degree -> "not_applicable", required "string" -> "".
 2. Be complete: read every section; keep every entry and every bullet point (tools, numbers, outcomes) without merging or shortening. Each item goes in exactly one section.
 3. English only: translate non-English text faithfully; use an organization's official English name, otherwise romanize. Keep emails, phones and URLs unchanged.
 4. Dates: "YYYY-MM", or "YYYY" if only the year is given. Ongoing -> end_date "present"; expected graduation -> that date.
-5. Use only schema keys. Ignore content with no matching field (awards, GPA, coursework, activities, hobbies).
+5. Keep everything: use only schema keys, but never drop resume content. Content with no dedicated field goes into additional_info as "Label: value" (e.g. "Age: 22", "Hobbies: hiking").
 
 Schema (// explains the field):
 {
@@ -21,7 +21,7 @@ Schema (// explains the field):
   "about": "string|null",  // the resume's own summary/objective; never write one
   "experiences": [{  // employment: internship, full-time, part-time, contract, freelance
     "company": "string", "title": "string",
-    "employment_type": "internship|full_time|part_time|contract|freelance|not_stated",  // explicit wording only; a plain job title -> not_stated
+    "employment_type": "full_time|part_time|internship|null",  // explicit wording only; a plain job title -> null; any other stated type (e.g. contract, freelance) -> null and record it in additional_info as "Employment type at <company>: <type>"
     "start_date": "string|null", "end_date": "string|null",
     "description": "string",  // all bullet points, joined with "\\n"
     "country": "string|null"  // country of the stated work location
@@ -30,25 +30,39 @@ Schema (// explains the field):
     "title": "string",
     "summary": "string",  // what was built, how, results; all bullet points
     "technologies": ["string"],  // named for this project
-    "role": "string|null"
+    "role": "string|null",
+    "start_date": "string|null", "end_date": "string|null"
   }],
-  "research": [{  // academic research: thesis, lab/supervised research, research assistantship, publications
-    "title": "string",  // topic or paper title
+  "research": [{  // research output: papers, patents, software copyrights, thesis, lab/supervised research, research assistantship
+    "type": "paper|patent|software_copyright|thesis|research_project|other",
+    "title": "string",  // topic, paper, patent or software title
     "institution": "string|null",  // university, lab or institute
     "summary": "string",  // problem, methods, results; publication venue if any
     "start_date": "string|null", "end_date": "string|null"
   }],
   "skills": ["string"],  // one skill per item (split "Python/Java"); from the skills section and technologies named elsewhere; no duplicates
+  "skill_groups": [{  // the skills section in full, one item per line/bullet, wording kept (proficiency, knowledge points); also fill skills from it
+    "category": "string|null",  // the line's heading, e.g. "Backend Development"
+    "description": "string"
+  }],
   "educations": [{  // diploma or above, plus exchange programmes; skip secondary school
     "institution": "string",
     "entry_type": "degree|exchange",  // exchange = exchange/study abroad without a degree
     "degree": "bachelor|master|phd|diploma|not_applicable",  // exchange -> not_applicable
     "major": "string|null",
     "start_date": "string|null", "end_date": "string|null",
-    "country": "string|null"
+    "country": "string|null",
+    "school_tier": "string|null",  // tier labels stated for the school, e.g. "985", "211, Double First-Class", "QS 52"
+    "research_direction": "string|null",
+    "gpa": "string|null",  // keep the scale, e.g. "3.92/4.00"
+    "ranking": "string|null",  // e.g. "4/64", "Top 5%"
+    "courses": ["string"]  // relevant coursework
   }],
-  "certificates": [{"name": "string", "issuer": "string|null", "issue_date": "string|null", "expiry_date": "string|null"}],  // professional certifications
-  "languages": ["string"]  // human languages only, one per item; programming languages go in skills
+  "certificates": [{"name": "string", "issuer": "string|null", "issue_date": "string|null", "expiry_date": "string|null",
+    "score": "string|null"}],  // professional certifications and tests (e.g. CET-6 with score "527", IELTS)
+  "languages": ["string"],  // human languages only, one per item; programming languages go in skills
+  "awards": [{"name": "string", "date": "string|null"}],  // awards, scholarships, competition prizes, honorary titles
+  "additional_info": ["string"]  // everything else, "Label: value"
 }
 
 Example
@@ -97,19 +111,24 @@ Expected JSON:
   "projects": [{
     "title": "Campus Marketplace",
     "summary": "Full-stack marketplace app using React, Node.js and PostgreSQL\\nImplemented JWT auth and Stripe checkout",
-    "technologies": ["React", "Node.js", "PostgreSQL"], "role": null
+    "technologies": ["React", "Node.js", "PostgreSQL"], "role": null,
+    "start_date": null, "end_date": null
   }],
   "research": [],
   "skills": ["Python", "FastAPI", "React", "PostgreSQL", "Docker", "Git"],
+  "skill_groups": [{"category": null, "description": "Python, FastAPI, React, PostgreSQL, Docker, Git"}],
   "educations": [{
     "institution": "National University of Singapore", "entry_type": "degree", "degree": "bachelor",
-    "major": "Computer Science", "start_date": "2022-08", "end_date": "2026-05", "country": null
+    "major": "Computer Science", "start_date": "2022-08", "end_date": "2026-05", "country": null,
+    "school_tier": null, "research_direction": null, "gpa": null, "ranking": null, "courses": []
   }],
   "certificates": [{
     "name": "AWS Certified Cloud Practitioner", "issuer": "Amazon Web Services",
-    "issue_date": "2024", "expiry_date": null
+    "issue_date": "2024", "expiry_date": null, "score": null
   }],
-  "languages": ["English", "Mandarin"]
+  "languages": ["English", "Mandarin"],
+  "awards": [],
+  "additional_info": []
 }
 """
 
