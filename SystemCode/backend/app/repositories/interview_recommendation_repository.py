@@ -21,6 +21,12 @@ class InterviewRoleMatch:
 
 
 @dataclass(frozen=True)
+class InterviewQuestionContext:
+    question_id: int
+    question_text_en: str
+
+
+@dataclass(frozen=True)
 class InterviewCandidateQuestion:
     id: int
     question_text: str
@@ -67,6 +73,25 @@ class InterviewRecommendationRepository:
             )
             for row in rows
         ]
+
+    def get_question_context(self, question_id: int) -> InterviewQuestionContext | None:
+        with get_postgres_engine().connect() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT id, question_text_en
+                    FROM interview_questions
+                    WHERE id = :question_id
+                    """
+                ),
+                {"question_id": question_id},
+            ).mappings().one_or_none()
+        if row is None:
+            return None
+        return InterviewQuestionContext(
+            question_id=int(row["id"]),
+            question_text_en=row["question_text_en"] or "",
+        )
 
     def list_candidates(
         self,

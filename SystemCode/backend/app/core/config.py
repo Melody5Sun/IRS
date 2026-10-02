@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     career_intent_similarity_full: float = 0.85
     # 简历改写专家知识库的检索向量；改写时用户原句用同一个模型向量化
     resume_guideline_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+
+    # English interview-answer transcription through Cloudflare Workers AI.
+    cloudflare_account_id: str | None = None
+    cloudflare_api_token: str | None = None
+    cloudflare_stt_model: str = "@cf/openai/whisper-large-v3-turbo"
+    cloudflare_stt_timeout_seconds: float = 60.0
+    interview_audio_max_bytes: int = 25 * 1024 * 1024
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,
         env_file_encoding="utf-8",

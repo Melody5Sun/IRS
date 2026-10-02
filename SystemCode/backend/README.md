@@ -69,6 +69,21 @@ a 4 easy / 4 medium / 2 hard distribution. The request accepts an optional
 Chinese and English questions and answers are returned for frontend reveal and
 hide interactions.
 
+Use `POST /api/jobs/{job_id}/interview-questions/{question_id}/transcription`
+with an `audio` multipart upload to transcribe one recorded English interview
+answer. The backend sends the audio to Cloudflare Workers AI and does not store
+the recording or transcript. Configure these values in the repository-root
+`.env` file:
+
+```text
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_API_TOKEN=...
+CLOUDFLARE_STT_MODEL=@cf/openai/whisper-large-v3-turbo
+```
+
+The endpoint accepts WebM, WAV, MP3, M4A/MP4, and OGG files up to 25 MB. The
+Cloudflare token remains on the backend and must not be exposed to the frontend.
+
 Use `POST /api/rules-screening` with a `UserProfile` body to run the
 hard-constraint rule engine over all analysed jobs; it returns the jobs that
 passed as `JobRequirementDocument`s plus per-rule rejection counts. Use
