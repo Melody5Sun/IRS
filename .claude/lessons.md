@@ -8,6 +8,8 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-02] | 不带 ORDER BY 浏览知识库表时 id 乱序（如 11,124,1,2…），重新导出快照后 pg_restore 出来仍有个别行跳位 | PostgreSQL 表没有固有顺序：`ON CONFLICT DO UPDATE` 会把行的新版本写到表尾，pg_restore 的 COPY 也可能把行塞进前面页的空隙。要物理重排用 `CLUSTER 表 USING 主键索引` 后再 `ALTER TABLE 表 SET WITHOUT CLUSTER`（不把聚簇标记留进 schema）；要稳定的顺序只能靠查询写 `ORDER BY id` | SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump
+
 [2026-10-02] | 运行库迁到 PostgreSQL 后，规则引擎、画像、简历历史都保留了一份只给测试用的 SQLite 代码；测试全绿，但测的是旧 `schema.sql` 的 `jobs/job_analysis`（生产库已没有这两张表），线上真正跑的 `screen_jobs_postgres` 零覆盖 | 一份逻辑只留一条读写路径：把"读库"和"纯逻辑"拆开，测试直接喂数据行（`make_rows`）或注入 Fake 仓库，SQL 本身用真实库跑一遍验证；不要为了测试另养一份数据库实现 | SystemCode/backend/app/rule_engine/engine.py, SystemCode/backend/tests/job_db.py, SystemCode/backend/tests/conftest.py
 
 [2026-10-02] | 含中文注释的 `.ps1` 脚本在 Windows PowerShell 5.1 里报 `UnexpectedToken '}'`、`EmptyPipeElement`，代码本身没问题 | PowerShell 5.1 把无 BOM 的 UTF-8 文件按系统代码页（GBK）读，中文被读乱并吞掉相邻字符；`.ps1` 一律存成 **UTF-8 with BOM**。检查语法：`[System.Management.Automation.Language.Parser]::ParseFile(...)` | start-backend.ps1

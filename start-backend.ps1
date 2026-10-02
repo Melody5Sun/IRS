@@ -62,6 +62,9 @@ function Import-Snapshot($snapshot, $marker) {
     if ($LASTEXITCODE -ne 0) { Fail "快照文件复制进容器失败" }
     docker exec $container pg_restore -U careerpilot -d careerpilot --no-owner /tmp/snapshot.dump
     if ($LASTEXITCODE -ne 0) { Fail "pg_restore 导入快照失败，见上方输出" }
+    # pg_restore 不保证行的物理顺序，知识库表按主键重排一次，不带 ORDER BY 浏览时也是 id 从小到大
+    $guidelineTables = "guideline_sources", "resume_guidelines", "resume_guideline_role_categories", "resume_guideline_examples", "resume_guideline_chunks"
+    Invoke-Sql (($guidelineTables | ForEach-Object { "CLUSTER $_ USING ${_}_pkey; ALTER TABLE $_ SET WITHOUT CLUSTER;" }) -join " ") | Out-Null
 
     if ($backup) {
         Write-Host "放回你的用户画像和简历记录……"
