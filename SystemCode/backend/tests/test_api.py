@@ -223,6 +223,18 @@ def test_llm_parser_raises_after_second_failure() -> None:
         parser.parse("some resume text")
 
 
+def test_parse_resume_pdf_returns_502_when_llm_output_invalid(monkeypatch: pytest.MonkeyPatch) -> None:
+    _use_fake_llm(monkeypatch, ["not valid json", "still not valid json"])
+
+    response = client.post(
+        "/api/resumes/parse-pdf",
+        files={"file": ("resume.pdf", _build_minimal_pdf("Resume"), "application/pdf")},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"].startswith("LLM 简历解析失败")
+
+
 def test_parse_resume_pdf_rejects_non_pdf_upload() -> None:
     response = client.post(
         "/api/resumes/parse-pdf",

@@ -8,6 +8,7 @@ from pdfminer.high_level import extract_text
 from app.repositories.job_repository import JobRepository
 from app.repositories.job_semantic_repository import JobSemanticRepository
 from app.repositories.resume_history_repository import ResumeRewriteRepository
+from app.resume.llm_resume_parser import ResumeParsingError
 from app.resume.resume_rewriter import ResumeRewriteError, ResumeRewriter
 from app.schemas.profile import UserProfile
 from app.schemas.resume import ResumeDocument, ResumeHistoryEntry, ResumeUpload
@@ -36,7 +37,11 @@ def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeUpload:
             status_code=422, detail="无法从 PDF 中提取文本，可能是扫描件图片版 PDF"
         )
 
-    parsed = resume_service.parse_text(text)
+    try:
+        parsed = resume_service.parse_text(text)
+    except (ResumeParsingError, APIError) as error:
+        # LLM 输出两次都不合法，或 LLM 服务本身出错（限流、503 过载等），与改写接口一致返回 502
+        raise HTTPException(status_code=502, detail=f"LLM 简历解析失败：{error}") from error
     # 只存进上传记录，不动画像：解析结果往往不完整，要用户补全后通过 PUT /profile 保存
     history_id = profile_service.resume_history.add(parsed, file.filename)
     return profile_service.resume_history.get(history_id)

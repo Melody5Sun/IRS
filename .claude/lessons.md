@@ -8,6 +8,8 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-04] | `POST /resumes/parse-pdf` 的 LLM 出错（输出两次不合法、限流/503）直接变成 500，而改写接口早已转成 502——10-02 那条规则只修了改写路由 | 修一个调 LLM 的路由的错误处理时，`grep -rn "OpenAICompatibleClient\|parse_text\|rewrite(" app/api` 把所有调 LLM 的路由一起检查；统一捕获「自己的输出不合法异常 + `openai.APIError`」转 502 | SystemCode/backend/app/api/routes/resumes.py
+
 [2026-10-04] | 用 Bash 工具的 heredoc（`python - <<'EOF'`）往 .py 文件里写含 `"\\n".join(...)` 的代码，写出来的是真换行，导致 `SyntaxError: unterminated string literal` | 含转义序列（\n、\t、正则反斜杠）的代码改动一律用 Write/Edit 工具，不要经 shell heredoc 再由 Python 字符串二次转义；改完先 `python -m py_compile` | 本机环境（Claude Code Bash 工具）
 [2026-10-04] | 简历改写检索把一行的多个问题合并成一次查询、每块截到 4 条，被动语态 11 次里只有 2 次检索到对应条目，LLM 照样改并错引条目（Gemini 两次输出错引 2/7、5/11）；按问题类型分开后每类只取向量最近 1 条，弱动词又拿到“大数据要写数据量”、与 JD 无关拿到“删掉保密信息” | 向量按主题匹配：① 每个问题类型单独检索；② 写法类和 JD 关系类问题再用“问题描述”作 query 各取 1 条（对题率 16/39→35/39）；③ 引用只认同问题类型下检索到的 key。按句切片（覆盖 0.86→0.85、噪音 +31%）和用 JD 职责向量当 query（相似度更高但条目更不对）都实测无收益。改检索前先用 `scripts/evaluate_rewrite_retrieval.py` 量化 | SystemCode/backend/app/resume/resume_rewriter.py
 
