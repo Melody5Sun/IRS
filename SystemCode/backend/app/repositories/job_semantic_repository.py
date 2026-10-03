@@ -261,6 +261,24 @@ class JobSemanticRepository:
         payload["industry"] = row["industry"]
         return JobRequirementDocument.model_validate(payload)
 
+    def load_role_categories(self, job_id: int) -> list[str]:
+        """岗位在 job_roles 里对应的标准岗位所属的大类（去重）；还没有分类结果时为空列表。"""
+        with get_postgres_engine().connect() as connection:
+            return list(
+                connection.execute(
+                    text(
+                        """
+                        SELECT DISTINCT r.category
+                        FROM job_roles jr
+                        JOIN roles r ON r.id = jr.role_id
+                        WHERE jr.job_id = :job_id AND r.category IS NOT NULL
+                        ORDER BY r.category
+                        """
+                    ),
+                    {"job_id": job_id},
+                ).scalars()
+            )
+
     @staticmethod
     def _require_analyzed_job(connection, job_id: int) -> None:
         found = connection.execute(

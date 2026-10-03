@@ -3,6 +3,7 @@ from sqlalchemy import text
 from app.db.postgres import get_postgres_engine
 from app.schemas.profile import UserProfile
 from app.schemas.resume import ParsedResume, ResumeDocument, ResumeHistoryEntry, ResumeUpload
+from app.schemas.resume_rewrite import SavedResumeRewrite
 
 
 class ResumeHistoryRepository:
@@ -96,3 +97,46 @@ class ProfileRepository:
                     "resume_upload_id": profile.resume_upload_id,
                 },
             )
+
+
+class ResumeRewriteRepository:
+    """resume_rewrites 表：按（上传的简历, 岗位）保存用户确认后的改写稿，每个组合只留最新一份。"""
+
+    def save(self, resume_upload_id: int, job_id: int, resume: ResumeDocument, source_hash: str) -> SavedResumeRewrite:
+        with get_postgres_engine().begin() as connection:
+            updated_at = connection.execute(
+                text(
+                    """
+                    INSERT INTO resume_rewrites (resume_upload_id, job_id, resume, source_hash)
+                    VALUES (:resume_upload_id, :job_id, CAST(:resume AS JSONB), :source_hash)
+                    ON CONFLICT (resume_upload_id, job_id) DO UPDATE SET
+                        resume = EXCLUDED.resume,
+                        source_hash = EXCLUDED.source_hash,
+                        updated_at = CURRENT_TIMESTAMP
+                    RETURNING updated_at
+                    """
+                ),
+                {
+                    "resume_upload_id": resume_upload_id,
+                    "job_id": job_id,
+                    "resume": resume.model_dump_json(),
+                    "source_hash": source_hash,
+                },
+            ).scalar_one()
+        return SavedResumeRewrite(resume=resume, stale=False, updated_at=updated_at)
+
+    def get(self, resume_upload_id: int, job_id: int, current_hash: str) -> SavedResumeRewrite | None:
+        """current_hash 是当前画像简历的哈希，和保存时的不一致就标记为过时。"""
+        with get_postgres_engine().connect() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT resume, source_hash, updated_at FROM resume_rewrites
+                    WHERE resume_upload_id = :resume_upload_id AND job_id = :job_id
+                    """
+                ),
+                {"resume_upload_id": resume_upload_id, "job_id": job_id},
+            ).one_or_none()
+        if row is None:
+            return None
+        return SavedResumeRewrite(resume=row.resume, stale=row.source_hash != current_hash, updated_at=row.updated_at)

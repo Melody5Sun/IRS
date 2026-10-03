@@ -38,7 +38,7 @@ def _change(**overrides: object) -> ResumeChange:
         "field": "description",
         "original": DESCRIPTION,
         "value": "Built REST APIs with Python and FastAPI powering 3 internal tools.",
-        "reasons": [{"issue_type": "weak_action_verb", "explanation": "Lead with an action verb."}],
+        "reasons": [{"issue_type": "weak_action_verb", "explanation": {"en": "Lead with an action verb.", "zh": "用动作动词开头。"}}],
     }
     fields.update(overrides)
     return ResumeChange(**fields)
@@ -87,6 +87,8 @@ def _skills_change(description: str, original: object = SKILL_GROUPS) -> dict[st
         ({"original": "Something the resume never said."}, "original_mismatch"),
         ({"value": "Built REST APIs with Python and FastAPI, cutting latency by 40%."}, "new_number"),
         ({"value": "Built REST APIs with Python, FastAPI and Kubernetes for 3 internal tools."}, "new_skill"),
+        # Docker 只出现在项目技术栈里，不能挪进这段经历
+        ({"value": "Built REST APIs with Python, FastAPI and Docker for 3 internal tools."}, "new_skill"),
         ({"value": "Built REST APIs with Python and FastAPI for 3 internal tools at Shopee."}, "jd_company_mention"),
         ({"value": "Built REST APIs with Python and FastAPI for 3 internal tools" + " and more" * 20}, "too_long"),
         (
@@ -156,3 +158,19 @@ def _regroup(kafka: bool) -> list[str]:
 def test_skill_group_category_labels_are_not_new_skills() -> None:
     assert _regroup(kafka=False) == []
     assert _regroup(kafka=True) == ["new_skill"]
+
+
+@pytest.mark.parametrize(
+    ("description", "response", "rejected"),
+    [
+        # 词表认不出 "Data Analysis"，由技能栏比较那次 LLM 调用发现是编造的新增技能
+        ("Python, FastAPI, Data Analysis", '{"removed_skills": [], "added_skills": ["Data Analysis"]}', ["new_skill"]),
+        # LLM 把 skills 列表里已有的 Docker 误判为新增，代码复核后不拒绝
+        ("Python, FastAPI, Docker", '{"removed_skills": [], "added_skills": ["Docker"]}', []),
+    ],
+)
+def test_skill_groups_reject_added_skills_found_by_llm(description: str, response: str, rejected: list[str]) -> None:
+    change = _change(**_skills_change(description))
+    result = apply_changes(_resume(), [change], jd_company="Shopee", client=FakeChatClient(response))
+
+    assert [r.reason for r in result.rejected_changes] == rejected

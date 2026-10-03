@@ -212,12 +212,13 @@ class ResumeGuidelineRepository:
         model_name: str,
         sections: list[ResumeSection],
         issue_types: list[IssueType],
-        role_category: str | None = None,
+        role_categories: list[str] | None = None,
         top_k: int = 3,
         chunk_types: tuple[ChunkType, ...] = ("guideline", "example"),
     ) -> list[GuidelineMatch]:
         """先按段落、问题类型（任一重叠即可）、岗位大类过滤条目，再在文本块上做余弦检索，
-        每条条目取最相近的一个块，按相似度返回 top_k 条。role_category 为 None 时不按大类过滤。"""
+        每条条目取最相近的一个块，按相似度返回 top_k 条。
+        role_categories 为空时不按大类过滤，否则只保留属于其中任一大类的条目和通用条目（没有大类关联行）。"""
         with get_postgres_engine().connect() as connection:
             rows = connection.execute(
                 text(
@@ -236,14 +237,15 @@ class ResumeGuidelineRepository:
                           AND g.sections && CAST(:sections AS TEXT[])
                           AND g.issue_types && CAST(:issue_types AS TEXT[])
                           AND (
-                              CAST(:role_category AS TEXT) IS NULL
+                              cardinality(CAST(:role_categories AS TEXT[])) = 0
                               OR NOT EXISTS (
                                   SELECT 1 FROM resume_guideline_role_categories rc
                                   WHERE rc.guideline_id = g.id
                               )
                               OR EXISTS (
                                   SELECT 1 FROM resume_guideline_role_categories rc
-                                  WHERE rc.guideline_id = g.id AND rc.role_category = CAST(:role_category AS TEXT)
+                                  WHERE rc.guideline_id = g.id
+                                    AND rc.role_category = ANY(CAST(:role_categories AS TEXT[]))
                               )
                           )
                         ORDER BY c.guideline_id, distance
@@ -258,7 +260,7 @@ class ResumeGuidelineRepository:
                     "chunk_types": list(chunk_types),
                     "sections": list(sections),
                     "issue_types": list(issue_types),
-                    "role_category": role_category,
+                    "role_categories": list(role_categories or []),
                     "top_k": top_k,
                 },
             ).all()

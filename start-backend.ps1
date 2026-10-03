@@ -73,7 +73,9 @@ function Import-Snapshot($snapshot, $marker) {
         if ($LASTEXITCODE -ne 0) { Fail "备份文件复制进容器失败，备份仍在 $backup" }
         # 快照里自带的简历记录（团队共享的测试简历）先另存一份，放回你的数据后再合并进去
         Invoke-Sql "DROP TABLE IF EXISTS _snapshot_resume_uploads; CREATE TABLE _snapshot_resume_uploads AS SELECT id AS snapshot_id, filename, resume_json, uploaded_at FROM resume_uploads" | Out-Null
-        Invoke-Sql "TRUNCATE user_profile, resume_uploads" | Out-Null
+        # resume_rewrites 外键指向 resume_uploads，必须一起清空，否则 TRUNCATE 会被拒绝；
+        # 改写稿不在备份里（job_id 依赖快照的岗位 id，放回可能违反外键导致整个恢复失败），重新导入快照后需要重新保存
+        Invoke-Sql "TRUNCATE user_profile, resume_uploads, resume_rewrites" | Out-Null
         docker exec $container pg_restore -U careerpilot -d careerpilot --data-only /tmp/my-data.dump
         if ($LASTEXITCODE -ne 0) { Fail "恢复你的数据失败，备份仍在 $backup" }
         # 自增 id 对齐到已有最大值，避免追加快照记录和下次上传简历时主键冲突

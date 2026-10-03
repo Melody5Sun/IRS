@@ -8,6 +8,13 @@
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
 
+[2026-10-04] | 用 Bash 工具的 heredoc（`python - <<'EOF'`）往 .py 文件里写含 `"\\n".join(...)` 的代码，写出来的是真换行，导致 `SyntaxError: unterminated string literal` | 含转义序列（\n、\t、正则反斜杠）的代码改动一律用 Write/Edit 工具，不要经 shell heredoc 再由 Python 字符串二次转义；改完先 `python -m py_compile` | 本机环境（Claude Code Bash 工具）
+[2026-10-04] | 简历改写检索把一行的多个问题合并成一次查询、每块截到 4 条，被动语态 11 次里只有 2 次检索到对应条目，LLM 照样改并错引条目（Gemini 两次输出错引 2/7、5/11）；按问题类型分开后每类只取向量最近 1 条，弱动词又拿到“大数据要写数据量”、与 JD 无关拿到“删掉保密信息” | 向量按主题匹配：① 每个问题类型单独检索；② 写法类和 JD 关系类问题再用“问题描述”作 query 各取 1 条（对题率 16/39→35/39）；③ 引用只认同问题类型下检索到的 key。按句切片（覆盖 0.86→0.85、噪音 +31%）和用 JD 职责向量当 query（相似度更高但条目更不对）都实测无收益。改检索前先用 `scripts/evaluate_rewrite_retrieval.py` 量化 | SystemCode/backend/app/resume/resume_rewriter.py
+
+[2026-10-02] | 新建 `resume_rewrites`（外键指向 `resume_uploads`）后，`start-backend.ps1` 重新导入快照时的 `TRUNCATE user_profile, resume_uploads` 会报 `cannot truncate a table referenced in a foreign key constraint`（被引用表为空也一样） | 给 `resume_uploads`/`user_profile` 这类启动脚本会备份+清空的表加外键时，同步把引用表加进 `start-backend.ps1` 的 TRUNCATE 列表；用 `BEGIN; TRUNCATE ...; ROLLBACK;` 在真实库上验证 | start-backend.ps1
+
+[2026-10-02] | 真实端到端调用 `POST /resumes/rewrite` 时 Gemini 返回 503 "model is currently experiencing high demand"，`openai.InternalServerError` 一路抛到 FastAPI，变成 500 + 整页 traceback | 调 LLM 的路由除了捕获自己的“输出不合法”异常，还要捕获 `openai.APIError`（限流、503 过载、鉴权失败都是它的子类）并转成 502 + 可读信息；503 是临时过载，稍后重试即可 | SystemCode/backend/app/api/routes/resumes.py
+
 [2026-10-02] | 用 `apply_changes` 规则自检技能栏示例时，加分类标签（"Databases: MySQL"、"Cloud: AWS"、"Networking: TCP/IP"）被判成编造技能 databases / cloud computing / computer networks；"before go-live" 被识别出技能 Go | `_check_skill_groups` 把 `groups_text`（"分类: 描述"）整体送进 `extract_skills`，分类名命中词表别名；知识库 skills-01/skills-10 等条目推荐的分组写法在真实改写中会被拒。写示例时避开 go-live 这类撞词；检查器已改为只对 description 抽技能（见 901d836） | SystemCode/backend/app/resume/rewrite_applier.py
 [2026-10-02] | Git Bash 里 `docker exec 容器 pg_dump -f /tmp/x.dump` 报 `could not open output file "C:/Users/.../Temp/x.dump"` | Git Bash 把参数里的 `/tmp/...` 自动转成 Windows 路径再传给 docker；命令前加 `export MSYS_NO_PATHCONV=1` 关掉路径转换 | 本机环境
 [2026-10-02] | 想让写法类问题（被动语态、空话）检索时“通用条目优先”，实测 hit@3 反而 0.905→0.892，被动语态的正确条目在通用条目里也只排第 4 | 向量模型分不出写法问题，排序怎么调都绕不开；要么在规则检测阶段把问题类型分细、用标签过滤直接定位（拆出 passive_voice / buzzword 后 0.872→0.936），要么换能理解写法的模型/重排器。改检索策略前先跑评测再决定 | SystemCode/backend/app/schemas/resume_guideline.py, SystemCode/backend/alembic/versions/20261002_0011_split_style_issue_types.py

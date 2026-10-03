@@ -2,13 +2,13 @@
 
 LLM 只输出要改的地方，原简历由代码保留；每条改动先过本地检查（不调用 LLM），
 不通过的单独拒绝并说明原因，通过的才写进改写后的简历。技能栏允许删技能，
-删掉了哪些由 removed_skills 调 LLM 做别名匹配找出，放进技能栏块提醒用户。
+删掉了哪些由 removed_skills 调 LLM 做别名匹配找出，放进技能栏块提醒用户；同一次调用也找出词表认不出的新增技能，有就拒绝。
 """
 
 import re
 
 from app.parsers.text_parser import extract_skills
-from app.resume.removed_skills import find_removed_skills, groups_text
+from app.resume.removed_skills import compare_skill_groups, groups_text
 from app.schemas.resume import ResumeDocument, SkillGroup
 from app.schemas.resume_rewrite import (
     RejectedChange,
@@ -46,6 +46,7 @@ def apply_changes(
 ) -> ResumeRewriteResult:
     rewritten = original.model_copy(deep=True)
     resume_skills = _resume_skills(original)
+    client = client or OpenAICompatibleClient()
     applied: dict[tuple[str, int], list[ResumeChange]] = {}
     rejected: list[RejectedChange] = []
     seen: set[tuple[str, int, str]] = set()
@@ -53,6 +54,10 @@ def apply_changes(
 
     for change in changes:
         rejection = _check(original, change, seen, resume_skills, jd_company)
+        if not rejection and change.field == "skill_groups":
+            removed, added = compare_skill_groups(client, original.skill_groups, change.value, original.skills)
+            if added:
+                rejection = ("new_skill", f"原简历中没有这些技能：{added}")
         if rejection:
             reason, detail = rejection
             rejected.append(RejectedChange(change=change, reason=reason, detail=detail))
@@ -61,9 +66,7 @@ def apply_changes(
         setattr(_entry(rewritten, change), change.field, change.value)
         applied.setdefault((change.section, change.index), []).append(change)
         if change.field == "skill_groups":
-            removed_skills = find_removed_skills(
-                client or OpenAICompatibleClient(), original.skill_groups, change.value, original.skills
-            )
+            removed_skills = removed
 
     return ResumeRewriteResult(
         blocks=_blocks(original, applied, removed_skills),
@@ -108,12 +111,15 @@ def _check(
     if _norm(change.original) != _norm(current):
         return "original_mismatch", "复述的原文与简历不一致"
 
+    # 文本改写只能用本块已经提到的技能（本块原文 + 项目技术栈），不能把简历别处的技能挪进来
+    block_skills = set(extract_skills("\n".join([current, *getattr(_entry(original, change), "technologies", [])])))
+
     old_words = len(current.split())
     limit = max(old_words * MAX_LENGTH_RATIO, old_words + MIN_EXTRA_WORDS)
     if len(change.value.split()) > limit:
         return "too_long", f"改写后 {len(change.value.split())} 词，超过上限 {int(limit)} 词"
 
-    return _check_facts(current, change.value, current, resume_skills, jd_company)
+    return _check_facts(current, change.value, current, block_skills, jd_company)
 
 
 def _check_skill_groups(
@@ -144,11 +150,11 @@ def _check_facts(
     current: str,
     value: str,
     evidence: str,
-    resume_skills: set[str],
+    known_skills: set[str],
     jd_company: str,
     skill_text: str | None = None,
 ) -> tuple[RejectionReason, str] | None:
-    """文本改写共用的事实检查：不能出现依据里没有的数字、原简历没有的技能、目标公司名。
+    """文本改写共用的事实检查：不能出现依据里没有的数字、known_skills 以外的技能、目标公司名。
 
     skill_text 不为空时只在这段文本里查新技能（技能栏用它排除分类名），数字和公司名仍查整个 value。
     """
@@ -157,9 +163,9 @@ def _check_facts(
         return "new_number", f"原文中没有这些数字：{sorted(new_numbers)}"
 
     # ponytail: 只能识别技能词表里的技能，词表外的新技术名词查不出来；接入 MIND 图谱后可扩大覆盖
-    new_skills = set(extract_skills(value if skill_text is None else skill_text)) - resume_skills
+    new_skills = set(extract_skills(value if skill_text is None else skill_text)) - known_skills
     if new_skills:
-        return "new_skill", f"原简历中没有这些技能：{sorted(new_skills)}"
+        return "new_skill", f"原文中没有这些技能：{sorted(new_skills)}"
 
     company = _norm(jd_company)
     if company and company in _norm(value) and company not in _norm(current):

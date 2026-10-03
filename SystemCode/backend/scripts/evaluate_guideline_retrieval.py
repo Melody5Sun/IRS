@@ -40,7 +40,7 @@ def main() -> None:
                 model_name=model_name,
                 sections=case["sections"],
                 issue_types=case["issue_types"],
-                role_category=case["role_category"],
+                role_categories=[case["role_category"]] if case["role_category"] else [],
                 top_k=MRR_DEPTH,
                 chunk_types=chunk_types,
             )
