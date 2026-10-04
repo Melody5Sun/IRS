@@ -2,24 +2,30 @@
 
 LLM 只输出改动（ResumeChangeSet），原简历由 apply_changes 保留和校验；
 删除建议不直接应用，原样返回给前端由用户确认。
+信息不足的块（改写稿带占位 + needs_user_input）不直接应用，由 fill_block 和用户多轮问答补全。
 """
 
 import json
+from collections.abc import Callable
+from typing import TypeVar
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.core.config import settings
 from app.matching.embedding_provider import EmbeddingProvider, SentenceTransformerEmbeddingProvider
 from app.repositories.resume_guideline_repository import GuidelineMatch, ResumeGuidelineRepository
 from app.resume.issue_detector import BlockIssues, detect_issues, jd_alignments
-from app.resume.rewrite_applier import apply_changes
+from app.parsers.text_parser import extract_skills
+from app.resume.rewrite_applier import MIN_EXTRA_WORDS, apply_changes, check_facts, placeholders
 from app.schemas.job import JobRequirementDocument
 from app.schemas.match import SkillScoreRequest
 from app.schemas.resume import ResumeDocument
 from app.schemas.resume_guideline import IssueType, ResumeGuideline
 from app.schemas.resume_rewrite import (
+    BlockFill,
     CitedGuideline,
     DeletionSuggestion,
+    PlaceholderAnswer,
     RejectedDeletion,
     ResumeChangeSet,
     ResumeRewriteResult,
@@ -41,8 +47,9 @@ ISSUE_QUERIES: dict[str, str] = {
     "irrelevant_content": "Experience or project that does not match the target role: shorten it to one line of transferable skills, move it down, or drop it.",
     "weak_jd_alignment": "Align the entry with the job description: put the job-relevant work first and use the job's terminology.",
 }
-_TEXT_FIELD = {"experience": "description", "project": "summary", "research": "summary"}
-_LIST_ATTR = {"experience": "experiences", "project": "projects", "research": "research"}
+# 经历/项目/研究块：可改写的文本字段、在 ResumeDocument 上的列表名
+TEXT_FIELD = {"experience": "description", "project": "summary", "research": "summary"}
+LIST_ATTR = {"experience": "experiences", "project": "projects", "research": "research"}
 
 # prompt 用英文写，与 llm_resume_parser 一致
 SYSTEM_PROMPT = """You are an expert technical resume editor for IT students. You receive a resume split into BLOCKS, the target JOB, and for each block the detected ISSUES plus GUIDELINES retrieved from an expert knowledge base, grouped by issue type. Improve the blocks so they fix the issues and align with the job, following the guidelines. Output raw JSON only.
@@ -79,7 +86,7 @@ Output schema:
 Editable fields (anything else will be rejected): experience -> "description"; project -> "summary" or "technologies"; research -> "summary"; skills (index 0) -> "skill_groups". Change each field at most once.
 
 Rules:
-1. No fabrication. Use only facts already in the block. Never add numbers, percentages, durations or scale that are not in the original; never add a skill, tool or technology that this block (its text or its technologies list) does not already mention; never mention the job's company. Never upgrade the strength of a contribution: "participated in", "assisted" or "helped" may become "contributed to" or "co-designed", never "led", "owned" or "spearheaded". For "unclear_tech_stack", surface only technologies this block already names; if none fit, write a placeholder such as "[framework/tool used]" and ask the user. When a guideline asks for missing data (a metric, an outcome, a scale), write a short bracketed placeholder such as "[number of users]" in value and add a needs_user_input item with the same placeholder, a question for the user and why it matters.
+1. No fabrication. Use only facts already in the block. Never add numbers, percentages, durations or scale that are not in the original; never add a skill, tool or technology that this block (its text or its technologies list) does not already mention; never mention the job's company. Never upgrade the strength of a contribution: "participated in", "assisted" or "helped" may become "contributed to" or "co-designed", never "led", "owned" or "spearheaded". For "unclear_tech_stack", surface only technologies this block already names; if none fit, write a placeholder such as "[framework/tool used]" and ask the user. When a guideline asks for data the block does not contain (a metric, an outcome, a scale), write a short bracketed placeholder such as "[number of users]" in value and add a needs_user_input item with the same placeholder, a question for the user and why it matters. Every new placeholder in value must have exactly one needs_user_input item and every needs_user_input item must have its placeholder in value; otherwise the change is rejected. Use placeholders only for information the block really lacks.
 2. Copy "original" exactly (same wording and line breaks). Keep one bullet per line joined with "\\n", keep the same bullets in the same order unless merging is clearly better, and keep value at most 1.8 times the length of the original.
 3. "technologies": only reorder the existing items by relevance to the job; never add or remove items.
 4. "skill_groups" (value is the complete new skills section as [{"category": "string|null", "description": "string"}]): consider both SKILLS and the original skill_groups; keep only skills useful for the job, ordered by importance to the job (groups and skills inside each group); you may add skills that are in SKILLS but missing from the original skill_groups; you may drop irrelevant skills.
@@ -89,8 +96,21 @@ Rules:
 8. If nothing needs to change, return {"changes": [], "deletions": []}."""
 
 
+FILL_SYSTEM_PROMPT = """You finish one resume block for an IT student. You receive the block TEXT (it contains bracketed placeholders such as "[number of users]" where data was missing), the target JOB, and the student's ANSWERS for some placeholders. Output raw JSON only:
+{"value": "...", "needs_user_input": [{"placeholder": "[...]", "question": {"en": "...", "zh": "..."}, "reason": {"en": "...", "zh": "..."}}]}
+
+Rules:
+1. For each answered placeholder, rewrite the sentence so the answer reads naturally in place of the placeholder (fix grammar and wording; do not just paste it in).
+2. For each placeholder whose answer is null (the student skipped it), remove the placeholder and rephrase that sentence neutrally without the missing information. Do not guess a value.
+3. Placeholders that are not in ANSWERS stay exactly as they are.
+4. Use only facts from TEXT and ANSWERS. Never add numbers, skills, tools, scale or outcomes that are not there, and never mention the job's company. Keep everything else unchanged: same bullets, same order, one bullet per line joined with "\\n". Write in English.
+5. If an answer is too vague to state as a fact (e.g. "a lot", "not sure", "it improved"), keep a placeholder for it in value and add a needs_user_input item with that placeholder: a specific follow-up question and why it matters, in English (en) and Simplified Chinese (zh). Otherwise needs_user_input is []."""
+
+_T = TypeVar("_T", bound=BaseModel)
+
+
 class ResumeRewriteError(RuntimeError):
-    """LLM 两次尝试后仍未能返回合法的 ResumeChangeSet JSON。"""
+    """LLM 两次尝试后仍未能返回合法（JSON 合法且通过本地检查）的输出。"""
 
 
 class ResumeRewriter:
@@ -132,7 +152,9 @@ class ResumeRewriter:
             for by_issue in retrieved.values() for matches in by_issue.values() for m in matches
         }
 
-        change_set = self._complete(self._user_prompt(resume, job, blocks, retrieved))
+        change_set = self._complete_json(
+            SYSTEM_PROMPT, self._user_prompt(resume, job, blocks, retrieved), ResumeChangeSet
+        )
         for item in [*change_set.changes, *change_set.deletions]:
             _keep_known_keys(item.reasons, retrieved.get((item.section, item.index), {}))
 
@@ -147,6 +169,45 @@ class ResumeRewriter:
         result.job_id = job.job_id
         result.guidelines = _cited(change_set, guidelines)
         return result
+
+    def fill_block(
+        self,
+        text: str,
+        answers: list[PlaceholderAnswer],
+        job: JobRequirementDocument,
+        technologies: list[str],
+    ) -> BlockFill:
+        """待补充块的一轮问答：把用户回答写进草稿、跳过的改成中性表述，回答含糊时追问。
+        不再检索知识库：写法指导首轮已经用过，这一步只融合用户提供的事实。"""
+        answered = [a.answer.strip() for a in answers if a.answer and a.answer.strip()]
+        evidence = "\n".join([text, *answered])
+        known_skills = set(extract_skills("\n".join([evidence, *technologies])))
+        handled = {a.placeholder for a in answers}
+        limit = len(text.split()) + len(" ".join(answered).split()) + MIN_EXTRA_WORDS
+
+        def check(fill: BlockFill) -> str | None:
+            asked = {item.placeholder for item in fill.needs_user_input}
+            if extra := placeholders(fill.value) - (placeholders(text) - handled) - asked:
+                return f"value 里的占位 {sorted(extra)} 既不是未回答的原占位，也没有在 needs_user_input 里追问"
+            if missing := asked - placeholders(fill.value):
+                return f"needs_user_input 的占位 {sorted(missing)} 没有出现在 value 里"
+            if len(fill.value.split()) > limit:
+                return f"改写后 {len(fill.value.split())} 词，超过上限 {limit} 词"
+            if rejection := check_facts(text, fill.value, evidence, known_skills, job.company):
+                return rejection[1]
+            return None
+
+        user_prompt = json.dumps(
+            {
+                "JOB": {"title": job.title, "company": job.company},
+                "TEXT": text,
+                "ANSWERS": [
+                    {"placeholder": a.placeholder, "answer": (a.answer or "").strip() or None} for a in answers
+                ],
+            },
+            ensure_ascii=False,
+        )
+        return self._complete_json(FILL_SYSTEM_PROMPT, user_prompt, BlockFill, check)
 
     def _retrieve(
         self, blocks: list[BlockIssues], role_categories: list[str]
@@ -201,7 +262,7 @@ class ResumeRewriter:
                 item["SKILLS"] = resume.skills
                 item["skills_required_by_job_but_not_shown_in_experience"] = block.unsurfaced_skills
             else:
-                item["field"] = _TEXT_FIELD[block.section]
+                item["field"] = TEXT_FIELD[block.section]
                 item["text"] = block.text
                 if block.section == "project":
                     item["technologies"] = resume.projects[block.index].technologies
@@ -231,21 +292,31 @@ class ResumeRewriter:
             ensure_ascii=False,
         )
 
-    def _complete(self, user_prompt: str) -> ResumeChangeSet:
-        raw = self.client.complete(system_prompt=SYSTEM_PROMPT, user_prompt=user_prompt)
-        try:
-            return ResumeChangeSet.model_validate_json(raw)
-        except (json.JSONDecodeError, ValidationError) as error:
-            retry_prompt = (
+    def _complete_json(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model: type[_T],
+        check: Callable[[_T], str | None] | None = None,
+    ) -> _T:
+        """最多调两次 LLM：输出不是合法 JSON，或没通过 check（返回错误说明），就带上错误重试一次。"""
+        prompt = user_prompt
+        error = ""
+        for _ in range(2):
+            raw = self.client.complete(system_prompt=system_prompt, user_prompt=prompt)
+            try:
+                result = model.model_validate_json(raw)
+            except (json.JSONDecodeError, ValidationError) as validation_error:
+                error = str(validation_error)
+            else:
+                if (error := check(result) if check else None) is None:
+                    return result
+            prompt = (
                 f"{user_prompt}\n\n"
                 f"上一次的输出没有通过校验，错误信息：{error}\n"
                 "请重新只输出一个符合 schema 的 JSON 对象。"
             )
-            raw = self.client.complete(system_prompt=SYSTEM_PROMPT, user_prompt=retry_prompt)
-            try:
-                return ResumeChangeSet.model_validate_json(raw)
-            except (json.JSONDecodeError, ValidationError) as retry_error:
-                raise ResumeRewriteError(f"LLM 重试后仍未能返回合法的改写 JSON：{retry_error}") from retry_error
+        raise ResumeRewriteError(f"LLM 重试后仍未能返回合法的输出：{error}")
 
 
 def _guideline_payload(match: GuidelineMatch) -> dict[str, object]:
@@ -273,10 +344,10 @@ def _check_deletion(
 ) -> str | None:
     if (deletion.section, deletion.index) not in irrelevant:
         return "该条目与 JD 有一定相关性，不建议删除"
-    entries = getattr(resume, _LIST_ATTR[deletion.section])
+    entries = getattr(resume, LIST_ATTR[deletion.section])
     if deletion.index >= len(entries):
         return f"{deletion.section}[{deletion.index}] 不存在"
-    text = getattr(entries[deletion.index], _TEXT_FIELD[deletion.section])
+    text = getattr(entries[deletion.index], TEXT_FIELD[deletion.section])
     if deletion.line is None:
         current = text
     else:

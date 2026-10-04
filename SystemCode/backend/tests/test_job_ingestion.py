@@ -84,3 +84,27 @@ def test_default_sources_enable_stable_public_apis() -> None:
     assert "tiktok_bytedance_campus" not in enabled_sources
     assert "alibaba_lazada_recruit" not in enabled_sources
     assert "huawei_careers" not in enabled_sources
+
+
+def test_library_status_route_reports_latest_sync_and_active_count(tmp_path, monkeypatch) -> None:
+    from fastapi.testclient import TestClient
+
+    from app.api.routes import jobs as jobs_route
+    from app.main import app
+
+    repository = JobRepository(tmp_path / "careerpilot.db")
+    monkeypatch.setattr(jobs_route, "job_repository", repository)
+    client = TestClient(app)
+    assert client.get("/api/jobs/library-status").json() == {"synced_at": None, "active_job_count": 0}
+
+    latest = datetime(2026, 10, 4, 7, 40, tzinfo=timezone.utc)
+    old, recent, inactive = make_job("a"), make_job("b"), make_job("c")
+    old.last_seen_at = datetime(2026, 10, 1, tzinfo=timezone.utc)
+    recent.last_seen_at = latest
+    inactive.status = "inactive"
+    inactive.last_seen_at = datetime(2026, 9, 1, tzinfo=timezone.utc)
+    repository.upsert_many([old, recent, inactive])
+
+    status = client.get("/api/jobs/library-status").json()
+    assert status["active_job_count"] == 2
+    assert datetime.fromisoformat(status["synced_at"].replace("Z", "+00:00")) == latest

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -162,6 +163,12 @@ class UserProfile(BaseModel):
     # 画像来自哪条上传记录（resume_uploads.id）；保存画像时必填，补全后的简历会回写到这一条。
     # 设为可选是因为 rules-screening / matches 等接口仍直接拿 UserProfile 当请求体，不要求有上传记录
     resume_upload_id: int | None = None
+
+
+class SavedProfile(UserProfile):
+    """库里保存的画像，多一个最后保存时间（前端显示「画像更新于」）。"""
+
+    updated_at: datetime
 
 
 class ProfileOptions(BaseModel):

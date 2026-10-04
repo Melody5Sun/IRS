@@ -7,6 +7,10 @@
 ---
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
+[2026-10-04] | 改写事实检查把 "2,000" 当成编造数字：用户回答 "2000"，LLM 自然写成 "2,000" 就被拒 | 比较数字前先去掉千分位逗号（`rewrite_applier._numbers`）；涉及用户补充数据的检查要用「同一个数的不同写法」做测试 | SystemCode/backend/app/resume/rewrite_applier.py
+[2026-10-04] | 在 Bash 工具里用 `<<'PYEOF'` heredoc 写 Python 编辑脚本，脚本里的 `"\\n"` 落到文件里变成了真换行，生成 `"` + 换行 + `".join(` 导致 SyntaxError | 含反斜杠转义的编辑脚本用 Write 工具写成文件再执行，或直接用 Edit 工具改；heredoc 只用于不含 `\\` 的内容 | 本机环境
+[2026-10-04] | 用 `SystemCode/backend/.venv/Scripts/python.exe -m pytest` 跑测试，加载 conftest 时报 `ModuleNotFoundError: No module named 'sqlalchemy'` | `.venv`（2026-09-15 那条用 uv 建的）没跟上 PostgreSQL 迁移后的依赖，已过时；跑测试/alembic 一律用 conda 环境的解释器 `/d/APP/Downloads/anaconda3/envs/careerpilot-backend/python.exe`（Git Bash 里没有 `conda` 命令，见 2026-09-22 那条） | SystemCode/backend/.venv, requirements.txt
+[2026-10-04] | 新增一个会读画像的路由模块（`targets.py` 里 `from app.services.profile_service import profile_service`），测试里画像始终读不到 / 会去连真实 PostgreSQL | 路由模块在导入时就绑定了 `profile_service` 这个名字，conftest 的 autouse fixture 只替换了列出的模块；新增读画像的路由时，要在 `tests/conftest.py` 的 `profile_service` fixture 里补一行 `monkeypatch.setattr(新路由模块, "profile_service", service)` | SystemCode/backend/tests/conftest.py, SystemCode/backend/app/api/routes/targets.py
 
 [2026-10-04] | `POST /resumes/parse-pdf` 的 LLM 出错（输出两次不合法、限流/503）直接变成 500，而改写接口早已转成 502——10-02 那条规则只修了改写路由 | 修一个调 LLM 的路由的错误处理时，`grep -rn "OpenAICompatibleClient\|parse_text\|rewrite(" app/api` 把所有调 LLM 的路由一起检查；统一捕获「自己的输出不合法异常 + `openai.APIError`」转 502 | SystemCode/backend/app/api/routes/resumes.py
 

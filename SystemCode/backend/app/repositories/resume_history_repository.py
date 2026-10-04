@@ -1,7 +1,7 @@
 from sqlalchemy import text
 
 from app.db.postgres import get_postgres_engine
-from app.schemas.profile import UserProfile
+from app.schemas.profile import SavedProfile, UserProfile
 from app.schemas.resume import ParsedResume, ResumeDocument, ResumeHistoryEntry, ResumeUpload
 from app.schemas.resume_rewrite import SavedResumeRewrite
 
@@ -70,16 +70,16 @@ class ProfileRepository:
     """user_profile 表：单用户部署只有一行（id 固定为 1），resume / constraints 两列合起来就是完整画像，
     resume_upload_id 记录画像来自哪条上传记录（外键，必填）。"""
 
-    def get(self) -> UserProfile | None:
+    def get(self) -> SavedProfile | None:
         with get_postgres_engine().connect() as connection:
             row = connection.execute(
-                text("SELECT resume, constraints, resume_upload_id FROM user_profile WHERE id = 1")
+                text("SELECT resume, constraints, resume_upload_id, updated_at FROM user_profile WHERE id = 1")
             ).mappings().one_or_none()
-        return UserProfile.model_validate(dict(row)) if row else None
+        return SavedProfile.model_validate(dict(row)) if row else None
 
-    def save(self, profile: UserProfile) -> None:
+    def save(self, profile: UserProfile) -> SavedProfile:
         with get_postgres_engine().begin() as connection:
-            connection.execute(
+            updated_at = connection.execute(
                 text(
                     """
                     INSERT INTO user_profile (id, resume, constraints, resume_upload_id)
@@ -89,6 +89,7 @@ class ProfileRepository:
                         constraints = EXCLUDED.constraints,
                         resume_upload_id = EXCLUDED.resume_upload_id,
                         updated_at = CURRENT_TIMESTAMP
+                    RETURNING updated_at
                     """
                 ),
                 {
@@ -96,7 +97,8 @@ class ProfileRepository:
                     "constraints": profile.constraints.model_dump_json(),
                     "resume_upload_id": profile.resume_upload_id,
                 },
-            )
+            ).scalar_one()
+        return SavedProfile.model_validate({**profile.model_dump(), "updated_at": updated_at})
 
 
 class ResumeRewriteRepository:

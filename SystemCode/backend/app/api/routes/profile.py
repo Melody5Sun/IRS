@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import ValidationError
 
-from app.schemas.profile import ProfileOptions, UserProfile
+from app.schemas.profile import ProfileOptions, SavedProfile, UserProfile
 from app.services.profile_service import find_empty_fields, merge_patch, profile_service
 
 router = APIRouter()
@@ -14,16 +14,16 @@ def get_profile_options() -> ProfileOptions:
     return ProfileOptions()
 
 
-@router.get("", response_model=UserProfile)
-def get_profile() -> UserProfile:
+@router.get("", response_model=SavedProfile)
+def get_profile() -> SavedProfile:
     profile = profile_service.get()
     if profile is None:
         raise HTTPException(status_code=404, detail="尚未上传简历或保存画像")
     return profile
 
 
-@router.put("", response_model=UserProfile)
-def save_profile(profile: UserProfile) -> UserProfile:
+@router.put("", response_model=SavedProfile)
+def save_profile(profile: UserProfile) -> SavedProfile:
     # 整体覆盖：前端提交补全后的完整画像 + 求职约束，这是画像唯一的写入入口。
     # 除选填字段外都必须填写；resume_upload_id 也必填（画像必须来自一份上传的简历）
     empty_fields = find_empty_fields(profile.model_dump())
@@ -33,23 +33,26 @@ def save_profile(profile: UserProfile) -> UserProfile:
             status_code=422,
             detail=[{"loc": ["body", *loc], "msg": "不能为空", "type": "empty"} for loc in empty_fields],
         )
-    if not profile_service.save(profile):
+    saved = profile_service.save(profile)
+    if saved is None:
         raise HTTPException(status_code=404, detail=UPLOAD_NOT_FOUND)
-    return profile
+    return saved
 
 
-@router.patch("", response_model=UserProfile)
-def patch_profile(patch: dict) -> UserProfile:
+@router.patch("", response_model=SavedProfile)
+def patch_profile(patch: dict) -> SavedProfile:
     # 局部更新：只传要改的字段，不要求先满足 PUT 的“非空”校验；仍会跑 pydantic 自身的字段校验（如枚举范围）
     current = profile_service.get()
     if current is None:
         raise HTTPException(status_code=404, detail="尚未上传简历或保存画像")
-    merged = merge_patch(current.model_dump(), patch)
+    # updated_at 由库生成，不参与合并
+    merged = merge_patch(current.model_dump(exclude={"updated_at"}), patch)
     try:
         updated = UserProfile.model_validate(merged)
     except ValidationError as error:
         # 手动调用 model_validate 不会像请求体参数那样自动转成 422，这里转换成和 FastAPI 一致的格式
         raise HTTPException(status_code=422, detail=error.errors()) from error
-    if not profile_service.save(updated):
+    saved = profile_service.save(updated)
+    if saved is None:
         raise HTTPException(status_code=404, detail=UPLOAD_NOT_FOUND)
-    return updated
+    return saved

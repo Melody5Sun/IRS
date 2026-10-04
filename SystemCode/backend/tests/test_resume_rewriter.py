@@ -12,7 +12,7 @@ from app.schemas.job import JobRequirementDocument
 from app.schemas.profile import UserProfile
 from app.schemas.resume import Experience, ParsedResume, Project, ResumeDocument, SkillGroup
 from app.schemas.resume_guideline import ResumeGuideline
-from app.schemas.resume_rewrite import SavedResumeRewrite
+from app.schemas.resume_rewrite import PlaceholderAnswer, SavedResumeRewrite
 from app.services.responsibility_match_service import ResponsibilityMatchService
 
 DESCRIPTION = "Responsible for building REST APIs with Python and FastAPI.\nWrote weekly reports for the team."
@@ -119,7 +119,10 @@ def test_rewrite_applies_changes_filters_keys_and_returns_deletions() -> None:
     change = result.blocks[0].changes[0]
     assert change.reasons[0].guideline_keys == ["action-verb-01"]  # 编造的 key 被丢掉
     assert change.needs_user_input[0].placeholder == "[number of users]"
-    assert result.rewritten_resume.experiences[0].description.startswith("Built REST APIs")
+    # 带占位的改动是待补充草稿：块标为 needs_input，改写后的简历保留原文，等 fill 补全后由前端回填
+    assert result.blocks[0].status == "needs_input"
+    assert result.blocks[0].pending_inputs == change.needs_user_input
+    assert result.rewritten_resume.experiences[0].description == DESCRIPTION
     assert [g.key for g in result.guidelines] == ["action-verb-01"]
     # 删除建议不应用到改写稿
     assert [(d.section, d.index) for d in result.deletion_suggestions] == [("project", 0)]
@@ -191,14 +194,28 @@ class FakeRewriteRepository:
 
 
 class FakeJobRepository:
+    """岗位 7、8 存在。"""
+
     def get_job(self, job_id: int) -> object | None:
-        return object() if job_id == 7 else None
+        return object() if job_id in (7, 8) else None
+
+
+class FakeTargetCheck:
+    """改写接口只问岗位是不是目标。"""
+
+    def __init__(self, *job_ids: int) -> None:
+        self.job_ids = set(job_ids)
+
+    def exists(self, job_id: int) -> bool:
+        return job_id in self.job_ids
 
 
 @pytest.fixture
 def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
     monkeypatch.setattr(resumes_route, "rewrite_repository", FakeRewriteRepository())
     monkeypatch.setattr(resumes_route, "job_repository", FakeJobRepository())
+    # 岗位 7 是目标，岗位 8 存在但不是目标
+    monkeypatch.setattr(resumes_route, "target_repository", FakeTargetCheck(7))
     return TestClient(app)
 
 
@@ -211,6 +228,15 @@ def _save_profile(profile_service, upload_id: int, resume: ResumeDocument) -> No
 def test_rewrite_requires_saved_profile(client: TestClient) -> None:
     assert client.post("/api/resumes/rewrite", json={"job_id": 7}).status_code == 409
     assert client.get("/api/resumes/rewrites/7").status_code == 409
+
+
+def test_rewrite_requires_target_job(client: TestClient, profile_service) -> None:
+    resume = _resume()
+    _save_profile(profile_service, 1, resume)
+    # 岗位存在但没设为目标：改写和保存都拦下，不会调用 LLM
+    assert client.post("/api/resumes/rewrite", json={"job_id": 8}).status_code == 409
+    response = client.put("/api/resumes/rewrites/8", json=resume.model_dump())
+    assert response.status_code == 409 and response.json()["detail"] == "请先把该岗位设为目标岗位"
 
 
 def test_saved_rewrite_round_trip_stale_and_per_resume(client: TestClient, profile_service) -> None:
@@ -232,3 +258,98 @@ def test_saved_rewrite_round_trip_stale_and_per_resume(client: TestClient, profi
     # 画像换成另一份简历后，读不到旧简历的改写稿
     _save_profile(profile_service, 2, resume)
     assert client.get("/api/resumes/rewrites/7").status_code == 404
+
+
+DRAFT = "Built REST APIs with Python and FastAPI serving [number of users] users, cutting latency by [latency drop].\nWrote weekly reports for the team. [report audience]"
+ANSWERS = [{"placeholder": "[number of users]", "answer": "2000"}, {"placeholder": "[latency drop]", "answer": None}]
+
+
+def _fill(rewriter: ResumeRewriter, answers: list[dict] = ANSWERS):
+    return rewriter.fill_block(
+        DRAFT, [PlaceholderAnswer(**a) for a in answers], _job(), technologies=[]
+    )
+
+
+def test_fill_block_writes_answers_and_neutralises_skipped() -> None:
+    value = "Built REST APIs with Python and FastAPI serving 2,000 users.\nWrote weekly reports for the team. [report audience]"
+    client = FakeChatClient(json.dumps({"value": value, "needs_user_input": []}))
+
+    fill = _fill(_rewriter(client, FakeGuidelineRepository()))
+
+    assert fill.value == value and fill.needs_user_input == []
+    sent = json.loads(client.prompts[0])
+    # 跳过的问询以 null 传给 LLM，没涉及的占位原样保留
+    assert sent["ANSWERS"][1] == {"placeholder": "[latency drop]", "answer": None}
+
+
+def test_fill_block_retries_on_invented_number_then_gives_up() -> None:
+    invented = json.dumps({"value": "Built REST APIs serving 2000 users, cutting latency by 40%.\nWrote weekly reports for the team. [report audience]"})
+    good = json.dumps({"value": "Built REST APIs serving 2000 users.\nWrote weekly reports for the team. [report audience]"})
+
+    client = FakeChatClient(invented, good)
+    assert _fill(_rewriter(client, FakeGuidelineRepository())).value.startswith("Built REST APIs serving 2000")
+    assert client.calls == 2 and "40" in client.prompts[1]
+
+    with pytest.raises(ResumeRewriteError):
+        _fill(_rewriter(FakeChatClient(invented, invented), FakeGuidelineRepository()))
+
+
+def test_fill_block_follow_up_must_keep_its_placeholder() -> None:
+    follow_up = {
+        "placeholder": "[number of users]",
+        "question": {"en": "Roughly how many users per day?", "zh": "大概每天多少用户？"},
+        "reason": {"en": "'A lot' cannot be stated as a fact.", "zh": "“很多”无法写成事实。"},
+    }
+    vague = [{"placeholder": "[number of users]", "answer": "a lot"}]
+    kept = "Built REST APIs with Python and FastAPI serving [number of users] users, cutting latency by [latency drop].\nWrote weekly reports for the team. [report audience]"
+    # 第一次追问了却把占位删了，不合格；第二次保留占位
+    dropped = kept.replace("[number of users]", "many")
+    client = FakeChatClient(
+        json.dumps({"value": dropped, "needs_user_input": [follow_up]}),
+        json.dumps({"value": kept, "needs_user_input": [follow_up]}),
+    )
+
+    fill = _fill(_rewriter(client, FakeGuidelineRepository()), vague)
+
+    assert client.calls == 2
+    assert [item.placeholder for item in fill.needs_user_input] == ["[number of users]"]
+
+
+class FakeSemanticRepository:
+    def get_analyzed_job(self, job_id: int) -> JobRequirementDocument | None:
+        return _job()
+
+
+def test_fill_route(client: TestClient, profile_service, monkeypatch: pytest.MonkeyPatch) -> None:
+    _save_profile(profile_service, 1, _resume())
+    value = "Built REST APIs with Python and FastAPI serving 2,000 users.\nWrote weekly reports for the team. [report audience]"
+    llm = FakeChatClient(json.dumps({"value": value}))
+    monkeypatch.setattr(resumes_route, "resume_rewriter", _rewriter(llm, FakeGuidelineRepository()))
+    monkeypatch.setattr(resumes_route, "semantic_repository", FakeSemanticRepository())
+    request = {"job_id": 7, "section": "experience", "index": 0, "text": DRAFT, "answers": ANSWERS}
+
+    assert client.post("/api/resumes/rewrite/fill", json={**request, "job_id": 8}).status_code == 409
+    assert client.post("/api/resumes/rewrite/fill", json={**request, "index": 3}).status_code == 404
+    # 草稿里没有的占位不是待回答的问询
+    bad = {**request, "answers": [{"placeholder": "[made up]", "answer": "x"}]}
+    assert client.post("/api/resumes/rewrite/fill", json=bad).status_code == 422
+    assert llm.calls == 0
+
+    response = client.post("/api/resumes/rewrite/fill", json=request)
+    assert response.status_code == 200
+    assert response.json() == {
+        "value": value, "needs_user_input": [], "section": "experience", "index": 0, "field": "description",
+    }
+
+
+def test_save_rejects_unresolved_placeholders(client: TestClient, profile_service) -> None:
+    resume = _resume()
+    _save_profile(profile_service, 1, resume)
+    draft = resume.model_copy(deep=True)
+    draft.experiences[0].description = DRAFT
+
+    response = client.put("/api/resumes/rewrites/7", json=draft.model_dump())
+    assert response.status_code == 409 and "[number of users]" in response.json()["detail"]
+    # 技术栈列表这类方括号以外的内容、原简历本来就有的方括号都不算占位
+    draft.experiences[0].description = DESCRIPTION
+    assert client.put("/api/resumes/rewrites/7", json=draft.model_dump()).status_code == 200

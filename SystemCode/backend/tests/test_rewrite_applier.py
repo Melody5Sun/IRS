@@ -70,6 +70,26 @@ def test_valid_changes_are_applied_and_identity_fields_kept() -> None:
         ("skills", "Skills", 1),
     ]
     assert result.blocks[-1].removed_skills == []
+    assert [b.status for b in result.blocks] == ["rewritten", "unchanged", "rewritten"]
+
+
+ASK = {
+    "placeholder": "[number of users]",
+    "question": {"en": "How many users?", "zh": "有多少用户？"},
+    "reason": {"en": "Scale shows impact.", "zh": "规模体现影响。"},
+}
+WITH_PLACEHOLDER = "Built REST APIs with Python and FastAPI for 3 internal tools used by [number of users] users."
+
+
+def test_change_needing_user_input_stays_a_draft() -> None:
+    result = apply_changes(_resume(), [_change(value=WITH_PLACEHOLDER, needs_user_input=[ASK])], jd_company="Shopee")
+
+    assert result.rejected_changes == []
+    block = result.blocks[0]
+    assert (block.status, block.changes[0].value) == ("needs_input", WITH_PLACEHOLDER)
+    assert [item.placeholder for item in block.pending_inputs] == ["[number of users]"]
+    # 草稿不写进改写后的简历，补全后由前端回填
+    assert result.rewritten_resume == _resume()
 
 
 def _skills_change(description: str, original: object = SKILL_GROUPS) -> dict[str, object]:
@@ -99,6 +119,9 @@ def _skills_change(description: str, original: object = SKILL_GROUPS) -> dict[st
         (_skills_change("Proficient in Python, FastAPI, Docker and Kubernetes."), "new_skill"),
         (_skills_change("Proficient in Python 3 and FastAPI."), "new_number"),
         ({"section": "skills", "field": "skill_groups", "original": SKILL_GROUPS}, "invalid_target"),
+        # 有占位没提问 / 提了问却没占位
+        ({"value": WITH_PLACEHOLDER}, "placeholder_mismatch"),
+        ({"needs_user_input": [ASK]}, "placeholder_mismatch"),
     ],
 )
 def test_invalid_changes_are_rejected_with_reason(overrides: dict[str, object], reason: str) -> None:

@@ -9,6 +9,7 @@ from app.schemas.job import (
     CompanySourceResponse,
     JobAnalysis,
     JobAnalysisRequest,
+    JobLibraryStatus,
     JobListResponse,
     JobRequirementDocument,
     JobSyncResponse,
@@ -60,6 +61,12 @@ def analyze_job_requirements(request: JobAnalysisRequest) -> JobRequirementDocum
 def list_jobs(status: str = "active", company: str | None = None, limit: int = 100) -> JobListResponse:
     jobs = job_repository.list_jobs(status=status, company=company, limit=limit)
     return JobListResponse(jobs=jobs)
+
+
+@router.get("/library-status", response_model=JobLibraryStatus)
+def get_library_status() -> JobLibraryStatus:
+    """JD 库最近同步时间和在招岗位数，前端每页顶栏显示。"""
+    return job_repository.library_status()
 
 
 @router.get("/sources", response_model=CompanySourceResponse)

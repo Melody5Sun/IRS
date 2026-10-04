@@ -10,6 +10,7 @@ from app.api.routes import (
     recommendations,
     resumes,
     rules_screening,
+    targets,
 )
 
 api_router = APIRouter()
@@ -25,6 +26,7 @@ api_router.include_router(
 api_router.include_router(matches.router, prefix="/matches", tags=["matches"])
 api_router.include_router(rules_screening.router, prefix="/rules-screening", tags=["rules-screening"])
 api_router.include_router(ranking.router, prefix="/ranking", tags=["ranking"])
+api_router.include_router(targets.router, prefix="/targets", tags=["targets"])
 api_router.include_router(
     recommendations.router,
     prefix="/recommendations",

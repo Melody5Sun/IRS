@@ -1,7 +1,9 @@
 """把 LLM 输出的 diff 应用到原简历上（参考 srbhr/Resume-Matcher 的 diff-based improvement 设计）。
 
 LLM 只输出要改的地方，原简历由代码保留；每条改动先过本地检查（不调用 LLM），
-不通过的单独拒绝并说明原因，通过的才写进改写后的简历。技能栏允许删技能，
+不通过的单独拒绝并说明原因，通过的才写进改写后的简历。
+信息不足的改动（带 needs_user_input、改写稿里有占位）是草稿：通过检查后留在块里，不写进改写后的简历，
+等用户经 /resumes/rewrite/fill 补全后由前端回填。技能栏允许删技能，
 删掉了哪些由 removed_skills 调 LLM 做别名匹配找出，放进技能栏块提醒用户；同一次调用也找出词表认不出的新增技能，有就拒绝。
 """
 
@@ -36,6 +38,8 @@ MAX_LENGTH_RATIO = 1.8
 MIN_EXTRA_WORDS = 10
 
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
+# 改写稿里向用户要数据的占位，如 "[number of users]"
+_PLACEHOLDER = re.compile(r"\[[^\[\]\n]+\]")
 
 
 def apply_changes(
@@ -54,6 +58,8 @@ def apply_changes(
 
     for change in changes:
         rejection = _check(original, change, seen, resume_skills, jd_company)
+        if not rejection:
+            rejection = _check_placeholders(change)
         if not rejection and change.field == "skill_groups":
             removed, added = compare_skill_groups(client, original.skill_groups, change.value, original.skills)
             if added:
@@ -63,7 +69,8 @@ def apply_changes(
             rejected.append(RejectedChange(change=change, reason=reason, detail=detail))
             continue
         seen.add((change.section, change.index, change.field))
-        setattr(_entry(rewritten, change), change.field, change.value)
+        if not change.needs_user_input:
+            setattr(_entry(rewritten, change), change.field, change.value)
         applied.setdefault((change.section, change.index), []).append(change)
         if change.field == "skill_groups":
             removed_skills = removed
@@ -119,7 +126,7 @@ def _check(
     if len(change.value.split()) > limit:
         return "too_long", f"改写后 {len(change.value.split())} 词，超过上限 {int(limit)} 词"
 
-    return _check_facts(current, change.value, current, block_skills, jd_company)
+    return check_facts(current, change.value, current, block_skills, jd_company)
 
 
 def _check_skill_groups(
@@ -143,10 +150,27 @@ def _check_skill_groups(
     evidence = "\n".join([old_text, *original.skills])
     # 分类名（"Databases"、"Cloud" 等）会命中技能词表别名，新技能检查只看各组的技能描述
     descriptions = "\n".join(group.description for group in change.value)
-    return _check_facts(old_text, new_text, evidence, resume_skills, jd_company, skill_text=descriptions)
+    return check_facts(old_text, new_text, evidence, resume_skills, jd_company, skill_text=descriptions)
 
 
-def _check_facts(
+def _check_placeholders(change: ResumeChange) -> tuple[RejectionReason, str] | None:
+    """改写稿里新出现的占位必须和 needs_user_input 一一对应：有占位就得有问题可问，提了问就得有地方回填。"""
+    new = placeholders(_as_text(change.value)) - placeholders(_as_text(change.original))
+    asked = {item.placeholder for item in change.needs_user_input}
+    if new != asked or len(asked) != len(change.needs_user_input):
+        return "placeholder_mismatch", f"占位 {sorted(new)} 与问询 {sorted(asked)} 不对应"
+    return None
+
+
+def _numbers(text: str) -> set[str]:
+    return {number.replace(",", "") for number in _NUMBER.findall(text)}
+
+
+def placeholders(text: str) -> set[str]:
+    return set(_PLACEHOLDER.findall(text))
+
+
+def check_facts(
     current: str,
     value: str,
     evidence: str,
@@ -158,7 +182,8 @@ def _check_facts(
 
     skill_text 不为空时只在这段文本里查新技能（技能栏用它排除分类名），数字和公司名仍查整个 value。
     """
-    new_numbers = set(_NUMBER.findall(value)) - set(_NUMBER.findall(evidence))
+    # 去掉千分位逗号再比：用户答 "2000"，改写成 "2,000" 不算编造
+    new_numbers = _numbers(value) - _numbers(evidence)
     if new_numbers:
         return "new_number", f"原文中没有这些数字：{sorted(new_numbers)}"
 
@@ -171,6 +196,14 @@ def _check_facts(
     if company and company in _norm(value) and company not in _norm(current):
         return "jd_company_mention", f"不应把目标公司 {jd_company!r} 写进经历"
     return None
+
+
+def _as_text(value: str | list[str] | list[SkillGroup]) -> str:
+    if isinstance(value, str):
+        return value
+    if all(isinstance(item, SkillGroup) for item in value):
+        return groups_text(value)
+    return "\n".join(value)
 
 
 def _entry(resume: ResumeDocument, change: ResumeChange) -> object:
@@ -199,13 +232,17 @@ def _blocks(
         *(("research", i, item.title) for i, item in enumerate(original.research)),
         ("skills", 0, "Skills"),
     ]
-    return [
-        RewriteBlock(
-            section=section, index=index, heading=heading, changes=applied.get((section, index), []),
+    blocks = []
+    for section, index, heading in headings:
+        changes = applied.get((section, index), [])
+        pending = [item for change in changes for item in change.needs_user_input]
+        blocks.append(RewriteBlock(
+            section=section, index=index, heading=heading, changes=changes,
+            status="needs_input" if pending else "rewritten" if changes else "unchanged",
+            pending_inputs=pending,
             removed_skills=removed_skills if section == "skills" else [],
-        )
-        for section, index, heading in headings
-    ]
+        ))
+    return blocks
 
 
 def _norm(text: str) -> str:

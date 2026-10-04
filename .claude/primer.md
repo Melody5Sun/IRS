@@ -1,11 +1,12 @@
 # IRS Project Primer
 
-> 最后更新: 2026-10-04（简历改写 RAG 修复：按问题类型检索 + 补写法类知识库条目，快照 385 条）
+> 最后更新: 2026-10-04（简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
 
 ## ⏭️ 下一步
 - [ ] 最早的 83 道面试题（agent-interview-hub 导入）的 `keywords_json` 仍是旧的中文小节标题（如 "一、Agent 核心面试题"），不是真正的关键词——`question_text_en`/`standard_answer_en`/`role` 已经回填完，只剩这一项历史遗留问题没修
 - [ ] 0voice 仓库只有 110 道可用的结构化题目（远少于最初设想的约 200）：`01.阿里篇`(29)/`02.华为篇`(12)/`03.百度篇`(2)/`05.美团篇`(1)/`06.头条篇`(1)/`08.京东篇`(1)/`09.MySQL篇`(10)/`10.Redis篇`(10)/`11.MongoDB篇`(25)/`12.Zookeeper篇`(19)；其余"公司篇"目录（腾讯/滴滴/Nginx/算法/内存/CPU/磁盘/网络通信/安全/并发）只有占位 `.gitkeep`，`21.面经` 是非结构化的个人面经叙述（未导入）
 - [ ] Devinterview-io 每个仓库的 README 只公开前 15 道题的完整答案（第 16 题起要跳转官网付费查看），本次只从 11 个仓库各挑了 1~2 道凑够 200+；如果还想从这个组织继续补充，同一个仓库最多还能再挖 13 道左右（已用掉的 repo：python/sql/java/react/aws/docker/javascript/data-structures/software-architecture/golang/node-interview-questions），还有 20 多个未碰过的仓库（typescript/css/html5/mongodb/microservices/concurrency/django/net-core/computer-vision/express/nlp/oop 等）
+- [ ] 前端对接目标岗位页（接口和四步完成条件见 `SystemCode/frontend/API.md` 页面 05；「设为目标岗位」后才能跳转改写页）
 - [ ] 前端对接新的画像流程：`parse-pdf` 响应改为整条上传记录 `{id, filename, name, uploaded_at, resume}`（about 在 `resume` 里，前端自行预填 notes）；`POST /history/{id}/apply` 已删除，换成 `GET /resumes/history/{id}`；`PUT /profile` 必须带 `resume_upload_id`；`POST /ranking` 不再传请求体、无画像时 409。现有 `ResumeUpload.tsx`/`ProfileForm.tsx`/`profileStorage.ts`（localStorage 历史）是按旧接口写的，也还没有补全简历字段的表单
 - [ ] 用真实 PDF 简历走一遍 `/parse-pdf` → `PUT /profile` → `POST /ranking`，检查排序结果和技能评分质量（解析质量本身已用真实简历验证过，见下）
 - [ ] 与 DB 同事对齐：`classify_company_industry` 对词典外公司返回默认 "Software & IT Services"（"没查到"被当成"查到了"），最终 ~1000 条数据公司变多后，规则 6 会据此静默剔除这些岗位；建议词典外返回 `not_stated`。最终数据到位后用合成画像重跑 `python -m app.rule_engine <profile.json> --stats`
@@ -22,7 +23,7 @@
 
 ## ✅ 已完成
 - 提案定稿（IRS-Project-Proposal-V1-CN.docx）、proposal-assets/ 整理、`.claude/` 配置系统
-- 后端 FastAPI 骨架（`SystemCode/backend/`）：health / resumes / jobs / recommendations 四组路由
+- 后端 FastAPI 骨架（`SystemCode/backend/`）：health / resumes / jobs / recommendations 四组路由；顶栏 `GET /jobs/library-status`（`MAX(last_seen_at)` + 在招数），`/profile` 响应带 `updated_at`
 - 简历解析：只保留 `POST /resumes/parse-pdf`（pdfminer 提取文本，纯文本的 `/parse` 已删除），调用 Gemini（OpenAI 兼容接口）抽取成结构化 `ResumeDocument`，校验失败自动重试一次
 - 简历 schema：
   - 包含 name/email/phone、experiences、projects、research、skills（`list[str]`）、educations、certificates、languages（`list[str]`）
@@ -59,7 +60,7 @@
 - 回填最早导入的 83 条 agent-interview-hub 数据的 `question_text_en`/`standard_answer_en`（Claude 翻译，中→英，和 0voice 那批同方向）和 `role`（几乎全部标了 "Agent Engineer"，大模型基础/微调类题目标了 "LLM Engineer"，端侧部署/鸿蒙类标了 "Embedded Software Engineer"/"Mobile Developer (Android)"，ML Pipeline/TPU-GPU 混合架构类标了 "MLOps Engineer"）。顺带发现并修复了 8 条历史脏数据——原 markdown 转存时把下一个小节的标题（如 "---\n## 二、大模型基础"）错误地拼接进了上一题的 `standard_answer` 末尾，本次一并清理（中英文都是干净版本）。全库 215 条题目的 `question_text_en`/`standard_answer_en` 已 100% 填充
 - 面试题 `role`（单值 TEXT）改为 `roles_json`（JSON 数组，模型字段 `roles: list[str]`）：215 条逐题按题干重新判定，可对应多个岗位（83 条多岗位）；数据结构/算法、C/C++/Java/Python 语言基础等匹配不到具体岗位的题统一标为 `["Basic Programming Problems"]`（26 条，常量 `GENERAL_PROGRAMMING_ROLE`），空列表会被校验器自动补成该值。旧库启动时由 `_migrate_interview_role_to_roles_json` 迁移（旧值转成单元素数组后删列）
 - 简历/画像持久化重构（迁移 `20261002_0009`，表名不变）：`resume_uploads.resume_json` → JSONB、`uploaded_at` → TIMESTAMPTZ；`user_profile.profile_json` 拆成 `resume`/`constraints` 两列 JSONB，接口仍返回完整画像。`ProfileService(profile_repository, resume_history)` 构造函数注入仓库（`app/repositories/resume_history_repository.py`），测试在 conftest 注入 Fake 仓库；`start-backend.ps1` 导入快照前后都先迁到最新，保证 data-only 备份能放回
-- 简历改写模块（diff 模式，参考 srbhr/Resume-Matcher）：知识库条目 schema `app/schemas/resume_guideline.py`（标签 sections / issue_types / role_categories）；LLM 只输出改动 `ResumeChange`（段落+下标+字段+复述原文+新值+原因），`app/resume/rewrite_applier.py` 的 `apply_changes` 按白名单应用，本地拒绝下标越界、原文对不上、项目技术栈增删、新数字、新技能、篇幅超 1.8 倍、写进 JD 公司名的改动，被拒的连同原因返回；技能栏块改的是 `skill_groups`（输出完整的新分组，只放对 JD 有用的技能并按重要性排序，可补入扁平 `skills` 里有、原技能栏没写的技能，不限篇幅，扁平 `skills` 不改）；删技能不拒绝，`app/resume/removed_skills.py` 调 LLM 做别名匹配找出删掉的技能（LLM 输出不合法时退回字符串匹配），放进技能栏块的 `removed_skills` 提醒用户；输出按块（每条经历/项目/研究 + 技能栏）组织。JD 由用户从库里选，不做个人简介块
+- 简历改写模块（diff 模式，参考 srbhr/Resume-Matcher）：知识库条目 schema `app/schemas/resume_guideline.py`（标签 sections / issue_types / role_categories）；LLM 只输出改动 `ResumeChange`（段落+下标+字段+复述原文+新值+原因），`app/resume/rewrite_applier.py` 的 `apply_changes` 按白名单应用，本地拒绝下标越界、原文对不上、项目技术栈增删、新数字、新技能、篇幅超 1.8 倍、写进 JD 公司名的改动，被拒的连同原因返回；技能栏块改的是 `skill_groups`（输出完整的新分组，只放对 JD 有用的技能并按重要性排序，可补入扁平 `skills` 里有、原技能栏没写的技能，不限篇幅，扁平 `skills` 不改）；删技能不拒绝，`app/resume/removed_skills.py` 调 LLM 做别名匹配找出删掉的技能（LLM 输出不合法时退回字符串匹配），放进技能栏块的 `removed_skills` 提醒用户；输出按块（每条经历/项目/研究 + 技能栏）组织。JD 由用户从库里选，不做个人简介块。简历改写两类块：`RewriteBlock.status` = rewritten（用户接受/拒绝）/ needs_input（占位+问询，草稿不进 `rewritten_resume`，走 `POST /resumes/rewrite/fill` 一问一答补全，跳过=中性表述，含糊=追问）；占位与问询必须一一对应（`placeholder_mismatch`），终稿 PUT 有未处理占位 409
 - 简历改写 RAG 全流程（迁移 `20261002_0013`）：`POST /api/resumes/rewrite {job_id}` 只读画像里的 resume（无画像 409）→ `app/resume/issue_detector.py` 规则检测行级问题 + 职责相似度/技能评分检测块级问题 → 按问题类型和 JD 大类（`job_roles`→`roles.category`，`search` 改为可传多个大类）检索知识库 → `app/resume/resume_rewriter.py` 单次 LLM 输出改动 + 删除建议（理由中英双语、待补充事项带占位符和理由，编造的 guideline key 丢弃）→ `apply_changes`；删除建议不应用，由前端确认。回填后 `PUT /resumes/rewrites/{job_id}` 存进 `resume_rewrites`（按 resume_upload_id + job_id 唯一，`source_hash` 判断画像是否在保存后改过，GET 返回 `stale`）；`start-backend.ps1` 重新导入快照时改写稿不保留（只备份画像和上传记录）
 - 简历改写 RAG 修复（审计后）：检索改为每个（行, 问题类型）单独查 top1，写法类和 JD 关系类问题再用问题描述各查一次（7 组样本对题率 16/39→35/39），去掉每块 4 条上限；prompt 里条目按问题类型分组，引用只保留同问题类型下检索到的 key；检测器去掉「小标题:」前缀、跳过 Project/Tech stack 标题行、`dynamic` 不再算空话，技能栏块固定带 irrelevant_content；检查器的新技能依据改为本块（原文 + 项目 technologies），技能栏比较那次 LLM 调用同时返回 added_skills 拦截词表外编造技能；知识库补 passive-01~04、buzzword-01~04（`action-verb-07` 补标 buzzword），现 385 条 / 1155 组示例 / 1540 块，检索评测原 78 条 hit@3 0.936→0.923（唯一新增的 miss 是一条空话用例，正确条目被挤到第 4、5 名），加 4 条新用例后 82 条 0.927 / MRR 0.846。按句切片、用库里 JD 职责向量当知识库 query 均实测无收益，未采用
 - 简历改写专家知识库（迁移 `20261002_0008`）：**知识层** `role_categories`（10 个岗位大类字典，`roles.category` 加了外键 `fk_roles_category` 指向它）、`guideline_sources`（6 个出处，清单在 `app/knowledge/guideline_source_registry.py`，写法同 JD 的 `source_registry.py`）、`resume_guidelines`（sections/issue_types 为 TEXT[] + CHECK 子集约束，status 软下线，content_hash）、`resume_guideline_role_categories`（外键约束大类，无关联行=通用）、`resume_guideline_examples`；**向量层** `resume_guideline_chunks`（每条 1 个说明块 + 每个示例 1 个改写前原句块，VECTOR(384) + HNSW，内容变了自动清空向量）。仓库层 `app/repositories/resume_guideline_repository.py` 的 `search` 先按标签过滤，再按块做余弦检索，每条取最相近的块。149 条英文条目 / 298 组示例 / 447 个块，按面试题导入惯例用一次性脚本写库（源数据不进仓库），示例遵守"改写后只用改写前事实，缺数据用 [...] 占位"并已用 `apply_changes` 同一套规则自检。检索评测 `python -m scripts.evaluate_guideline_retrieval`（42 条手写用例）：只用说明块 hit@3=0.714 / MRR=0.636 → 加示例块 0.952 / 0.926。团队快照已更新为 `careerpilot-postgresql-20261002.dump`（README 已同步 SHA-256 与计数）；知识库 5 张表（guideline_sources / resume_guidelines / resume_guideline_role_categories / resume_guideline_examples / resume_guideline_chunks）已按主键 CLUSTER 重排后重新导出快照，数据内容不变；pg_restore 不保证物理顺序，`start-backend.ps1` 导入快照后会再重排一次
@@ -67,6 +68,7 @@
 - 问题类型拆分（迁移 `20261002_0011`）：从 `weak_action_verb` 拆出 `passive_voice` / `buzzword`，6 条条目改标（action-verb-03/04、javaguide-07、ai-26、data-03、sd-38）。试过“写法类问题通用条目优先”，结果更差（hit@3 0.905→0.892）已撤销：向量按主题匹配，通用条目内部也排不准。同 78 条用例拆分前后 hit@3 0.872→0.936 / MRR 0.814→0.857。快照仍是 0010，导入后迁移自动改标
 - 测试简历入库：`SystemCode/backend/resume test/` 的 10 份 PDF（5 中 5 英）由 Claude 按 `llm_resume_parser` 同一套规则手工解析成英文 JSON，存于 `resume test/parsed/`，经 `ParsedResume` 校验后用 `ResumeHistoryRepository.add` 写入 `resume_uploads`（id 1–10，filename = 原 PDF 名）；用 `GET /resumes/history/{id}` 取出，补全后 `PUT /profile` 保存为画像。4 份测试简历本身没有姓名/联系方式，RAG_CN 的教育经历在 PDF 中缺失，均留空。已进团队快照 `careerpilot-postgresql-20261002.dump`（第二版，含迁移 0010）；`start-backend.ps1` 导入快照时把快照里的简历记录合并进队友自己的 resume_uploads（同名文件以队友的为准）
 - 简历 schema 原则：**简历里的所有内容都要存进数据库**。新增 `Project.start_date/end_date`、`Research.type`（paper/patent/software_copyright/thesis/research_project/other）、`Education.school_tier/research_direction/gpa/ranking/courses`、`Certificate.score`（CET 等考试放证书）、顶层 `awards`、技能栏原文 `skill_groups`（分类+原文描述，供简历改写用；匹配仍用扁平 `skills`）和兜底 `additional_info`（"Label: value"）；解析 prompt 去掉了"忽略奖项/GPA/课程"规则。JSONB 存储，无需迁移，旧数据按默认值读出。`PUT /profile` 的选填白名单 `OPTIONAL_FIELDS` 按段落区分（`profile_service.py`）：项目日期、研究的机构和日期、证书的颁发机构和日期选填，经历日期必填。简历经历 `employment_type` 只有 full_time/part_time/internship（和岗位侧 `schemas/common.py` 的同名类型是两套）：解析阶段可为 null，保存画像时必填；简历写的其他类型（合同工等）记进 additional_info。迁移 `20261002_0010` 把旧的 not_stated/contract/freelance 转成 null，contract/freelance 原值追加进 additional_info
+- 目标岗位（迁移 `20261004_0014`）：`target_jobs` 表（岗位 id 为主键，存申请阶段 10 档 + 自填备注 + 模拟面试完成时间 + 匹配度快照）；`GET/POST /targets`、`PATCH/DELETE /targets/{job_id}`。简历改写一步从 `resume_rewrites` 推出（none/saved/stale），提交申请一步 = `stage != not_applied`；移出目标在同一事务里删掉该岗位所有改写稿；`POST /resumes/rewrite`、`PUT /resumes/rewrites/{id}` 对非目标岗位返回 409；迁移时已有改写稿的岗位（108）自动设为目标
 
 ## 📖 需要先读
 - [CLAUDE.md](../CLAUDE.md) — 项目完整指南
@@ -75,7 +77,6 @@
 ## ⚠️ 已知限制
 - JD 和候选人的技能匹配目前仍依赖 `skill_lexicon.py`；MIND 图谱已经加载，但尚未接入提取和评分
 - MIND 上游少量 `impliesKnowingSkills` 关系指向未定义技能，加载器会统计但不会阻断应用启动
-- 求职约束暂时不参与推荐
 - 提案「决策自动化」里提到的签证约束已按需求删除；经验年限、截止日期也已从岗位 schema 删除，规则层目前只有 6 条（见上）
 - `/ranking` 的 `partial_score` 最高 65（职责相似度、职业意向契合度未实现），不是最终匹配分
 - 前端最小工程已打通“上传简历→解析→localStorage 缓存→编辑求职约束→PUT 保存画像”全链路，但没有接 `PATCH /profile`（只用 `PUT` 整体保存），也没有登录态/多用户概念；`SystemCode/frontend/IT CareerPilot demo.html` 仍是独立的静态打包文件，两者未打通

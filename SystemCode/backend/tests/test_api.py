@@ -265,13 +265,16 @@ def test_profile_flow(monkeypatch: pytest.MonkeyPatch, profile_service: ProfileS
     # 补全后才能保存；补全后的简历同时回写到来源的上传记录，about 保留
     response = client.put("/api/profile", json=COMPLETE_PROFILE)
     assert response.status_code == 200
-    assert client.get("/api/profile").json() == COMPLETE_PROFILE
+    saved = response.json()
+    # 响应多一个保存时间，前端显示「画像更新于」
+    assert {**COMPLETE_PROFILE, "updated_at": saved["updated_at"]} == saved and saved["updated_at"]
+    assert client.get("/api/profile").json() == saved
     written_back = client.get(f"/api/resumes/history/{upload['id']}").json()["resume"]
     assert written_back == {**COMPLETE_PROFILE["resume"], "about": "Aspiring backend engineer."}
 
     # 再上传一份简历：画像不变，直到用户补全后再次保存
     _upload_pdf("Jane Tan v2")
-    assert client.get("/api/profile").json() == COMPLETE_PROFILE
+    assert client.get("/api/profile").json() == saved
 
 
 def test_profile_requires_resume_upload() -> None:

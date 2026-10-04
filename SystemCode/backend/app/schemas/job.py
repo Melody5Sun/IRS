@@ -53,6 +53,14 @@ class JobListResponse(BaseModel):
     jobs: list[JobPosting]
 
 
+class JobLibraryStatus(BaseModel):
+    """JD 库概况，前端顶栏显示「JD 库同步于 xx:xx · N 条」。"""
+
+    # 最近一次同步看到岗位的时间（各岗位 last_seen_at 的最大值）；库为空时为 None
+    synced_at: datetime | None = None
+    active_job_count: int
+
+
 class CompanySource(BaseModel):
     name: str
     company: str

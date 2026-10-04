@@ -20,7 +20,11 @@ RejectionReason = Literal[
     "new_skill",            # 改写后出现了原简历里没有的技能
     "too_long",             # 改写后篇幅膨胀过多
     "jd_company_mention",   # 把 JD 的公司名写进了简历
+    "placeholder_mismatch", # 改写稿里的占位和 needs_user_input 对不上（有占位没提问，或提了问却没占位）
 ]
+# unchanged = 不用改；rewritten = 已改好，用户只需接受/拒绝；
+# needs_input = 信息不足，草稿带占位，要用户通过 /resumes/rewrite/fill 补充后才回填进简历
+BlockStatus = Literal["unchanged", "rewritten", "needs_input"]
 
 
 class LocalizedText(BaseModel):
@@ -105,8 +109,11 @@ class RewriteBlock(BaseModel):
     index: int
     # 块标题由代码从原简历生成（如 "Backend Intern · Shopee"），不经过 LLM
     heading: str
-    # 通过检查并已应用的改动；为空表示这一块保持原样
+    status: BlockStatus = "unchanged"
+    # 通过检查的改动；为空表示这一块保持原样。带 needs_user_input 的改动是草稿，没有写进 rewritten_resume
     changes: list[ResumeChange] = Field(default_factory=list)
+    # 该块所有改动待用户回答的问询汇总，status=needs_input 时非空
+    pending_inputs: list[UserInputRequest] = Field(default_factory=list)
     # 仅技能栏块：改写后技能栏里删掉的技能（原文写法），提醒用户确认
     removed_skills: list[str] = Field(default_factory=list)
 
@@ -123,6 +130,7 @@ class CitedGuideline(BaseModel):
 class ResumeRewriteResult(BaseModel):
     job_id: int | None = None
     blocks: list[RewriteBlock]
+    # 只应用了直接改写的改动；待补充块的字段保持原文，补全后由前端回填
     rewritten_resume: ResumeDocument
     # 被拒绝的改动连同原因一起返回给用户，不静默丢弃
     rejected_changes: list[RejectedChange] = Field(default_factory=list)
@@ -136,6 +144,39 @@ class ResumeRewriteResult(BaseModel):
 class ResumeRewriteRequest(BaseModel):
     # 用户从库里选的岗位；简历由服务端从画像读取
     job_id: int
+
+
+class PlaceholderAnswer(BaseModel):
+    # 改写稿里原样出现的占位，如 "[number of users]"
+    placeholder: str
+    # None 或空串 = 用户跳过，改成不含该信息的中性表述
+    answer: str | None = None
+
+
+class BlockFillRequest(BaseModel):
+    """待补充块的一轮问答：用户回答（或跳过）若干问询，LLM 把回答写进该块。"""
+
+    job_id: int
+    section: Literal["experience", "project", "research"]
+    index: int = Field(ge=0)
+    # 该块当前草稿：第一轮是改写结果里该改动的 value，之后是上一轮 fill 返回的 value
+    text: str
+    answers: list[PlaceholderAnswer] = Field(min_length=1)
+
+
+class BlockFill(BaseModel):
+    """LLM 的输出。"""
+
+    value: str
+    # 回答太含糊无法写成事实时的追问，value 里保留对应占位
+    needs_user_input: list[UserInputRequest] = Field(default_factory=list)
+
+
+class BlockFillResult(BlockFill):
+    section: ResumeSection
+    index: int
+    field: RewriteField
+    # needs_user_input 为空 = 补全完成，前端把 value 写进改写后简历的该字段
 
 
 class SavedResumeRewrite(BaseModel):

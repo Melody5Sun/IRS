@@ -15,6 +15,7 @@ from app.parsers.job_industry_classifier import (
 )
 from app.repositories.postgres_helpers import ensure_company, ensure_skill
 from app.schemas.job import (
+    JobLibraryStatus,
     JobPosting,
     JobRequirementDocument,
 )
@@ -113,6 +114,30 @@ class JobRepository:
         with self._connect() as connection:
             rows = connection.execute(query, params).fetchall()
         return [self._row_to_job(row) for row in rows]
+
+    def library_status(self) -> JobLibraryStatus:
+        # 每次同步 upsert 都会把看到的岗位 last_seen_at 刷成本次时间，取最大值即最近同步时间
+        if self._use_postgres:
+            with get_postgres_engine().connect() as connection:
+                row = connection.execute(
+                    text(
+                        """
+                        SELECT MAX(last_seen_at) AS synced_at,
+                               COUNT(*) FILTER (WHERE status = 'active') AS active_job_count
+                        FROM job_postings
+                        """
+                    )
+                ).mappings().one()
+            return JobLibraryStatus.model_validate(dict(row))
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT MAX(last_seen_at) AS synced_at,
+                       COALESCE(SUM(status = 'active'), 0) AS active_job_count
+                FROM jobs
+                """
+            ).fetchone()
+        return JobLibraryStatus.model_validate(dict(row))
 
     def get_job(self, job_id: int) -> JobPosting | None:
         if self._use_postgres:

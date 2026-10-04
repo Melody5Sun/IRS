@@ -1,5 +1,8 @@
+import hashlib
+
 from app.repositories.resume_history_repository import ProfileRepository, ResumeHistoryRepository
-from app.schemas.profile import UserProfile
+from app.schemas.profile import SavedProfile, UserProfile
+from app.schemas.resume import ResumeDocument
 
 # 用户提交画像时允许留空的字段，按所在段落区分（同名字段如 start_date 在不同段落规则不同）。
 # 标量字段：可以为 None/空串；列表字段：可以一条都不填，但填了的条目里字段仍要完整
@@ -25,6 +28,11 @@ Loc = list[str | int]
 
 def _is_blank(value: object) -> bool:
     return value is None or (isinstance(value, str) and not value.strip())
+
+
+def resume_hash(resume: ResumeDocument) -> str:
+    """改写稿据此判断画像简历是否在保存后改过；同一个模型的序列化结果是稳定的，不用额外规范化。"""
+    return hashlib.sha256(resume.model_dump_json().encode()).hexdigest()
 
 
 def merge_patch(base: dict[str, object], patch: dict[str, object]) -> dict[str, object]:
@@ -73,18 +81,17 @@ class ProfileService:
         self.profile_repository = profile_repository or ProfileRepository()
         self.resume_history = resume_history or ResumeHistoryRepository()
 
-    def get(self) -> UserProfile | None:
+    def get(self) -> SavedProfile | None:
         return self.profile_repository.get()
 
-    def save(self, profile: UserProfile) -> bool:
-        """补全后的简历先回写到来源上传记录，再保存画像；上传记录不存在时什么都不写，返回 False。"""
+    def save(self, profile: UserProfile) -> SavedProfile | None:
+        """补全后的简历先回写到来源上传记录，再保存画像；上传记录不存在时什么都不写，返回 None。"""
         if profile.resume_upload_id is None or not self.resume_history.update(
             profile.resume_upload_id, profile.resume
         ):
-            return False
-        self.profile_repository.save(profile)
-        return True
+            return None
+        return self.profile_repository.save(profile)
 
 
-# resumes / profile / ranking 路由共用同一份画像
+# resumes / profile / ranking / targets 路由共用同一份画像
 profile_service = ProfileService()
