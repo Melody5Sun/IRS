@@ -1,35 +1,74 @@
 export type ApiErrorDetail = string | Array<{ loc: Array<string | number>; msg: string; type: string }>;
 export type ApiErrorBody = { detail: ApiErrorDetail };
 
+export type EmploymentType = "full_time" | "part_time" | "internship";
+export type Degree = "bachelor" | "master" | "phd" | "diploma" | "not_applicable";
+export type EducationEntryType = "degree" | "exchange";
+export type ResearchType = "paper" | "patent" | "software_copyright" | "thesis" | "research_project" | "other";
+export type WorkMode = "onsite" | "hybrid" | "remote";
+export type TargetEmploymentType = "full_time" | "internship";
+
+export type Experience = {
+  company: string; title: string; employment_type: EmploymentType | null;
+  start_date: string | null; end_date: string | null; description: string; country: string | null;
+};
+export type Project = {
+  title: string; summary: string; technologies: string[]; role: string | null;
+  start_date: string | null; end_date: string | null;
+};
+export type Research = {
+  type: ResearchType; title: string; institution: string | null; summary: string;
+  start_date: string | null; end_date: string | null;
+};
+export type Education = {
+  institution: string; entry_type: EducationEntryType; degree: Degree; major: string | null;
+  start_date: string | null; end_date: string | null; country: string | null;
+  school_tier: string | null; research_direction: string | null; gpa: string | null;
+  ranking: string | null; courses: string[];
+};
+export type Certificate = {
+  name: string; issuer: string | null; issue_date: string | null; expiry_date: string | null; score: string | null;
+};
+export type SkillGroup = { category: string | null; description: string };
+export type Award = { name: string; date: string | null };
+
 export type ResumeDocument = {
   name: string | null;
   email: string | null;
   phone: string | null;
-  experiences: Array<Record<string, unknown>>;
-  projects: Array<Record<string, unknown>>;
-  research: Array<Record<string, unknown>>;
+  experiences: Experience[];
+  projects: Project[];
+  research: Research[];
   skills: string[];
-  skill_groups: Array<Record<string, unknown>>;
-  educations: Array<Record<string, unknown>>;
-  certificates: Array<Record<string, unknown>>;
+  skill_groups: SkillGroup[];
+  educations: Education[];
+  certificates: Certificate[];
   languages: string[];
-  awards: Array<Record<string, unknown>>;
+  awards: Award[];
   additional_info: string[];
 };
 
 export type JobSearchConstraints = {
   target_roles: string[];
   target_industries: string[];
-  work_modes: Array<"onsite" | "hybrid" | "remote">;
-  target_employment_types: Array<"full_time" | "internship">;
+  work_modes: WorkMode[];
+  target_employment_types: TargetEmploymentType[];
   notes: string;
 };
 
 export type UserProfile = {
   resume: ResumeDocument;
   constraints: JobSearchConstraints;
-  resume_upload_id: number;
+  resume_upload_id: number | null;
   updated_at?: string;
+};
+
+export type SavedProfile = UserProfile & { updated_at: string };
+export type ParsedResume = ResumeDocument & { about: string | null };
+export type ResumeHistoryEntry = Pick<ResumeUpload, "id" | "filename" | "name" | "uploaded_at">;
+export type ProfileOptions = {
+  target_role_categories: Record<string, string[]>;
+  target_industries: string[];
 };
 
 export type ResumeUpload = {
@@ -37,7 +76,7 @@ export type ResumeUpload = {
   filename: string;
   name: string | null;
   uploaded_at: string;
-  resume: ResumeDocument & { about?: string | null };
+  resume: ParsedResume;
 };
 
 export type RankingJob = {
@@ -59,17 +98,38 @@ export type RankingResponse = {
 };
 
 export type JobMatchDetail = {
-  job: Record<string, unknown> & { job_id: number; company: string; title: string; url: string | null };
-  match: Record<string, unknown> & { final_score: number };
-  recommendation: { level: string; level_label: string; summary: string; highlights: string[]; evidence: Array<Record<string, unknown>> };
-  gaps: Array<Record<string, unknown>>;
-  improvement_plan: Record<string, unknown>;
+  job: {
+    job_id: number; source: string; company: string; title: string;
+    location: string | { city: string | null; country: string | null } | null;
+    employment_type: string; url: string | null; description: string; summary: string;
+    responsibilities: string[]; required_skills: string[]; preferred_skills: string[];
+    collected_at: string | null;
+  };
+  match: Record<string, unknown> & { final_score: number; core_score?: number; preferred_skill_bonus?: number };
+  recommendation: {
+    level: "excellent" | "strong" | "moderate" | "developing" | string;
+    level_label: string; summary: string; highlights: string[];
+    evidence: Array<{
+      requirement: string; candidate_evidence: string; evidence_source: string;
+      match_type: string; similarity: number; relation: string | null; path: string[];
+    }>;
+  };
+  gaps: Array<{
+    name: string; gap_type: string; importance: string; current_evidence: string | null;
+    reason: string; suggestion: string;
+  }>;
+  improvement_plan: {
+    summary: string;
+    priorities: Array<{ priority: "high" | "medium" | "low" | string; title: string; items: string[]; advice: string }>;
+    next_action: string;
+  };
 };
 
 export type InterviewQuestion = {
   sequence: number;
   id: number;
   question_type: "basic_programming" | "role_specific";
+  allocated_role: string;
   question_text: string;
   standard_answer: string;
   question_text_en: string;
@@ -87,8 +147,26 @@ export type InterviewSample = {
   generated_at: string;
   requested_count: number;
   returned_count: number;
+  basic_question_count: number;
+  difficulty_distribution: { easy: number; medium: number; hard: number };
+  role_allocation: Array<{ role: string; similarity: number; normalized_weight: number; requested_quota: number; actual_count: number }>;
   questions: InterviewQuestion[];
   warnings: string[];
+};
+
+export type InterviewSampleRequest = {
+  count?: number;
+  difficulty_mix?: { easy: number; medium: number; hard: number };
+  exclude_question_ids?: number[];
+  seed?: number;
+};
+
+export type InterviewTranscription = {
+  job_id: number;
+  question_id: number;
+  transcript: string;
+  language: "en";
+  model: string;
 };
 
 export type TargetJob = {

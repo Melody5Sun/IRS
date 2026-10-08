@@ -28,17 +28,17 @@ export function App() {
   };
 
   let content: ReactNode = <DashboardPage navigate={navigate} targetIds={targetIds} />;
-  if (page === "profile") content = <ProfilePage />;
+  if (page === "profile") content = <ProfilePage navigate={navigate} />;
   if (page === "jobs") content = <JobsPage targetIds={targetIds} setTargetIds={setTargetIds} navigate={navigate} />;
   if (page === "rewrite") content = <RewritePage />;
   if (page === "interview") content = <InterviewPage />;
-  if (page === "targets") content = <TargetsPage targetIds={targetIds} setTargetIds={setTargetIds} navigate={navigate} />;
+  if (page === "targets") content = <TargetsPage navigate={navigate} />;
 
   return (
     <div className="shell">
       <AppHeader page={page} navigate={navigate} />
       {content}
-      <footer className="site-footer">CareerPilot · Interactive frontend prototype · Sample data only</footer>
+      {page !== "jobs" && page !== "targets" && <footer className="site-footer">CareerPilot · Interactive frontend prototype · Sample data only</footer>}
       <button className="float" title="Open job recommendations" onClick={() => navigate("jobs")}>↗<small>00</small></button>
     </div>
   );

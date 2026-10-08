@@ -1,9 +1,9 @@
 import { apiRequest } from "./client";
-import type { UserProfile } from "../types/api";
+import type { ProfileOptions, SavedProfile, UserProfile } from "../types/api";
 
 export const profileApi = {
-  getOptions: () => apiRequest<{ target_role_categories: Record<string, string[]>; target_industries: string[] }>("/profile/options"),
-  get: () => apiRequest<UserProfile>("/profile"),
-  save: (profile: UserProfile) => apiRequest<UserProfile>("/profile", { method: "PUT", body: JSON.stringify(profile) }),
-  patch: (updates: Partial<UserProfile>) => apiRequest<UserProfile>("/profile", { method: "PATCH", body: JSON.stringify(updates) }),
+  getOptions: () => apiRequest<ProfileOptions>("/profile/options"),
+  get: () => apiRequest<SavedProfile>("/profile"),
+  save: (profile: UserProfile) => apiRequest<SavedProfile>("/profile", { method: "PUT", body: JSON.stringify(profile) }),
+  patch: (updates: Partial<UserProfile>) => apiRequest<SavedProfile>("/profile", { method: "PATCH", body: JSON.stringify(updates) }),
 };

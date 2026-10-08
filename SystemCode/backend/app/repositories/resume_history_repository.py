@@ -22,6 +22,11 @@ class ResumeHistoryRepository:
                 {"filename": filename, "resume_json": parsed.model_dump_json()},
             ).scalar_one()
 
+    def add_manual(self, resume: ResumeDocument) -> int:
+        """为纯手动填写的画像建立来源记录，使后续简历改写仍可沿用同一套外键关系。"""
+        parsed = ParsedResume.model_validate({**resume.model_dump(), "about": None})
+        return self.add(parsed, "Manual profile")
+
     def list(self) -> list[ResumeHistoryEntry]:
         # 名字直接在 SQL 里从 JSONB 取，不用把整份简历读回来
         with get_postgres_engine().connect() as connection:
@@ -68,7 +73,7 @@ class ResumeHistoryRepository:
 
 class ProfileRepository:
     """user_profile 表：单用户部署只有一行（id 固定为 1），resume / constraints 两列合起来就是完整画像，
-    resume_upload_id 记录画像来自哪条上传记录（外键，必填）。"""
+    resume_upload_id 记录画像对应的来源记录；纯手动画像会自动建立 Manual profile 记录。"""
 
     def get(self) -> SavedProfile | None:
         with get_postgres_engine().connect() as connection:

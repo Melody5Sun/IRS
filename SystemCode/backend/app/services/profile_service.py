@@ -7,6 +7,8 @@ from app.schemas.resume import ResumeDocument
 # 用户提交画像时允许留空的字段，按所在段落区分（同名字段如 start_date 在不同段落规则不同）。
 # 标量字段：可以为 None/空串；列表字段：可以一条都不填，但填了的条目里字段仍要完整
 OPTIONAL_FIELDS: dict[str, set[str]] = {
+    # 手动填写画像时没有上传记录；首次保存会自动建立 Manual profile 来源记录
+    "": {"resume_upload_id"},
     # 学生可能没有经历/项目/研究/证书/奖项，也可能没有零散补充信息
     "resume": {"experiences", "projects", "research", "certificates", "awards", "additional_info", "skill_groups"},
     # 技能栏原文的某一行可以没有分类标题
@@ -85,10 +87,12 @@ class ProfileService:
         return self.profile_repository.get()
 
     def save(self, profile: UserProfile) -> SavedProfile | None:
-        """补全后的简历先回写到来源上传记录，再保存画像；上传记录不存在时什么都不写，返回 None。"""
-        if profile.resume_upload_id is None or not self.resume_history.update(
-            profile.resume_upload_id, profile.resume
-        ):
+        """上传画像回写来源记录；纯手动画像首次保存时建立 Manual profile 来源记录。"""
+        if profile.resume_upload_id is None:
+            profile = profile.model_copy(
+                update={"resume_upload_id": self.resume_history.add_manual(profile.resume)}
+            )
+        elif not self.resume_history.update(profile.resume_upload_id, profile.resume):
             return None
         return self.profile_repository.save(profile)
 

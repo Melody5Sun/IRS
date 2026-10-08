@@ -98,6 +98,18 @@ matching evidence for one selected job is returned by
 Profile flow: `POST /api/resumes/parse-pdf` only stores the parsed resume in
 `resume_uploads` and returns the whole record (`id` + `resume`);
 `GET /api/resumes/history/{id}` returns any earlier upload the same way.
+
+Resume parsing, resume rewriting, and optional LLM-based JD analysis use the
+Gemini key in the repository-root `.env` file by default:
+
+```text
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-3.5-flash-lite
+```
+
+Alternatively, configure all three `LLM_API_KEY`, `LLM_BASE_URL`, and
+`LLM_MODEL` values to use another OpenAI-compatible provider. Explicit `LLM_*`
+settings take precedence over the Gemini fallback. Never commit `.env`.
 Neither touches the profile. `PUT /api/profile` is the only way to create the
 profile: every required field must be filled (422 otherwise), `resume_upload_id`
 must point to an existing upload (404 otherwise), and the completed resume is

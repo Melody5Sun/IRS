@@ -42,7 +42,7 @@
                                                   └──▶ 申请进度      PATCH /targets/{id} 更新阶段
 ```
 
-**关键前置条件**：`/ranking`、`/resumes/rewrite`、`/resumes/rewrites/*` 都读库里保存的画像，没有画像返回 **409**。所以用户第一次使用必须先走完「上传 → 补全 → `PUT /profile`」。另外，`POST /resumes/rewrite` 和 `PUT /resumes/rewrites/{job_id}` 只对**目标岗位**开放，没设为目标返回 **409**，所以前端要先 `POST /targets` 再跳到改写页。
+**关键前置条件**：`/ranking`、`/resumes/rewrite`、`/resumes/rewrites/*` 都读库里保存的画像，没有画像返回 **409**。用户第一次使用可以「上传 → 补全 → `PUT /profile`」，也可以直接手动填写完整画像后 `PUT /profile`。另外，`POST /resumes/rewrite` 和 `PUT /resumes/rewrites/{job_id}` 只对**目标岗位**开放，没设为目标返回 **409**，所以前端要先 `POST /targets` 再跳到改写页。
 
 ## 3. 按页面的接口
 
@@ -71,7 +71,7 @@
 - **只存进上传记录，不改画像**。前端拿到后让用户检查、补全，再 `PUT /profile`，并把 `id` 填进 `resume_upload_id`
 - `resume.about`（简历里的自我介绍）只在这里有，前端用它预填求职意向的 `notes`（`notes` 为空时）
 - ⏱ **耗时提示**：后端调用大模型解析，需要几秒到十几秒，要有 loading 状态和较长的请求超时
-- 错误：400 不是 PDF；422 提取不到文字（扫描件图片 PDF，提示用户手动填写）；502 大模型出错或输出两次都不合法（提示「解析失败，请重试或手动填写」）
+- 错误：400 不是 PDF；422 提取不到文字（扫描件图片 PDF，提示用户手动填写）；502 大模型出错或输出两次都不合法（提示「解析失败，请重试或手动填写」）；503 后端尚未配置 LLM（仍可手动填写并保存画像）
 
 #### `GET /resumes/history`
 - 响应：`[{id, filename, name, uploaded_at}]`（不含简历内容）
@@ -90,7 +90,7 @@
 - 错误：404 还没有画像（引导用户去上传简历）
 
 #### `PUT /profile`
-- 请求：完整的 `UserProfile`，**`resume_upload_id` 必填**
+- 请求：完整的 `UserProfile`。上传过简历时传对应的 `resume_upload_id`；纯手动创建时传 `null` 或省略，后端会建立一条 `Manual profile` 来源记录并在响应中返回其 id
 - 响应：保存后的 `UserProfile` + `updated_at`
 - 校验：除选填字段外都不能为空（`null`、空串、空数组都算空），选填字段见第 4 节
 - 保存时补全后的简历会回写到 `resume_upload_id` 那条上传记录
@@ -324,7 +324,7 @@
 {
   resume: ResumeDocument,
   constraints: JobSearchConstraints,
-  resume_upload_id: int        // PUT /profile 时必填
+  resume_upload_id: int | null // 上传来源；纯手动创建时可为空
 }
 ```
 
@@ -372,7 +372,7 @@
 
 `src/components/ResumeUpload.tsx`、`src/components/ProfileForm.tsx`、`src/lib/profileStorage.ts` 是按旧接口写的：
 - `parse-pdf` 现在返回整条上传记录 `{id, filename, name, uploaded_at, resume}`，不再是裸简历
-- `PUT /profile` 必须带 `resume_upload_id`
+- `PUT /profile` 可以不带 `resume_upload_id`；纯手动画像会由后端自动建立来源记录
 - 上传历史由后端保存（`GET /resumes/history`），不需要再用 localStorage 存历史
 - 还缺补全简历字段的表单
 

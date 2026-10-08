@@ -1,7 +1,10 @@
 import json
 
-from app.core.config import settings
-from app.services.openai_client_service import ChatClient, OpenAICompatibleClient
+from app.services.openai_client_service import (
+    ChatClient,
+    OpenAICompatibleClient,
+    llm_connection_settings,
+)
 from app.schemas.job import JobPosting, JobRequirementDocument
 
 
@@ -11,11 +14,7 @@ class GeminiService:
         self.client = client or OpenAICompatibleClient()
 
     def is_configured(self) -> bool:
-        return self._client_was_supplied or bool(
-            settings.llm_api_key
-            and settings.llm_base_url
-            and settings.llm_model
-        )
+        return self._client_was_supplied or all(llm_connection_settings())
 
     def extract_job_requirements(self, job: JobPosting) -> JobRequirementDocument:
         raw_text = self.client.complete(

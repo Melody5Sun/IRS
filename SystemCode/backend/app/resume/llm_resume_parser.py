@@ -1,4 +1,6 @@
 import json
+import re
+from typing import Any
 
 from pydantic import ValidationError
 
@@ -11,7 +13,7 @@ SYSTEM_PROMPT = """You are a resume parser. Convert the resume text into ONE JSO
 Rules:
 1. No fabrication: use only what the resume states. If absent or unclear: "string|null" -> null, list -> [], employment_type -> null, degree -> "not_applicable", required "string" -> "".
 2. Be complete: read every section; keep every entry and every bullet point (tools, numbers, outcomes) without merging or shortening. Each item goes in exactly one section.
-3. English only: translate non-English text faithfully; use an organization's official English name, otherwise romanize. Keep emails, phones and URLs unchanged.
+3. English only: every human-readable string value must be in English and contain no Chinese characters. Translate non-English text faithfully; use an organization's official English name, otherwise romanize it. Do not preserve the original Chinese text in parentheses. Keep emails, phones and URLs unchanged.
 4. Dates: "YYYY-MM", or "YYYY" if only the year is given. Ongoing -> end_date "present"; expected graduation -> that date.
 5. Keep everything: use only schema keys, but never drop resume content. Content with no dedicated field goes into additional_info as "Label: value" (e.g. "Age: 22", "Hobbies: hiking").
 
@@ -132,6 +134,8 @@ Expected JSON:
 }
 """
 
+CJK_PATTERN = re.compile(r"[\u3400-\u9fff]")
+
 
 class ResumeParsingError(RuntimeError):
     """LLM 两次尝试后仍未能返回合法的 ParsedResume JSON。"""
@@ -144,20 +148,51 @@ class LLMResumeParser:
     def parse(self, text: str) -> ParsedResume:
         raw = self.client.complete(system_prompt=SYSTEM_PROMPT, user_prompt=text)
         try:
-            return ParsedResume.model_validate_json(raw)
-        except (json.JSONDecodeError, ValidationError) as error:
+            parsed = ParsedResume.model_validate_json(raw)
+            self._ensure_english(parsed)
+            return parsed
+        except (json.JSONDecodeError, ValidationError, ValueError) as error:
             return self._retry(text, error)
 
     def _retry(self, text: str, error: Exception) -> ParsedResume:
         retry_prompt = (
             f"{text}\n\n"
-            f"上一次的输出没有通过校验，错误信息：{error}\n"
-            "请重新只输出一个符合 schema 的 JSON 对象。"
+            f"The previous output failed validation: {error}\n"
+            "Return the complete JSON object again. Use English for every human-readable "
+            "string value, translate or romanize all Chinese text, and output raw JSON only."
         )
         raw = self.client.complete(system_prompt=SYSTEM_PROMPT, user_prompt=retry_prompt)
         try:
-            return ParsedResume.model_validate_json(raw)
-        except (json.JSONDecodeError, ValidationError) as retry_error:
+            parsed = ParsedResume.model_validate_json(raw)
+            self._ensure_english(parsed)
+            return parsed
+        except (json.JSONDecodeError, ValidationError, ValueError) as retry_error:
             raise ResumeParsingError(
                 f"LLM 重试后仍未能返回合法的简历 JSON：{retry_error}"
             ) from retry_error
+
+    @staticmethod
+    def _ensure_english(parsed: ParsedResume) -> None:
+        paths = _cjk_string_paths(parsed.model_dump())
+        if paths:
+            raise ValueError(
+                "English-only output required; Chinese characters remained in: "
+                + ", ".join(paths)
+            )
+
+
+def _cjk_string_paths(value: Any, path: str = "") -> list[str]:
+    if isinstance(value, str):
+        return [path] if CJK_PATTERN.search(value) else []
+    if isinstance(value, dict):
+        paths: list[str] = []
+        for key, item in value.items():
+            child_path = f"{path}.{key}" if path else str(key)
+            paths.extend(_cjk_string_paths(item, child_path))
+        return paths
+    if isinstance(value, list):
+        paths = []
+        for index, item in enumerate(value):
+            paths.extend(_cjk_string_paths(item, f"{path}[{index}]"))
+        return paths
+    return []

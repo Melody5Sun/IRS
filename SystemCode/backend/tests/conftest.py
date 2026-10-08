@@ -45,6 +45,12 @@ class FakeResumeHistoryRepository:
         self.uploads.append((filename, parsed))
         return len(self.uploads)
 
+    def add_manual(self, resume: ResumeDocument) -> int:
+        return self.add(
+            ParsedResume.model_validate({**resume.model_dump(), "about": None}),
+            "Manual profile",
+        )
+
     def list(self) -> list[ResumeHistoryEntry]:
         return [
             ResumeHistoryEntry(

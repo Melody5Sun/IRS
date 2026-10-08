@@ -5,12 +5,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.routes import resumes as resumes_route
+from app.core.config import settings
 from app.main import app
 from app.matching.scorer import calculate_experience_years
 from app.resume.llm_resume_parser import SYSTEM_PROMPT, LLMResumeParser, ResumeParsingError
 from app.resume.resume_parser import ResumeParser
 from app.schemas.resume import Experience, ParsedResume
 from app.services.profile_service import ProfileService
+from app.services.openai_client_service import (
+    GEMINI_OPENAI_BASE_URL,
+    LLMNotConfiguredError,
+    llm_connection_settings,
+)
 from app.services.resume_service import ResumeService
 
 client = TestClient(app)
@@ -141,6 +147,35 @@ def test_health_check() -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_cors_allows_vite_loopback_origin() -> None:
+    response = client.options(
+        "/api/profile/options",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+
+
+def test_llm_configuration_falls_back_to_existing_gemini_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "llm_api_key", None)
+    monkeypatch.setattr(settings, "llm_base_url", None)
+    monkeypatch.setattr(settings, "llm_model", None)
+    monkeypatch.setattr(settings, "gemini_api_key", "test-gemini-key")
+    monkeypatch.setattr(settings, "gemini_model", "test-gemini-model")
+
+    assert llm_connection_settings() == (
+        "test-gemini-key",
+        GEMINI_OPENAI_BASE_URL,
+        "test-gemini-model",
+    )
+
+
 def test_parse_resume_pdf_extracts_structured_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     llm_response = json.dumps(
         {
@@ -216,6 +251,33 @@ def test_llm_parser_retries_once_on_invalid_json() -> None:
     assert parser.parse("some resume text").name == "Retry Candidate"
 
 
+def test_llm_parser_retries_when_output_contains_chinese() -> None:
+    parser = LLMResumeParser(
+        client=FakeChatClient(
+            [
+                json.dumps({"name": "测试用户", "skills": ["Python"]}),
+                json.dumps({"name": "Test Candidate", "skills": ["Python"]}),
+            ]
+        )
+    )
+
+    assert parser.parse("some resume text").name == "Test Candidate"
+
+
+def test_llm_parser_rejects_chinese_after_retry() -> None:
+    parser = LLMResumeParser(
+        client=FakeChatClient(
+            [
+                json.dumps({"name": "测试用户"}),
+                json.dumps({"name": "仍有中文"}),
+            ]
+        )
+    )
+
+    with pytest.raises(ResumeParsingError, match="English-only output required"):
+        parser.parse("some resume text")
+
+
 def test_llm_parser_raises_after_second_failure() -> None:
     parser = LLMResumeParser(client=FakeChatClient(["not valid json", "still not valid json"]))
 
@@ -233,6 +295,23 @@ def test_parse_resume_pdf_returns_502_when_llm_output_invalid(monkeypatch: pytes
 
     assert response.status_code == 502
     assert response.json()["detail"].startswith("LLM 简历解析失败")
+
+
+def test_parse_resume_pdf_returns_503_when_llm_is_not_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def raise_not_configured(_: str) -> ParsedResume:
+        raise LLMNotConfiguredError("LLM is not configured")
+
+    monkeypatch.setattr(resumes_route.resume_service, "parse_text", raise_not_configured)
+
+    response = client.post(
+        "/api/resumes/parse-pdf",
+        files={"file": ("resume.pdf", _build_minimal_pdf("Resume"), "application/pdf")},
+    )
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "LLM is not configured"
 
 
 def test_parse_resume_pdf_rejects_non_pdf_upload() -> None:
@@ -277,17 +356,23 @@ def test_profile_flow(monkeypatch: pytest.MonkeyPatch, profile_service: ProfileS
     assert client.get("/api/profile").json() == saved
 
 
-def test_profile_requires_resume_upload() -> None:
-    # 没有 resume_upload_id：和其他必填字段一样 422
+def test_profile_can_be_created_manually_without_resume_upload() -> None:
+    # 没有 resume_upload_id：建立 Manual profile 来源记录并正常保存
     profile = copy.deepcopy(COMPLETE_PROFILE)
     del profile["resume_upload_id"]
     response = client.put("/api/profile", json=profile)
-    assert response.status_code == 422
-    assert [error["loc"] for error in response.json()["detail"]] == [["body", "resume_upload_id"]]
+    assert response.status_code == 200
+    saved = response.json()
+    assert saved["resume_upload_id"] == 1
+    history = client.get("/api/resumes/history").json()
+    assert history[0]["filename"] == "Manual profile"
+    assert history[0]["name"] == COMPLETE_PROFILE["resume"]["name"]
 
     # 指向不存在的上传记录：404，画像不写入
-    assert client.put("/api/profile", json=COMPLETE_PROFILE).status_code == 404
-    assert client.get("/api/profile").status_code == 404
+    invalid = copy.deepcopy(COMPLETE_PROFILE)
+    invalid["resume_upload_id"] = 999
+    assert client.put("/api/profile", json=invalid).status_code == 404
+    assert client.get("/api/profile").json()["resume_upload_id"] == 1
 
 
 def test_resume_history_list_and_get(monkeypatch: pytest.MonkeyPatch) -> None:

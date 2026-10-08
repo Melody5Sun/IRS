@@ -22,6 +22,7 @@ from app.schemas.resume_rewrite import (
     SavedResumeRewrite,
 )
 from app.services.profile_service import profile_service, resume_hash
+from app.services.openai_client_service import LLMNotConfiguredError
 from app.services.resume_service import ResumeService
 
 router = APIRouter()
@@ -48,6 +49,8 @@ def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeUpload:
 
     try:
         parsed = resume_service.parse_text(text)
+    except LLMNotConfiguredError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     except (ResumeParsingError, APIError) as error:
         # LLM 输出两次都不合法，或 LLM 服务本身出错（限流、503 过载等），与改写接口一致返回 502
         raise HTTPException(status_code=502, detail=f"LLM 简历解析失败：{error}") from error
@@ -82,6 +85,8 @@ def rewrite_resume(request: ResumeRewriteRequest) -> ResumeRewriteResult:
         return resume_rewriter.rewrite(
             profile.resume, job, semantic_repository.load_role_categories(request.job_id)
         )
+    except LLMNotConfiguredError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     except (ResumeRewriteError, APIError) as error:
         # LLM 输出两次都不合法，或 LLM 服务本身出错（限流、503 过载等）
         raise HTTPException(status_code=502, detail=f"LLM 改写失败：{error}") from error
@@ -106,6 +111,8 @@ def fill_rewrite_block(request: BlockFillRequest) -> BlockFillResult:
         fill = resume_rewriter.fill_block(
             request.text, request.answers, job, getattr(entries[request.index], "technologies", [])
         )
+    except LLMNotConfiguredError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     except (ResumeRewriteError, APIError) as error:
         raise HTTPException(status_code=502, detail=f"LLM 改写失败：{error}") from error
     return BlockFillResult(

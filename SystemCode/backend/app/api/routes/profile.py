@@ -25,7 +25,7 @@ def get_profile() -> SavedProfile:
 @router.put("", response_model=SavedProfile)
 def save_profile(profile: UserProfile) -> SavedProfile:
     # 整体覆盖：前端提交补全后的完整画像 + 求职约束，这是画像唯一的写入入口。
-    # 除选填字段外都必须填写；resume_upload_id 也必填（画像必须来自一份上传的简历）
+    # 除选填字段外都必须填写；没有上传简历时允许 resume_upload_id 为空，由服务建立手动画像来源记录。
     empty_fields = find_empty_fields(profile.model_dump())
     if empty_fields:
         # 错误格式与 FastAPI 自带的 422 一致，前端用同一套逻辑定位出错字段
