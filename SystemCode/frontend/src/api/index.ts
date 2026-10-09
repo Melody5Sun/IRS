@@ -1,5 +1,5 @@
 export { ApiError } from "./client";
-export { interviewsApi } from "./interviews";
+export { interviewApi } from "./interview";
 export { jobsApi } from "./jobs";
 export { profileApi } from "./profile";
 export { resumesApi } from "./resumes";

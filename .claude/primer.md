@@ -1,6 +1,6 @@
 # IRS Project Primer
 
-> 最后更新: 2026-10-09（前端按 feature 分层重构 + react-router + 中英文切换；简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
+> 最后更新: 2026-10-09（仪表盘 / 简历改写页接真实接口、删除 src/mocks、右下角流程菜单可拖动；前端按 feature 分层重构 + react-router + 中英文切换；简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
 
 ## ⏭️ 下一步
 - [ ] 最早的 83 道面试题（agent-interview-hub 导入）的 `keywords_json` 仍是旧的中文小节标题（如 "一、Agent 核心面试题"），不是真正的关键词——`question_text_en`/`standard_answer_en`/`role` 已经回填完，只剩这一项历史遗留问题没修
@@ -78,7 +78,7 @@
 - MIND 上游少量 `impliesKnowingSkills` 关系指向未定义技能，加载器会统计但不会阻断应用启动
 - 提案「决策自动化」里提到的签证约束已按需求删除；经验年限、截止日期也已从岗位 schema 删除，规则层目前只有 6 条（见上）
 - `/ranking` 的 `partial_score` 最高 65（职责相似度、职业意向契合度未实现），不是最终匹配分
-- 前端（2026-10-09 重构）按 feature 分层：`src/app/`（react-router-dom v6 路由，路径 `/`、`/profile`、`/jobs`、`/rewrite`、`/interview`、`/targets`，旧 `#page` 书签自动跳转）、`src/features/<页面>/`（页面 + `useXxx` 状态/接口 hook + 纯函数及单测 + 该页 CSS）、`src/i18n/`（自写中英文切换，右上角用户下方 EN/中文 按钮，存 localStorage `careerpilot:lang`；面试题在中文下显示 `question_text`/`standard_answer`，其余后端数据只有英文保持原样）；`src/api/` 与 `src/types/api.ts` 未动。仪表盘和简历改写页仍是示例数据，未接接口；`/jobs` 页高度公式 `calc(100vh - 157px)` 依赖顶栏高度
+- 前端（2026-10-09 重构）按 feature 分层：`src/app/`（react-router-dom v6 路由，路径 `/`、`/profile`、`/jobs`、`/rewrite`、`/interview`、`/targets`，旧 `#page` 书签自动跳转）、`src/features/<页面>/`（页面 + `useXxx` 状态/接口 hook + 纯函数及单测 + 该页 CSS）、`src/i18n/`（自写中英文切换，右上角用户下方 EN/中文 按钮，存 localStorage `careerpilot:lang`；面试题在中文下显示 `question_text`/`standard_answer`，其余后端数据只有英文保持原样）；`src/api/` 与 `src/types/api.ts` 未动。仪表盘（`/profile` + `/ranking` + `/targets`）和简历改写页（读已保存终稿 → 手动点「生成」才调大模型 → 逐块采纳/拒绝、`/rewrite/fill` 补问询、确认删除建议 → `buildFinalResume` 组装后 PUT）已接真实接口，`src/mocks/` 已删除，页面不再有示例数据；改写页导出 PDF 未做；右下角 `FlowMenu` 是原型的五步流程菜单，可拖动，位置存 localStorage `careerpilot.flowMenuPosition`；`/jobs` 页高度公式 `calc(100vh - 157px)` 依赖顶栏高度
 - 仓库里没有样例简历，prompt 效果只能靠各自本地的真实简历人工验证
 - 后端使用 Conda 环境 `careerpilot-backend`；依赖安装命令为 `conda activate careerpilot-backend` 后执行 `python -m pip install -r SystemCode/backend/requirements.txt`
 - 各自机器要在仓库根目录 `.env` 里填入 `DATABASE_URL`（本地 Docker 为 `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`）和真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）

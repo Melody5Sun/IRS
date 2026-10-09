@@ -1,4 +1,5 @@
-import { useGo } from "../../app/routes";
+import { useNavigate } from "react-router-dom";
+import { ROUTES, useGo } from "../../app/routes";
 import { ProgressStep } from "../../components/common/ProgressStep";
 import { useI18n } from "../../i18n/LanguageProvider";
 import { formatDay, locationLabel } from "../../lib/format";
@@ -8,6 +9,7 @@ import { completedSteps, stageLabel } from "./progress";
 export function TargetCard({ target }: { target: TargetJob }) {
   const { lang, t } = useI18n();
   const go = useGo();
+  const navigate = useNavigate();
   const completed = completedSteps(target);
   const progress = completed * 25;
   const stage = stageLabel(target.stage, t);
@@ -32,7 +34,7 @@ export function TargetCard({ target }: { target: TargetJob }) {
       </section>
       <section className="steps">
         <ProgressStep done title={t("targets.step.matched")} detail={t("targets.step.matchedDetail")} action={t("targets.review")} onClick={() => go("jobs")} />
-        <ProgressStep done={target.rewrite_status !== "none"} title={t("targets.step.tailored")} detail={rewriteDetail} action={t("targets.continue")} onClick={() => go("rewrite")} />
+        <ProgressStep done={target.rewrite_status !== "none"} title={t("targets.step.tailored")} detail={rewriteDetail} action={t("targets.continue")} onClick={() => navigate(`${ROUTES.rewrite.path}?job=${target.job_id}`)} />
         <ProgressStep done={Boolean(target.interview_done_at)} title={t("targets.step.interview")} detail={target.interview_done_at ? t("targets.interviewDone") : t("targets.interviewPending")} action={t("targets.start")} onClick={() => go("interview")} />
         <ProgressStep done={target.stage !== "not_applied"} title={t("targets.step.submitted")} detail={stage} action={t("targets.track")} />
       </section>

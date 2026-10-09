@@ -184,3 +184,71 @@ export type TargetJob = {
   created_at: string;
   updated_at: string;
 };
+
+// 简历改写（对应后端 schemas/resume_rewrite.py）
+export type LocalizedText = { en: string; zh: string };
+export type RewriteSection = "experience" | "project" | "research" | "skills";
+export type RewriteField = "description" | "summary" | "technologies" | "skill_groups";
+export type RewriteValue = string | string[] | SkillGroup[];
+
+export type RewriteReason = {
+  issue_type: string;
+  explanation: LocalizedText;
+  guideline_keys: string[];
+  jd_responsibility: string | null;
+};
+
+export type UserInputRequest = { placeholder: string; question: LocalizedText; reason: LocalizedText };
+
+export type ResumeChange = {
+  section: RewriteSection;
+  index: number;
+  field: RewriteField;
+  original: RewriteValue;
+  value: RewriteValue;
+  reasons: RewriteReason[];
+  needs_user_input: UserInputRequest[];
+};
+
+export type RewriteBlock = {
+  section: RewriteSection;
+  index: number;
+  heading: string;
+  status: "unchanged" | "rewritten" | "needs_input";
+  changes: ResumeChange[];
+  pending_inputs: UserInputRequest[];
+  removed_skills: string[];
+};
+
+export type DeletionSuggestion = {
+  section: "experience" | "project" | "research";
+  index: number;
+  line: number | null;
+  original: string;
+  reasons: RewriteReason[];
+};
+
+export type ResumeRewriteResult = {
+  job_id: number | null;
+  blocks: RewriteBlock[];
+  rewritten_resume: ResumeDocument;
+  deletion_suggestions: DeletionSuggestion[];
+};
+
+export type BlockFillRequest = {
+  job_id: number;
+  section: "experience" | "project" | "research";
+  index: number;
+  text: string;
+  answers: Array<{ placeholder: string; answer: string | null }>;
+};
+
+export type BlockFillResult = {
+  section: RewriteSection;
+  index: number;
+  field: RewriteField;
+  value: string;
+  needs_user_input: UserInputRequest[];
+};
+
+export type SavedResumeRewrite = { resume: ResumeDocument; stale: boolean; updated_at: string };

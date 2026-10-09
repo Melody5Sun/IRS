@@ -104,6 +104,21 @@
   border-right: 1px solid var(--line);
 }
 
+/* 草稿框和左侧原文等高，内容更长时继续撑高 */
+.compare section {
+  display: flex;
+  flex-direction: column;
+}
+
+.compare section>p,
+.compare section>textarea {
+  flex: 1;
+}
+
+.compare textarea {
+  field-sizing: content;
+}
+
 .compare header {
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
@@ -127,8 +142,11 @@
 .compare p {
   background: #f5eae8;
   color: #7e2d27;
+  white-space: pre-wrap;
 }
 
+/* 列表字段（技术栈、技能栏）的改写稿只读展示，和可编辑草稿同色 */
+.compare p.draft,
 .compare textarea {
   background: #ebf2ec;
   color: #244e31;
@@ -170,6 +188,124 @@
 
 .editor details p {
   margin-top: 10px;
+}
+
+.rewrite-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+  font: 12px/1.5 var(--serif);
+  color: var(--muted);
+}
+
+.rewrite-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: .1em;
+}
+
+.rewrite-toolbar select {
+  max-width: min(520px,100%);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  padding: 3px 22px 3px 0;
+  font: 12.5px var(--serif);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.rewrite-note {
+  margin-top: 18px;
+  font: 13px/1.7 var(--serif);
+  color: var(--muted);
+}
+
+.rewrite-questions {
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: #fbf3e6;
+  margin-top: 20px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rewrite-questions h3 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.rewrite-questions p {
+  margin: 0;
+  font: 12px/1.6 var(--serif);
+  color: var(--muted);
+}
+
+.rewrite-questions label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 13px/1.55 var(--serif);
+}
+
+.rewrite-questions small {
+  font: 11px/1.5 var(--serif);
+  color: var(--muted);
+}
+
+.rewrite-questions input {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  padding: 7px 10px;
+}
+
+.rewrite-questions>button {
+  align-self: flex-start;
+}
+
+.rewrite-deletions {
+  border: 1px solid var(--line);
+  margin-top: 28px;
+  padding: 16px 18px;
+}
+
+.rewrite-deletions h3 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+
+.rewrite-deletions>p {
+  margin: 0 0 8px;
+  font: 12px/1.6 var(--serif);
+  color: var(--muted);
+}
+
+.rewrite-deletions label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-top: 1px solid var(--line);
+  padding: 10px 0;
+  font: 12px/1.6 var(--serif);
+}
+
+.rewrite-deletions label>span {
+  display: flex;
+  flex-direction: column;
+}
+
+.rewrite-deletions del {
+  color: var(--red);
+}
+
+.rewrite-deletions small {
+  color: var(--muted);
 }
 
 @media (max-width: 1050px) {

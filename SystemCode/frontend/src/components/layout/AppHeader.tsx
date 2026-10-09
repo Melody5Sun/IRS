@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { jobsApi } from "../../api/jobs";
+import { profileApi } from "../../api/profile";
 import { ROUTES, useGo } from "../../app/routes";
 import { useI18n, type Lang, type Translate } from "../../i18n/LanguageProvider";
 import { localeOf } from "../../lib/format";
@@ -13,11 +14,17 @@ export function AppHeader({ page }: { page: Page }) {
   const { lang, setLang, t } = useI18n();
   const go = useGo();
   const [libraryStatus, setLibraryStatus] = useState<LibraryStatus | null>(null);
+  const [user, setUser] = useState<{ name: string; school: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
     jobsApi.getLibraryStatus().then((status) => {
       if (active) setLibraryStatus(status);
+    }).catch(() => undefined);
+    // 还没有画像（404）时顶栏不显示用户
+    profileApi.get().then((profile) => {
+      const name = profile.resume.name?.trim();
+      if (active && name) setUser({ name, school: profile.resume.educations[0]?.institution || null });
     }).catch(() => undefined);
     return () => { active = false; };
   }, []);
@@ -34,9 +41,11 @@ export function AppHeader({ page }: { page: Page }) {
         <div className="topbar-account">
           <div className="userbar">
             <span>{libraryLabel(libraryStatus, lang, t)}</span>
-            <i />
-            <span>Alex Chen · NUS Computing</span>
-            <b>AC</b>
+            {user && <>
+              <i />
+              <span>{user.school ? `${user.name} · ${user.school}` : user.name}</span>
+              <b>{initials(user.name)}</b>
+            </>}
           </div>
           <div className="seg lang-switch" role="group" aria-label={t("app.language")}>
             {LANGUAGES.map(([value, label]) => (
@@ -53,6 +62,10 @@ export function AppHeader({ page }: { page: Page }) {
       )}
     </>
   );
+}
+
+function initials(name: string) {
+  return name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("");
 }
 
 function libraryLabel(status: LibraryStatus | null, lang: Lang, t: Translate) {

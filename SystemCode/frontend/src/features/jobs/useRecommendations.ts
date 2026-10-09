@@ -9,7 +9,7 @@ import { filterJobs, PER_PAGE, type JobFilter, type MinimumLevel } from "./recom
 type Failure = { reason: unknown };
 
 // 岗位推荐页的全部状态与接口调用：排序、匹配详情、目标岗位增删、筛选分页
-export function useRecommendations(setTargetIds: (ids: number[]) => void) {
+export function useRecommendations() {
   const [ranking, setRanking] = useState<RankingResponse | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [targets, setTargets] = useState<TargetJob[]>([]);
@@ -36,12 +36,11 @@ export function useRecommendations(setTargetIds: (ids: number[]) => void) {
         setRanking(rankingResult);
         setProfile(savedProfile);
         setTargets(targetList);
-        setTargetIds(targetList.map((target) => target.job_id));
       })
       .catch((reason) => active && setError({ reason }))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [setTargetIds]);
+  }, []);
 
   const filtered = useMemo(() => filterJobs(ranking?.results ?? [], filter, minimumLevel), [filter, minimumLevel, ranking]);
 
@@ -81,7 +80,6 @@ export function useRecommendations(setTargetIds: (ids: number[]) => void) {
       const added = await targetsApi.add(job.job_id, job.final_score);
       const next = [added, ...targets.filter((target) => target.job_id !== added.job_id)];
       setTargets(next);
-      setTargetIds(next.map((target) => target.job_id));
       setTargetAction(job.job_id);
     } catch (reason) { setActionError({ reason }); }
     finally { setTargetLoading(null); }
@@ -97,7 +95,6 @@ export function useRecommendations(setTargetIds: (ids: number[]) => void) {
       await targetsApi.remove(removeTarget.job_id);
       const next = targets.filter((target) => target.job_id !== removeTarget.job_id);
       setTargets(next);
-      setTargetIds(next.map((target) => target.job_id));
       setTargetAction(null); setRemoveTarget(null); setRemoveChecked(false);
     } catch (reason) { setActionError({ reason }); }
     finally { setTargetLoading(null); }

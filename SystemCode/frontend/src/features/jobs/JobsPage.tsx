@@ -7,10 +7,10 @@ import { Pagination } from "./Pagination";
 import { RemoveTargetDialog } from "./RemoveTargetDialog";
 import { useRecommendations } from "./useRecommendations";
 
-export function JobsPage({ setTargetIds }: { setTargetIds: (ids: number[]) => void }) {
+export function JobsPage() {
   const { t } = useI18n();
   const go = useGo();
-  const state = useRecommendations(setTargetIds);
+  const state = useRecommendations();
   const { ranking, loading, error, removeTarget } = state;
 
   return <div className="recommendations-page">
