@@ -207,12 +207,12 @@
   letter-spacing: .1em;
 }
 
-.rewrite-toolbar select {
+.rewrite-toolbar .select-trigger {
   max-width: min(520px,100%);
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
-  padding: 3px 22px 3px 0;
+  padding: 3px 2px 3px 0;
   font: 12.5px var(--serif);
   color: var(--ink);
   letter-spacing: 0;
@@ -335,5 +335,93 @@
     margin-left: -14px;
     margin-right: -14px;
     padding: 11px 14px;
+  }
+}
+
+/* 按行高亮：原文里被改掉的行划掉，改写稿里新写的行加底色 */
+.compare span.removed {
+  text-decoration: line-through;
+  background: #ecd2ce;
+}
+
+.compare span.added {
+  background: #cfe3d3;
+}
+
+.compare header {
+  display: flex;
+  align-items: center;
+}
+
+.compare header button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font: 10px var(--serif);
+  letter-spacing: .05em;
+  color: var(--dark);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 导出 PDF：屏幕上不显示，打印时只显示排好版的简历 */
+.resume-print {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  body {
+    background: #fff;
+  }
+  body>*:not(.resume-print) {
+    display: none !important;
+  }
+  .resume-print {
+    display: block;
+    color: #111;
+    font: 10.5pt/1.45 Georgia, "Times New Roman", "Songti SC", serif;
+  }
+  .resume-print header {
+    text-align: center;
+    margin-bottom: 10pt;
+  }
+  .resume-print h1 {
+    font-size: 20pt;
+    margin: 0;
+  }
+  .resume-print header p {
+    margin: 2pt 0 0;
+  }
+  .resume-print h2 {
+    font-size: 11.5pt;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    border-bottom: 1px solid #111;
+    margin: 10pt 0 5pt;
+    padding-bottom: 2pt;
+  }
+  .resume-print p {
+    margin: 2pt 0;
+  }
+  .resume-print ul {
+    margin: 2pt 0 0;
+    padding-left: 14pt;
+  }
+  .print-entry {
+    margin-bottom: 6pt;
+    break-inside: avoid;
+  }
+  .print-entry-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12pt;
+  }
+  .print-meta {
+    font-style: italic;
+    color: #333;
   }
 }

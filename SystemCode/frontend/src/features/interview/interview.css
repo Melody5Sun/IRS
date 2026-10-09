@@ -31,17 +31,17 @@
   color: var(--muted);
 }
 
-.interview-target-line select {
+.interview-target-line .select-trigger {
   max-width: min(580px,100%);
   border: 0;
   border-bottom: 1px solid var(--line);
   background: transparent;
-  padding: 3px 22px 3px 0;
+  padding: 3px 2px 3px 0;
   font: 12.5px var(--serif);
   outline: none;
 }
 
-.interview-target-line select:focus {
+.interview-target-line .select-trigger:focus {
   border-color: var(--accent);
 }
 

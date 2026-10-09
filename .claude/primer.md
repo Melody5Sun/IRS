@@ -1,12 +1,11 @@
 # IRS Project Primer
 
-> 最后更新: 2026-10-09（仪表盘 / 简历改写页接真实接口、删除 src/mocks、右下角流程菜单可拖动；前端按 feature 分层重构 + react-router + 中英文切换；简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
+> 最后更新: 2026-10-09（全站原生下拉框和年月输入换成与页面同风格的自绘组件 `components/common/Select`、`MonthPicker`；简历改写对比入库（迁移 0015 `resume_rewrites.session`，生成即存、审阅进度自动保存、再次进入可继续修改）+ 按行高亮 + 浏览器打印导出 PDF；题库「已准备好面试题」开关；目标岗位投递状态可编辑；画像国家/语言可搜索下拉；仪表盘 / 简历改写页接真实接口、删除 src/mocks、右下角流程菜单可拖动；前端按 feature 分层重构 + react-router + 中英文切换；简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
 
 ## ⏭️ 下一步
 - [ ] 最早的 83 道面试题（agent-interview-hub 导入）的 `keywords_json` 仍是旧的中文小节标题（如 "一、Agent 核心面试题"），不是真正的关键词——`question_text_en`/`standard_answer_en`/`role` 已经回填完，只剩这一项历史遗留问题没修
 - [ ] 0voice 仓库只有 110 道可用的结构化题目（远少于最初设想的约 200）：`01.阿里篇`(29)/`02.华为篇`(12)/`03.百度篇`(2)/`05.美团篇`(1)/`06.头条篇`(1)/`08.京东篇`(1)/`09.MySQL篇`(10)/`10.Redis篇`(10)/`11.MongoDB篇`(25)/`12.Zookeeper篇`(19)；其余"公司篇"目录（腾讯/滴滴/Nginx/算法/内存/CPU/磁盘/网络通信/安全/并发）只有占位 `.gitkeep`，`21.面经` 是非结构化的个人面经叙述（未导入）
 - [ ] Devinterview-io 每个仓库的 README 只公开前 15 道题的完整答案（第 16 题起要跳转官网付费查看），本次只从 11 个仓库各挑了 1~2 道凑够 200+；如果还想从这个组织继续补充，同一个仓库最多还能再挖 13 道左右（已用掉的 repo：python/sql/java/react/aws/docker/javascript/data-structures/software-architecture/golang/node-interview-questions），还有 20 多个未碰过的仓库（typescript/css/html5/mongodb/microservices/concurrency/django/net-core/computer-vision/express/nlp/oop 等）
-- [ ] 前端对接目标岗位页（接口和四步完成条件见 `SystemCode/frontend/API.md` 页面 05；「设为目标岗位」后才能跳转改写页）
 - [ ] 用真实 PDF 简历走一遍 `/parse-pdf` → `PUT /profile` → `POST /ranking`，检查排序结果和技能评分质量（解析质量本身已用真实简历验证过，见下）
 - [ ] 与 DB 同事对齐：`classify_company_industry` 对词典外公司返回默认 "Software & IT Services"（"没查到"被当成"查到了"），最终 ~1000 条数据公司变多后，规则 6 会据此静默剔除这些岗位；建议词典外返回 `not_stated`。最终数据到位后用合成画像重跑 `python -m app.rule_engine <profile.json> --stats`
 - [ ] 待讨论怎么开发（规则层扩展）：**A** 更多硬约束——`deadline_at`/`posted_at`/`min_experience_years`/`visa`/`seniority` 已被 schema 迁移有意删除，做之前先定数据侧是否加回；另需先定 `target_roles/target_industries` 由规则硬筛还是由评分文档预留的 35 分（职业意向契合度）软评。**B** 简历改写的事实一致性检查器（已完成，见 `app/resume/rewrite_applier.py`）。**D** 技能差距 → 建议/准备进度推导，若做成多层推导，是 Experta 前向链最能体现价值的地方

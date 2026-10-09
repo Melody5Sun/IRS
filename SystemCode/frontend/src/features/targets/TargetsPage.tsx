@@ -47,7 +47,7 @@ export function TargetsPage() {
             <p>{t("targets.emptyText")}</p>
             <button className="primary" onClick={() => go("jobs")}>{t("targets.emptyAction")}</button>
           </div>
-        ) : <div className="target-list">{targets.map((target) => <TargetCard key={target.job_id} target={target} />)}</div>}
+        ) : <div className="target-list">{targets.map((target) => <TargetCard key={target.job_id} target={target} onChange={(updated) => setTargets((current) => current.map((item) => item.job_id === updated.job_id ? updated : item))} />)}</div>}
       </>}
     </PageFrame>
   );

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useI18n } from "../../../i18n/LanguageProvider";
 import type { TargetEmploymentType, WorkMode } from "../../../types/api";
 import { TARGET_EMPLOYMENT_OPTIONS, WORK_MODE_OPTIONS } from "../constants";
+import { Select } from "../../../components/common/Select";
 import { ChoiceGroup, TagPickerField, TextField } from "../fields";
 import { errorBorder, useValidation } from "../ValidationContext";
 import { FormSection, useOptions, type SectionProps } from "./SectionParts";
@@ -26,21 +27,18 @@ export function IntentSection({ editor, draft }: SectionProps) {
     <p className="section-note">{t("profile.intentNote")}</p>
     <TagPickerField id="fld-intent-0-target_roles" label={t("profile.field.targetRoles")} values={constraints.target_roles} onRemove={(role) => editor.updateConstraint("target_roles", constraints.target_roles.filter((item) => item !== role))}>
       <div className="select-pair">
-        <select style={roleBorder} value={roleCategory} onChange={(event) => setRoleCategory(event.target.value)}>
-          <option value="">{t("profile.roleCategory")}</option>
-          {options && Object.keys(options.target_role_categories).map((category) => <option key={category}>{category}</option>)}
-        </select>
-        <select style={roleBorder} value="" disabled={!roleCategory} onChange={(event) => { const role = event.target.value; if (role && !constraints.target_roles.includes(role)) editor.updateConstraint("target_roles", [...constraints.target_roles, role]); }}>
-          <option value="">{roleCategory ? t("profile.selectRole") : t("profile.chooseCategory")}</option>
-          {roleCategory && options?.target_role_categories[roleCategory]?.filter((role) => !constraints.target_roles.includes(role)).map((role) => <option key={role}>{role}</option>)}
-        </select>
+        <Select style={roleBorder} value={roleCategory} placeholder={t("profile.roleCategory")} aria-label={t("profile.roleCategory")} onChange={setRoleCategory}
+          options={Object.keys(options?.target_role_categories ?? {}).map((category) => ({ value: category, label: category }))} />
+        {/* 选中即加成标签，下拉本身不保留值 */}
+        <Select style={roleBorder} value="" disabled={!roleCategory} placeholder={roleCategory ? t("profile.selectRole") : t("profile.chooseCategory")} aria-label={t("profile.field.targetRoles")}
+          onChange={(role) => { if (!constraints.target_roles.includes(role)) editor.updateConstraint("target_roles", [...constraints.target_roles, role]); }}
+          options={(options?.target_role_categories[roleCategory] ?? []).filter((role) => !constraints.target_roles.includes(role)).map((role) => ({ value: role, label: role }))} />
       </div>
     </TagPickerField>
     <TagPickerField id="fld-intent-0-target_industries" label={t("profile.field.targetIndustries")} values={constraints.target_industries} onRemove={(industry) => editor.updateConstraint("target_industries", constraints.target_industries.filter((item) => item !== industry))}>
-      <select style={errorBorder(errorFor("fld-intent-0-target_industries"), color)} value="" onChange={(event) => { const industry = event.target.value; if (industry && !constraints.target_industries.includes(industry)) editor.updateConstraint("target_industries", [...constraints.target_industries, industry]); }}>
-        <option value="">{t("profile.selectIndustry")}</option>
-        {options?.target_industries.filter((industry) => !constraints.target_industries.includes(industry)).map((industry) => <option key={industry}>{industry}</option>)}
-      </select>
+      <Select style={errorBorder(errorFor("fld-intent-0-target_industries"), color)} value="" placeholder={t("profile.selectIndustry")} aria-label={t("profile.field.targetIndustries")}
+        onChange={(industry) => { if (!constraints.target_industries.includes(industry)) editor.updateConstraint("target_industries", [...constraints.target_industries, industry]); }}
+        options={(options?.target_industries ?? []).filter((industry) => !constraints.target_industries.includes(industry)).map((industry) => ({ value: industry, label: industry }))} />
     </TagPickerField>
     <ChoiceGroup id="fld-intent-0-work_modes" label={t("profile.field.workModes")} options={workModes} selected={constraints.work_modes} onSelect={(mode) => editor.updateConstraint("work_modes", toggle(constraints.work_modes, mode as WorkMode))} />
     <ChoiceGroup id="fld-intent-0-target_employment_types" label={t("profile.field.employmentTypes")} options={employmentTypes} selected={constraints.target_employment_types} onSelect={(type) => editor.updateConstraint("target_employment_types", toggle(constraints.target_employment_types, type as TargetEmploymentType))} />

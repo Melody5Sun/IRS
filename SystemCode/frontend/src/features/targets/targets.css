@@ -1,4 +1,4 @@
-.target select {
+.target .select-trigger {
   width: 100%;
   border: 1px solid #bdb8b1;
   border-radius: 3px;
@@ -190,4 +190,32 @@
     border-right: 0;
     border-bottom: 1px solid var(--line);
   }
+}
+
+.target input {
+  width: 100%;
+  border: 1px solid #bdb8b1;
+  border-radius: 3px;
+  background: transparent;
+  padding: 9px 10px;
+  font: 12px/1.55 var(--serif);
+  outline: none;
+}
+
+.target input:disabled,
+.target .select-trigger:disabled {
+  color: var(--muted);
+}
+
+/* 投递进度：放在「已投递」一步下面，阶段下拉和自填并排 */
+.target-stage {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px 12px;
+  padding: 10px 0 0 26px;
+}
+
+.target-stage .target-stage-note,
+.target-stage .form-message {
+  grid-column: 1 / -1;
 }

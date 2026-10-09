@@ -186,7 +186,7 @@
   padding: 4px 8px;
 }
 
-.field select {
+.field .select-trigger {
   width: 100%;
   border: 1px solid #bdb8b1;
   border-radius: 3px;
@@ -196,17 +196,8 @@
   outline: none;
 }
 
-.field select:focus {
+.field .select-trigger:focus {
   border-color: var(--accent);
-}
-
-.field select[multiple] {
-  min-height: 132px;
-  padding: 5px;
-}
-
-.field select[multiple] option {
-  padding: 5px 7px;
 }
 
 .field small {
@@ -581,3 +572,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* 可搜索下拉（国家、语言）的定位容器，弹层样式见 base.css 的 .popover / .dropdown-list */
+.suggest {
+  position: relative;
+  min-width: 0;
+}
+

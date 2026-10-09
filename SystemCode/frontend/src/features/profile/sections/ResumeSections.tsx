@@ -1,5 +1,5 @@
 import { useI18n } from "../../../i18n/LanguageProvider";
-import { DEGREE_OPTIONS, EMPLOYMENT_OPTIONS, ENTRY_TYPE_OPTIONS, QUICK_LANGUAGES, RESEARCH_TYPE_OPTIONS } from "../constants";
+import { COUNTRIES, DEGREE_OPTIONS, EMPLOYMENT_OPTIONS, ENTRY_TYPE_OPTIONS, LANGUAGES, QUICK_LANGUAGES, RESEARCH_TYPE_OPTIONS } from "../constants";
 import { ChoiceGroup, SelectField, TagEditor, TextField } from "../fields";
 import { AddEntryButton, EntryCard, FormSection, useOptions, type SectionProps } from "./SectionParts";
 
@@ -23,7 +23,7 @@ export function EducationSection({ editor, draft }: SectionProps) {
         </div>
         <div className="field-row">
           <TextField label={t("profile.field.major")} value={item.major} onChange={(value) => update(index, "major", value)} />
-          <TextField id={id("country")} required label={t("profile.field.country")} value={item.country} onChange={(value) => update(index, "country", value)} />
+          <TextField id={id("country")} required label={t("profile.field.country")} value={item.country} placeholder={t("profile.countryPlaceholder")} suggestions={COUNTRIES} onChange={(value) => update(index, "country", value)} />
         </div>
         <div className="field-row">
           <TextField type="month" id={id("start_date")} required label={t("profile.field.startDate")} value={item.start_date} onChange={(value) => update(index, "start_date", value)} />
@@ -45,7 +45,7 @@ export function SkillsSection({ editor, draft }: SectionProps) {
   const { t } = useI18n();
   return <FormSection id="profile-skills" title={t("profile.section.skills")} section="skills">
     <TagEditor id="fld-skills-0-skills" required label={t("profile.field.skills")} values={draft.resume.skills} onChange={(values) => editor.updateResume("skills", values)} placeholder={t("profile.skillsPlaceholder")} />
-    <TagEditor id="fld-skills-0-languages" required label={t("profile.field.languages")} values={draft.resume.languages} onChange={(values) => editor.updateResume("languages", values)} placeholder={t("profile.languagesPlaceholder")} quickOptions={QUICK_LANGUAGES} />
+    <TagEditor id="fld-skills-0-languages" required label={t("profile.field.languages")} values={draft.resume.languages} onChange={(values) => editor.updateResume("languages", values)} placeholder={t("profile.languagesPlaceholder")} quickOptions={QUICK_LANGUAGES} suggestions={LANGUAGES} />
     {draft.resume.skill_groups.map((item, index) => <EntryCard key={index} title={item.category || t("profile.skillGroup")} section="skill_groups" index={index} onRemove={() => editor.removeListItem("skill_groups", index)}>
       <TextField label={t("profile.field.category")} value={item.category} onChange={(value) => editor.updateListItem("skill_groups", index, "category", value)} />
       <TextField id={`fld-skill_groups-${index}-description`} required label={t("profile.field.description")} value={item.description} onChange={(value) => editor.updateListItem("skill_groups", index, "description", value)} />
@@ -68,7 +68,7 @@ export function ExperienceSection({ editor, draft }: SectionProps) {
         </div>
         <div className="field-row">
           <SelectField id={id("employment_type")} required label={t("profile.field.employmentType")} value={item.employment_type} onChange={(value) => update(index, "employment_type", value)} options={employmentTypes} />
-          <TextField id={id("country")} required label={t("profile.field.country")} value={item.country} onChange={(value) => update(index, "country", value)} />
+          <TextField id={id("country")} required label={t("profile.field.country")} value={item.country} placeholder={t("profile.countryPlaceholder")} suggestions={COUNTRIES} onChange={(value) => update(index, "country", value)} />
         </div>
         <div className="field-row date-with-check">
           <TextField type="month" id={id("start_date")} required label={t("profile.field.startDate")} value={item.start_date} onChange={(value) => update(index, "start_date", value)} />

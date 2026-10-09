@@ -1,3 +1,4 @@
+import { Select } from "../../components/common/Select";
 import { useI18n } from "../../i18n/LanguageProvider";
 import { LEVELS, type JobFilter, type MinimumLevel } from "./recommendation";
 
@@ -25,10 +26,8 @@ export function JobFilters({ filter, onFilter, minimumLevel, onMinimumLevel, cou
       </div>
       <label className="recommendation-level-filter">
         <span>{t("jobs.minimumLevel")}</span>
-        <select value={minimumLevel} onChange={(event) => onMinimumLevel(event.target.value as MinimumLevel)}>
-          <option value="all">{t("jobs.allLevels")}</option>
-          {LEVEL_OPTIONS.map((level) => <option key={level} value={level}>{t(LEVELS[level].labelKey)}</option>)}
-        </select>
+        <Select value={minimumLevel} aria-label={t("jobs.minimumLevel")} onChange={(level) => onMinimumLevel(level as MinimumLevel)}
+          options={[{ value: "all", label: t("jobs.allLevels") }, ...LEVEL_OPTIONS.map((level) => ({ value: level, label: t(LEVELS[level].labelKey) }))]} />
       </label>
       <span>{t("jobs.eligibleCount", { count: filteredCount })}</span>
     </div>

@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { BlockFillRequest, BlockFillResult, ResumeDocument, ResumeHistoryEntry, ResumeRewriteResult, ResumeUpload, SavedResumeRewrite } from "../types/api";
+import type { BlockFillRequest, BlockFillResult, ResumeDocument, ResumeHistoryEntry, ResumeRewriteResult, ResumeUpload, RewriteSession, SavedResumeRewrite } from "../types/api";
 
 export const resumesApi = {
   parsePdf: (file: File) => {
@@ -12,5 +12,6 @@ export const resumesApi = {
   generateRewrite: (jobId: number) => apiRequest<ResumeRewriteResult>("/resumes/rewrite", { method: "POST", body: JSON.stringify({ job_id: jobId }) }),
   fillRewriteBlock: (payload: BlockFillRequest) => apiRequest<BlockFillResult>("/resumes/rewrite/fill", { method: "POST", body: JSON.stringify(payload) }),
   getSavedRewrite: (jobId: number) => apiRequest<SavedResumeRewrite>("/resumes/rewrites/" + jobId),
+  saveRewriteSession: (jobId: number, session: RewriteSession) => apiRequest<void>("/resumes/rewrites/" + jobId + "/session", { method: "PUT", body: JSON.stringify(session) }),
   saveRewrite: (jobId: number, resume: ResumeDocument) => apiRequest<SavedResumeRewrite>("/resumes/rewrites/" + jobId, { method: "PUT", body: JSON.stringify(resume) }),
 };

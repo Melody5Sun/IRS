@@ -251,4 +251,14 @@ export type BlockFillResult = {
   needs_user_input: UserInputRequest[];
 };
 
-export type SavedResumeRewrite = { resume: ResumeDocument; stale: boolean; updated_at: string };
+// 改写对比和审阅进度，后端原样存取（key 规则见 features/rewrite/assemble.ts 的 blockKey / draftKey）
+export type RewriteSession = {
+  result: ResumeRewriteResult;
+  reviews: Record<string, "accepted" | "rejected">;
+  drafts: Record<string, string>;
+  pending: Record<string, UserInputRequest[]>;
+  confirmed_deletions: Record<number, boolean>;
+};
+
+// resume 为 null = 只生成了改写对比、还没保存终稿
+export type SavedResumeRewrite = { resume: ResumeDocument | null; session: RewriteSession | null; stale: boolean; updated_at: string };

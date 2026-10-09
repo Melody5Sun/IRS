@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DeletionSuggestion, ResumeChange, ResumeDocument, ResumeRewriteResult } from "../../types/api";
-import { buildFinalResume, draftKey } from "./assemble";
+import { buildFinalResume, changedLines, draftKey } from "./assemble";
 
 const reason = { issue_type: "weak_action_verb", explanation: { en: "e", zh: "z" }, guideline_keys: [], jd_responsibility: null };
 const experience = (company: string, description: string) => ({ company, title: "Intern", employment_type: null, start_date: null, end_date: null, description, country: null });
@@ -56,5 +56,16 @@ describe("buildFinalResume", () => {
     const resume = buildFinalResume(result, { "experience:0": "accepted" }, {}, deletions);
     expect(resume.experiences).toHaveLength(1);
     expect(resume.experiences[0]).toMatchObject({ company: "Y", description: "Line one" });
+  });
+});
+
+describe("changedLines", () => {
+  it("marks lines missing from the other side, ignoring order, spacing and blank lines", () => {
+    expect(changedLines("Line one\n  Line two\n\nOld line", "Line two\nLine one\nNew line")).toEqual([
+      { line: "Line one", changed: false },
+      { line: "  Line two", changed: false },
+      { line: "", changed: false },
+      { line: "Old line", changed: true },
+    ]);
   });
 });

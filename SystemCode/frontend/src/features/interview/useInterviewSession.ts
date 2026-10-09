@@ -24,6 +24,7 @@ export function useInterviewSession() {
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
   const [recordings, setRecordings] = useState<Record<number, Recording>>({});
   const [error, setError] = useState<InterviewFailure | null>(null);
+  const [markingDone, setMarkingDone] = useState(false);
   // 卸载时释放录音的 object URL，用 ref 拿到最新的录音表
   const recordingsRef = useRef(recordings);
   recordingsRef.current = recordings;
@@ -87,6 +88,17 @@ export function useInterviewSession() {
     finally { setTranscribing(false); }
   };
 
+  // 用户确认已准备好该岗位的面试题：目标岗位的「模拟面试」一步随之打勾，false 撤销
+  const setInterviewDone = async (done: boolean) => {
+    if (!selectedJobId) return;
+    setMarkingDone(true); setError(null);
+    try {
+      const updated = await targetsApi.update(selectedJobId, { interview_done: done });
+      setTargets((current) => current.map((target) => target.job_id === updated.job_id ? updated : target));
+    } catch (reason) { setError({ reason }); }
+    finally { setMarkingDone(false); }
+  };
+
   const startRecording = async () => {
     if (!question || recorder.recording) return;
     setError(null);
@@ -125,6 +137,7 @@ export function useInterviewSession() {
     recorder, targets, selectedJobId, setSelectedJobId, selectedTarget, sample, mode, active,
     loading, sampling, transcribing, cameraOn, setCameraOn, transcripts, setTranscripts, recordings, error,
     questions, question, answeredCount, transcript, stats,
+    markingDone, setInterviewDone,
     loadQuestions, startRecording, chooseQuestion, backToBank, resetAnswer,
   };
 }

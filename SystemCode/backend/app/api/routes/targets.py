@@ -71,7 +71,8 @@ def _with_rewrite_status(record: TargetJobRecord, profile: UserProfile | None) -
     saved = None
     if profile is not None and profile.resume_upload_id is not None:
         saved = rewrite_repository.get(profile.resume_upload_id, record.job_id, resume_hash(profile.resume))
-    if saved is None:
+    # 只生成了改写对比、还没保存终稿的不算完成这一步
+    if saved is None or saved.resume is None:
         return TargetJob(**record.model_dump(), rewrite_status="none")
     return TargetJob(
         **record.model_dump(),

@@ -465,17 +465,17 @@
   gap: 8px!important;
 }
 
-.recommendation-level-filter select {
+.recommendation-level-filter .select-trigger {
   min-height: 30px;
   border: 1px solid var(--line);
   border-radius: 3px;
   background: transparent;
-  padding: 5px 30px 5px 9px;
+  padding: 5px 9px;
   font: 11px var(--serif);
   outline: none;
 }
 
-.recommendation-level-filter select:focus {
+.recommendation-level-filter .select-trigger:focus {
   border-color: var(--accent);
 }
 

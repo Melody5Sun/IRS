@@ -179,10 +179,26 @@ class BlockFillResult(BlockFill):
     # needs_user_input 为空 = 补全完成，前端把 value 写进改写后简历的该字段
 
 
+class RewriteSession(BaseModel):
+    """改写对比和用户的审阅进度，前端原样存取；块的 key 为 "section:index"，草稿的 key 为 "section:index:改动序号"。"""
+
+    result: ResumeRewriteResult
+    reviews: dict[str, Literal["accepted", "rejected"]] = Field(default_factory=dict)
+    # 用户编辑或补全后的文本草稿
+    drafts: dict[str, str] = Field(default_factory=dict)
+    # 待补充块还没回答的问询
+    pending: dict[str, list[UserInputRequest]] = Field(default_factory=dict)
+    # 删除建议下标 → 是否已勾选
+    confirmed_deletions: dict[int, bool] = Field(default_factory=dict)
+
+
 class SavedResumeRewrite(BaseModel):
     """按（简历, 岗位）保存的改写稿。"""
 
-    resume: ResumeDocument
+    # 终稿；None = 只生成了草稿、还没保存终稿
+    resume: ResumeDocument | None
+    # 改写对比和审阅进度；旧数据没有时为 None
+    session: RewriteSession | None = None
     # 画像里的简历在这份改写稿保存之后又被修改过
     stale: bool
     updated_at: datetime

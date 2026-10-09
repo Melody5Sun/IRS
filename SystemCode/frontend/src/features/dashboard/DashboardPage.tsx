@@ -8,7 +8,7 @@ import { formatDay, localeOf, locationLabel } from "../../lib/format";
 import type { RankingResponse, SavedProfile, TargetJob } from "../../types/api";
 import { employmentLabel, recommendationLevel } from "../jobs/recommendation";
 import { WORK_MODE_OPTIONS } from "../profile/constants";
-import { averageProgress, completedSteps, stageLabel } from "../targets/progress";
+import { averageProgress, completedSteps, progressLabel } from "../targets/progress";
 
 type DashboardData = {
   profile: SavedProfile | null;
@@ -115,7 +115,7 @@ export function DashboardPage() {
               <small>{target.company}</small>
               <div className="progress"><i style={{ width: `${progress}%` }} /></div>
               <p>
-                <em>{stageLabel(target.stage, t)}</em>
+                <em>{progressLabel(target, t)}</em>
                 <em>{target.rewrite_status === "none" ? t("dashboard.resumePending") : t("targets.rewriteSaved")}</em>
                 <em>{target.interview_done_at ? t("targets.interviewDone") : t("dashboard.interviewPending")}</em>
               </p>

@@ -12,7 +12,7 @@ from app.schemas.job import JobRequirementDocument
 from app.schemas.profile import UserProfile
 from app.schemas.resume import Experience, ParsedResume, Project, ResumeDocument, SkillGroup
 from app.schemas.resume_guideline import ResumeGuideline
-from app.schemas.resume_rewrite import PlaceholderAnswer, SavedResumeRewrite
+from app.schemas.resume_rewrite import PlaceholderAnswer, RewriteSession, SavedResumeRewrite
 from app.services.responsibility_match_service import ResponsibilityMatchService
 
 DESCRIPTION = "Responsible for building REST APIs with Python and FastAPI.\nWrote weekly reports for the team."
@@ -180,17 +180,25 @@ class FakeRewriteRepository:
     """代替 resume_rewrites 表。"""
 
     def __init__(self) -> None:
-        self.rows: dict[tuple[int, int], tuple[ResumeDocument, str]] = {}
+        # (上传记录, 岗位) → [终稿, 改写对比, 哈希]
+        self.rows: dict[tuple[int, int], list] = {}
 
     def save(self, resume_upload_id: int, job_id: int, resume: ResumeDocument, source_hash: str) -> SavedResumeRewrite:
-        self.rows[(resume_upload_id, job_id)] = (resume, source_hash)
+        row = self.rows.setdefault((resume_upload_id, job_id), [None, None, source_hash])
+        row[0], row[2] = resume, source_hash
         return SavedResumeRewrite(resume=resume, stale=False, updated_at="2026-10-02T00:00:00Z")
+
+    def save_session(self, resume_upload_id: int, job_id: int, session: RewriteSession, source_hash: str) -> None:
+        # 和真实 SQL 一样：已有记录只更新 session
+        self.rows.setdefault((resume_upload_id, job_id), [None, None, source_hash])[1] = session
 
     def get(self, resume_upload_id: int, job_id: int, current_hash: str) -> SavedResumeRewrite | None:
         if (resume_upload_id, job_id) not in self.rows:
             return None
-        resume, source_hash = self.rows[(resume_upload_id, job_id)]
-        return SavedResumeRewrite(resume=resume, stale=source_hash != current_hash, updated_at="2026-10-02T00:00:00Z")
+        resume, session, source_hash = self.rows[(resume_upload_id, job_id)]
+        return SavedResumeRewrite(
+            resume=resume, session=session, stale=source_hash != current_hash, updated_at="2026-10-02T00:00:00Z"
+        )
 
 
 class FakeJobRepository:
@@ -258,6 +266,28 @@ def test_saved_rewrite_round_trip_stale_and_per_resume(client: TestClient, profi
     # 画像换成另一份简历后，读不到旧简历的改写稿
     _save_profile(profile_service, 2, resume)
     assert client.get("/api/resumes/rewrites/7").status_code == 404
+
+
+def test_rewrite_session_survives_and_final_save_keeps_it(client: TestClient, profile_service) -> None:
+    resume = _resume()
+    _save_profile(profile_service, 1, resume)
+    result = {"job_id": 7, "blocks": [], "rewritten_resume": resume.model_dump()}
+    session = {"result": result, "reviews": {"experience:0": "accepted"}, "drafts": {"experience:0:0": "Edited"},
+               "confirmed_deletions": {"0": True}}
+
+    # 不是目标岗位的不能存
+    assert client.put("/api/resumes/rewrites/8/session", json=session).status_code == 409
+    assert client.put("/api/resumes/rewrites/7/session", json=session).status_code == 204
+    saved = client.get("/api/resumes/rewrites/7").json()
+    # 只有对比、还没终稿
+    assert saved["resume"] is None
+    assert saved["session"]["reviews"] == {"experience:0": "accepted"}
+    assert saved["session"]["confirmed_deletions"] == {"0": True}
+
+    # 保存终稿后对比还在，可继续修改
+    assert client.put("/api/resumes/rewrites/7", json=resume.model_dump()).status_code == 200
+    saved = client.get("/api/resumes/rewrites/7").json()
+    assert saved["resume"]["name"] == resume.name and saved["session"]["drafts"] == {"experience:0:0": "Edited"}
 
 
 DRAFT = "Built REST APIs with Python and FastAPI serving [number of users] users, cutting latency by [latency drop].\nWrote weekly reports for the team. [report audience]"

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ApiError } from "../../api";
 import { resumesApi } from "../../api/resumes";
 import { targetsApi } from "../../api/targets";
-import type { ResumeRewriteResult, RewriteBlock, SavedResumeRewrite, TargetJob, UserInputRequest } from "../../types/api";
+import type { ResumeRewriteResult, RewriteBlock, RewriteSession as StoredSession, SavedResumeRewrite, TargetJob, UserInputRequest } from "../../types/api";
 import { blockKey, buildFinalResume, draftKey, type Review } from "./assemble";
 
 // 错误一律保存原始 reason，由页面按当前语言转成文案
@@ -12,7 +12,10 @@ type Failure = { reason: unknown };
 // 待补充块里带问询的那条改动（只有文本字段会带占位）
 export const inputChangeIndex = (block: RewriteBlock) => block.changes.findIndex((change) => change.needs_user_input.length > 0);
 
-// 简历改写页的状态与接口调用：目标岗位、已保存终稿、生成改写、补充问询、审阅、保存
+// 改写对比和审阅进度自动保存到后端的防抖间隔
+const AUTOSAVE_MS = 800;
+
+// 简历改写页的状态与接口调用：目标岗位、已保存的对比与终稿、生成改写、补充问询、审阅、保存
 export function useRewriteSession() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [targets, setTargets] = useState<TargetJob[]>([]);
@@ -23,6 +26,8 @@ export function useRewriteSession() {
   const [filling, setFilling] = useState(false);
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  // 当前对比是从数据库恢复的（而不是刚生成的）
+  const [restored, setRestored] = useState(false);
   const [active, setActive] = useState(0);
   const [reviews, setReviews] = useState<Record<string, Review>>({});
   // 每条文本改动的当前草稿（用户编辑或补全后的值），key 见 draftKey
@@ -53,13 +58,33 @@ export function useRewriteSession() {
     return () => { activeRequest = false; };
   }, []);
 
-  // 切换岗位：清空上一个岗位的改写结果，读该岗位已保存的终稿（不调用大模型）
+  // 载入一份改写对比：先按改写结果生成初始草稿/问询，再用已保存的审阅进度覆盖
+  const hydrate = (next: ResumeRewriteResult, stored?: StoredSession) => {
+    const nextDrafts: Record<string, string> = {};
+    const nextPending: Record<string, UserInputRequest[]> = {};
+    for (const item of next.blocks) {
+      item.changes.forEach((change, index) => { if (typeof change.value === "string") nextDrafts[draftKey(item, index)] = change.value; });
+      if (item.status === "needs_input") nextPending[blockKey(item)] = item.pending_inputs;
+    }
+    setResult(next);
+    setDrafts({ ...nextDrafts, ...stored?.drafts });
+    setPending({ ...nextPending, ...stored?.pending });
+    setReviews(stored?.reviews ?? {}); setAnswers({}); setConfirmedDeletions(stored?.confirmed_deletions ?? {});
+    // 默认打开第一个需要审阅的块
+    setActive(Math.max(0, next.blocks.findIndex((item) => item.status !== "unchanged")));
+  };
+
+  // 切换岗位：清空上一个岗位的改写结果，读该岗位已保存的对比和终稿（不调用大模型）
   useEffect(() => {
-    setResult(null); setSaved(null); setError(null); setJustSaved(false);
+    setResult(null); setSaved(null); setError(null); setJustSaved(false); setRestored(false);
     if (!selectedJobId) return;
     let activeRequest = true;
     resumesApi.getSavedRewrite(selectedJobId)
-      .then((item) => { if (activeRequest) setSaved(item); })
+      .then((item) => {
+        if (!activeRequest) return;
+        setSaved(item);
+        if (item.session) { hydrate(item.session.result, item.session); setRestored(true); }
+      })
       .catch((reason) => {
         // 404 = 这个岗位还没保存过终稿
         if (activeRequest && !(reason instanceof ApiError && reason.status === 404)) setError({ reason });
@@ -67,23 +92,25 @@ export function useRewriteSession() {
     return () => { activeRequest = false; };
   }, [selectedJobId]);
 
+  const currentSession = (): StoredSession | null => result && { result, reviews, drafts, pending, confirmed_deletions: confirmedDeletions };
+
+  // 审阅进度有变化就防抖保存；切换岗位时 cleanup 取消未发出的保存，不会存到别的岗位下
+  useEffect(() => {
+    const session = currentSession();
+    if (!selectedJobId || !session) return;
+    const timer = setTimeout(() => { resumesApi.saveRewriteSession(selectedJobId, session).catch((reason) => setError({ reason })); }, AUTOSAVE_MS);
+    return () => clearTimeout(timer);
+  }, [selectedJobId, result, reviews, drafts, pending, confirmedDeletions]);
+
   const selectJob = (jobId: number) => setSearchParams({ job: String(jobId) });
 
   const generate = async () => {
     if (!selectedJobId) return;
     setGenerating(true); setError(null); setJustSaved(false);
     try {
-      const next = await resumesApi.generateRewrite(selectedJobId);
-      const nextDrafts: Record<string, string> = {};
-      const nextPending: Record<string, UserInputRequest[]> = {};
-      for (const item of next.blocks) {
-        item.changes.forEach((change, index) => { if (typeof change.value === "string") nextDrafts[draftKey(item, index)] = change.value; });
-        if (item.status === "needs_input") nextPending[blockKey(item)] = item.pending_inputs;
-      }
-      setResult(next); setDrafts(nextDrafts); setPending(nextPending);
-      setReviews({}); setAnswers({}); setConfirmedDeletions({});
-      // 默认打开第一个需要审阅的块
-      setActive(Math.max(0, next.blocks.findIndex((item) => item.status !== "unchanged")));
+      // 后端生成后已把结果存为该岗位的改写对比
+      hydrate(await resumesApi.generateRewrite(selectedJobId));
+      setRestored(false);
     } catch (reason) { setError({ reason }); }
     finally { setGenerating(false); }
   };
@@ -121,12 +148,20 @@ export function useRewriteSession() {
 
   const toggleDeletion = (index: number) => setConfirmedDeletions((current) => ({ ...current, [index]: !current[index] }));
 
+  // 按当前审阅状态组装的终稿；还没有对比时用已保存的终稿（导出 PDF 用）
+  const finalResume = () => result
+    ? buildFinalResume(result, reviews, drafts, result.deletion_suggestions.filter((_, index) => confirmedDeletions[index]))
+    : saved?.resume ?? null;
+
   const save = async () => {
-    if (!selectedJobId || !result) return;
+    const session = currentSession();
+    if (!selectedJobId || !session) return;
     setSaving(true); setError(null);
     try {
-      const deletions = result.deletion_suggestions.filter((_, index) => confirmedDeletions[index]);
-      setSaved(await resumesApi.saveRewrite(selectedJobId, buildFinalResume(result, reviews, drafts, deletions)));
+      // 先把最新进度落库，防抖还没触发时也不会丢
+      await resumesApi.saveRewriteSession(selectedJobId, session);
+      const next = await resumesApi.saveRewrite(selectedJobId, finalResume()!);
+      setSaved({ ...next, session });
       setJustSaved(true);
     } catch (reason) { setError({ reason }); }
     finally { setSaving(false); }
@@ -134,7 +169,7 @@ export function useRewriteSession() {
 
   return {
     targets, loading, selectedTarget, selectJob,
-    saved, justSaved, result, generating, generate,
+    saved, justSaved, restored, result, finalResume, generating, generate,
     blocks, block, active, setActive, reviews, review, reviewable, reviewedCount, acceptedCount,
     drafts, editDraft, pending, answerOf, setAnswer, filling, submitAnswers,
     confirmedDeletions, toggleDeletion, saving, save, error,

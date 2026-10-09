@@ -152,13 +152,15 @@
 
 | 接口 | 用途 |
 |---|---|
-| `POST /resumes/rewrite` | 针对某个岗位生成改写建议 |
+| `POST /resumes/rewrite` | 针对某个岗位生成改写建议（生成后立即存为该岗位的改写对比） |
 | `POST /resumes/rewrite/fill` | 信息不足的块：用户回答问询后由大模型重写该块（可多轮） |
+| `PUT /resumes/rewrites/{job_id}/session` | 自动保存改写对比和审阅进度 |
 | `PUT /resumes/rewrites/{job_id}` | 保存用户确认后的终稿 |
-| `GET /resumes/rewrites/{job_id}` | 读已保存的终稿 |
+| `GET /resumes/rewrites/{job_id}` | 读已保存的改写对比和终稿 |
 
 #### `POST /resumes/rewrite`
 - 请求：`{"job_id": 123}`。简历由后端从画像读取，求职意向不参与改写
+- 生成成功后后端把结果存为该岗位的改写对比（`session.result`），覆盖之前的对比和审阅进度；终稿不受影响
 - ⏱ **耗时提示**：后端调用大模型，单次约 **1 分钟**，要有明确的 loading 状态，请求超时调到 2 分钟以上。当前使用免费额度，**每天约 20 次**；额度用完或模型繁忙时返回 502，提示用户稍后重试。开发调试时尽量用 `GET /resumes/rewrites/{job_id}` 读已保存的结果，节省额度
 - 响应 `ResumeRewriteResult`：
   - `blocks[]`：按块组织（每条经历/项目/研究 + 整个技能栏各一块），`{section: experience|project|research|skills, index, heading（如 "Backend Intern · Shopee"）, status, changes[], pending_inputs[], removed_skills[]}`
@@ -209,6 +211,11 @@
 - ⏱ 每次调用一次大模型（比整份改写短很多，几秒），同样占每日额度
 - 错误：409 没有画像 / 岗位还没设为目标 / 岗位没有结构化分析；404 岗位不存在或简历里没有该 `section[index]`；422 `answers` 里的占位符不在 `text` 中（只能回答草稿里确实待补充的问询）；502 大模型出错或两次输出都没通过校验（提示重试，或让用户手动编辑）
 
+#### `PUT /resumes/rewrites/{job_id}/session`
+- 请求 `RewriteSession`：`{result: ResumeRewriteResult, reviews: {"section:index": "accepted"|"rejected"}, drafts: {"section:index:改动序号": 文本}, pending: {"section:index": UserInputRequest[]}, confirmed_deletions: {删除建议下标: true}}`
+- 响应 204。只更新对比和审阅进度，不改终稿、不改 `updated_at`；前端在审阅状态变化后防抖约 0.8 秒调用
+- 错误：409 没有画像 / 岗位还没设为目标；404 岗位不存在；422 结构不合法
+
 #### `PUT /resumes/rewrites/{job_id}`
 - 请求：完整的 `ResumeDocument`（用户确认后的终稿）
 - 响应：`{resume, stale, updated_at}`
@@ -217,8 +224,8 @@
 - 错误：409 没有画像 / 岗位还没设为目标 / 还有待补充的占位符（`detail` 里列出是哪些）；404 岗位不存在
 
 #### `GET /resumes/rewrites/{job_id}`
-- 响应：`{resume, stale, updated_at}`。`stale: true` 表示画像在保存之后又改过，提示用户「改写稿基于旧画像」
-- 错误：409 没有画像；404 还没保存过这个岗位的改写稿
+- 响应：`{resume, session, stale, updated_at}`。`resume: null` 表示只生成了对比、还没保存终稿（目标岗位的「简历已改写」一步不算完成）；`session` 是改写对比和审阅进度，旧数据为 null；`stale: true` 表示画像在保存之后又改过，提示用户「改写稿基于旧画像」
+- 错误：409 没有画像；404 这个岗位既没有对比也没有终稿
 
 ### 页面 04：模拟面试
 

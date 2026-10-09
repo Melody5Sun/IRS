@@ -1,3 +1,4 @@
+import { Select } from "../../components/common/Select";
 import { useI18n } from "../../i18n/LanguageProvider";
 import { difficultyLabel, questionText, typeLabel } from "./labels";
 import { interviewErrorMessage } from "./messages";
@@ -6,21 +7,22 @@ import type { InterviewSession } from "./useInterviewSession";
 // 题库视图：选择目标岗位、换一组题、从任意题开始练习
 export function QuestionBank({ session }: { session: InterviewSession }) {
   const { lang, t } = useI18n();
-  const { targets, selectedJobId, questions, transcripts, sample, sampling, error } = session;
+  const { targets, selectedJobId, selectedTarget, questions, transcripts, sample, sampling, error } = session;
+  const prepared = Boolean(selectedTarget?.interview_done_at);
   return <>
     <header className="interview-header">
       <div className="interview-heading">
         <div className="eyebrow">{t("interview.bankEyebrow")}</div>
         <h1>{t("interview.bankTitle")}</h1>
         <div className="interview-target-line">
-          <select value={selectedJobId ?? ""} onChange={(event) => session.setSelectedJobId(Number(event.target.value))}>
-            {targets.map((target) => <option key={target.job_id} value={target.job_id}>{target.company} · {target.title}</option>)}
-          </select>
+          <Select value={String(selectedJobId ?? "")} aria-label={t("interview.bankTitle")} onChange={(jobId) => session.setSelectedJobId(Number(jobId))}
+            options={targets.map((target) => ({ value: String(target.job_id), label: target.company + " · " + target.title }))} />
           <span>{t("interview.questionCount", { count: questions.length })}</span>
         </div>
       </div>
       <div className="interview-header-actions">
         <div className="interview-counter"><strong>{session.answeredCount} / {questions.length}</strong><span>{t("interview.answered")}</span></div>
+        <button className={prepared ? "primary" : "secondary"} aria-pressed={prepared} disabled={session.markingDone || !selectedTarget} title={t("interview.preparedHint")} onClick={() => session.setInterviewDone(!prepared)}>{prepared ? t("interview.prepared") : t("interview.markPrepared")}</button>
         <button className="secondary" disabled={sampling} onClick={() => selectedJobId && session.loadQuestions(selectedJobId, questions.map((item) => item.id))}>{sampling ? t("interview.loading") : t("interview.refresh")}</button>
         <button className="primary" disabled={!questions.length} onClick={() => session.chooseQuestion(0)}>{t("interview.startFirst")}</button>
       </div>

@@ -230,3 +230,159 @@ button:disabled {
   background: var(--soft);
   color: var(--dark);
 }
+
+/* 自绘下拉框（components/common/Select、MonthPicker）：各页面给 .select-trigger 定边框和内边距，这里只管布局和箭头 */
+.select {
+  position: relative;
+  min-width: 0;
+}
+
+.select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-trigger>span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-trigger::after {
+  content: "";
+  flex: none;
+  width: 5px;
+  height: 5px;
+  margin: -3px 2px 0 0;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
+  opacity: .6;
+}
+
+.select-trigger[aria-expanded="true"]::after {
+  margin-top: 3px;
+  transform: rotate(225deg);
+}
+
+.select-trigger:disabled {
+  cursor: default;
+  color: var(--muted);
+}
+
+.select-placeholder {
+  color: var(--muted);
+}
+
+/* 下拉列表、年月面板等弹层：与输入框同一套边框、衬线字体和强调色 */
+.popover {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  z-index: 30;
+  border: 1px solid #bdb8b1;
+  border-radius: 3px;
+  background: var(--paper);
+  box-shadow: 0 8px 22px #1424351f;
+  font: 12px/1.55 var(--serif);
+  color: var(--ink);
+  letter-spacing: 0;
+}
+
+.dropdown-list {
+  min-width: 100%;
+  width: max-content;
+  max-width: min(560px, 92vw);
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.dropdown-list li {
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.dropdown-list li[aria-selected="true"] {
+  color: var(--dark);
+  font-weight: 600;
+}
+
+.dropdown-list li.active {
+  background: var(--soft);
+  color: var(--dark);
+}
+
+.month-panel {
+  width: 236px;
+  padding: 10px;
+}
+
+.month-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font: 500 15px var(--serif);
+}
+
+.month-panel button {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: transparent;
+  font: 12px var(--serif);
+  color: var(--ink);
+}
+
+.month-panel header button {
+  width: 28px;
+  height: 26px;
+  font-size: 16px;
+}
+
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.month-grid button {
+  padding: 6px 0;
+}
+
+.month-panel button:hover,
+.month-panel button:focus-visible {
+  background: var(--soft);
+  color: var(--dark);
+  outline: none;
+}
+
+.month-grid button.this-month {
+  border-color: var(--line);
+}
+
+.month-grid button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.month-panel footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+
+.month-panel footer button {
+  padding: 3px 8px;
+  color: var(--dark);
+}

@@ -52,5 +52,41 @@ export const RESEARCH_TYPE_OPTIONS: Option[] = [
   ["paper", "profile.researchType.paper"], ["patent", "profile.researchType.patent"], ["software_copyright", "profile.researchType.softwareCopyright"],
   ["thesis", "profile.researchType.thesis"], ["research_project", "profile.researchType.researchProject"], ["other", "profile.researchType.other"],
 ];
-// 语言名作为数据提交，保持英文
-export const QUICK_LANGUAGES = ["English", "Mandarin", "Malay", "Tamil", "Cantonese"];
+// 语言名作为数据提交，保持英文；面向新加坡学生，常用项含四大官方语言和最常见的几种华人方言
+export const QUICK_LANGUAGES = ["English", "Mandarin", "Malay", "Tamil", "Hokkien", "Teochew", "Cantonese", "Hakka"];
+
+// 国家/地区和语言的可搜索下拉选项（datalist）；作为数据提交，保持英文。仍允许填列表外的值，兼容简历解析出的写法
+export const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+  "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon",
+  "Canada", "Cape Verde", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+  "Croatia", "Cuba", "Cyprus", "Czech Republic", "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador",
+  "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France",
+  "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
+  "Guyana", "Haiti", "Honduras", "Hong Kong", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq",
+  "Ireland", "Israel", "Italy", "Ivory Coast", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati",
+  "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania",
+  "Luxembourg", "Macau", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania",
+  "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar",
+  "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia",
+  "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines",
+  "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa",
+  "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden",
+  "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago",
+  "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay",
+  "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
+];
+
+// 含新加坡常见的华人方言（福建、潮州、广东、客家、海南、福州、兴化、上海）和马来、印度裔社群语言
+export const LANGUAGES = [
+  "Afrikaans", "Arabic", "Bengali", "Boyanese", "Bulgarian", "Burmese", "Cantonese", "Catalan", "Croatian", "Czech",
+  "Danish", "Dutch", "English", "Estonian", "Filipino", "Finnish", "Foochow", "French", "German", "Greek",
+  "Gujarati", "Hainanese", "Hakka", "Hebrew", "Henghua", "Hindi", "Hokkien", "Hungarian", "Icelandic", "Indonesian",
+  "Irish", "Italian", "Japanese", "Javanese", "Kannada", "Kazakh", "Khmer", "Korean", "Lao", "Latvian",
+  "Lithuanian", "Malay", "Malayalam", "Mandarin", "Marathi", "Mongolian", "Nepali", "Norwegian", "Persian", "Polish",
+  "Portuguese", "Punjabi", "Romanian", "Russian", "Serbian", "Shanghainese", "Sindhi", "Sinhala", "Slovak", "Slovenian",
+  "Spanish", "Swahili", "Swedish", "Tamil", "Telugu", "Teochew", "Thai", "Tibetan", "Turkish", "Ukrainian",
+  "Urdu", "Uyghur", "Uzbek", "Vietnamese", "Welsh",
+];

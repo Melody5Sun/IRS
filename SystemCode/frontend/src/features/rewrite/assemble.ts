@@ -56,3 +56,9 @@ export function buildFinalResume(
   }
   return resume;
 }
+
+// 按行对比（忽略首尾空白）：标出 text 里在 other 中找不到的行。改写会合并、调换行，所以只看这一行还在不在
+export function changedLines(text: string, other: string) {
+  const kept = new Set(other.split("\n").map((line) => line.trim()));
+  return text.split("\n").map((line) => ({ line, changed: line.trim() !== "" && !kept.has(line.trim()) }));
+}

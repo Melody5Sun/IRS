@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from openai import APIError
 from pdfminer.high_level import extract_text
 
@@ -19,6 +19,7 @@ from app.schemas.resume_rewrite import (
     BlockFillResult,
     ResumeRewriteRequest,
     ResumeRewriteResult,
+    RewriteSession,
     SavedResumeRewrite,
 )
 from app.services.profile_service import profile_service, resume_hash
@@ -75,14 +76,15 @@ def get_resume_history(history_id: int) -> ResumeUpload:
 
 @router.post("/rewrite", response_model=ResumeRewriteResult)
 def rewrite_resume(request: ResumeRewriteRequest) -> ResumeRewriteResult:
-    """按用户选的岗位改写画像里的简历：返回每块的原稿/改写稿/理由/待补充事项和待确认的删除建议，不改画像。"""
+    """按用户选的岗位改写画像里的简历：返回每块的原稿/改写稿/理由/待补充事项和待确认的删除建议，不改画像。
+    结果立即存为该岗位的改写对比（覆盖之前的对比和审阅进度），下次进页面不用重新生成。"""
     profile = _saved_profile()
     _ensure_job_exists(request.job_id)
     _ensure_target(request.job_id)
     job = _analyzed_job(request.job_id)
     try:
         # 只用画像里的简历，求职约束不参与改写
-        return resume_rewriter.rewrite(
+        result = resume_rewriter.rewrite(
             profile.resume, job, semantic_repository.load_role_categories(request.job_id)
         )
     except LLMNotConfiguredError as error:
@@ -90,6 +92,10 @@ def rewrite_resume(request: ResumeRewriteRequest) -> ResumeRewriteResult:
     except (ResumeRewriteError, APIError) as error:
         # LLM 输出两次都不合法，或 LLM 服务本身出错（限流、503 过载等）
         raise HTTPException(status_code=502, detail=f"LLM 改写失败：{error}") from error
+    rewrite_repository.save_session(
+        profile.resume_upload_id, request.job_id, RewriteSession(result=result), resume_hash(profile.resume)
+    )
+    return result
 
 
 @router.post("/rewrite/fill", response_model=BlockFillResult)
@@ -137,9 +143,19 @@ def save_resume_rewrite(job_id: int, resume: ResumeDocument) -> SavedResumeRewri
     return rewrite_repository.save(profile.resume_upload_id, job_id, resume, resume_hash(profile.resume))
 
 
+@router.put("/rewrites/{job_id}/session", status_code=204)
+def save_rewrite_session(job_id: int, session: RewriteSession) -> Response:
+    """自动保存改写对比的审阅进度（接受/拒绝、编辑后的草稿、补充问询、勾选的删除），不改终稿。"""
+    profile = _saved_profile()
+    _ensure_job_exists(job_id)
+    _ensure_target(job_id)
+    rewrite_repository.save_session(profile.resume_upload_id, job_id, session, resume_hash(profile.resume))
+    return Response(status_code=204)
+
+
 @router.get("/rewrites/{job_id}", response_model=SavedResumeRewrite)
 def get_resume_rewrite(job_id: int) -> SavedResumeRewrite:
-    """读取当前画像这份简历针对该岗位保存的改写稿；stale=true 表示画像在保存之后又改过。"""
+    """读取当前画像这份简历针对该岗位的改写稿和改写对比；resume 为空表示还没保存终稿，stale=true 表示画像在保存之后又改过。"""
     profile = _saved_profile()
     saved = rewrite_repository.get(profile.resume_upload_id, job_id, resume_hash(profile.resume))
     if saved is None:

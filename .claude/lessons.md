@@ -7,6 +7,10 @@
 ---
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
+[2026-10-09] | 自绘下拉 `Select` 打开后列表没有浮起来，而是把整行布局撑开（改写页「目标岗位」标签被挤到列表中间） | 弹层样式拆成两层：`.popover` 管定位/边框/阴影，`.dropdown-list`、`.month-panel` 管内容；新写的弹层两个类都要加。验证时用 `getComputedStyle(el).position` 确认是 absolute | SystemCode/frontend/src/components/common/Select.tsx, styles/base.css
+[2026-10-09] | 在 Bash 工具里用 `node - <<'EOF'` 跑含反引号模板字符串或 `\n` 的编辑脚本，报 `unexpected EOF while looking for matching` 或把 `\n` 写成了真换行 | 多行替换脚本先用 Write 工具写到 scratchpad 的 .js 文件再 `node 文件`；文件是 CRLF 换行（API.md、.claude/*.md），替换前把 `\n` 换成文件实际的换行符 | 本机环境
+[2026-10-09] | 短时间内对同一个 .tsx 连续两次 Edit 后，浏览器里只有第一次的改动（Vite 返回的已是新代码，页面仍加载旧的 `?t=` 版本），刷新也没用 | 改完页面没变化时先用 `performance.getEntriesByType("resource")` 看模块的 `?t=` 时间戳；`touch` 该文件重新触发 HMR 后再刷新，不要怀疑代码 | SystemCode/frontend（Vite dev server）
+[2026-10-09] | 又一次先用 `SystemCode/backend/.venv/Scripts/python.exe -m pytest` 跑测试，报 `No module named 'sqlalchemy'`；Git Bash 里的 `python3` 是 WindowsApps 占位程序（退出码 49，脚本什么都没做） | 跑后端测试 / alembic / 一次性 Python 脚本前先看本文件：一律用 `/d/APP/Downloads/anaconda3/envs/careerpilot-backend/python.exe`，不要用 `.venv` 或 `python3` | 本机环境
 [2026-10-04] | 改写事实检查把 "2,000" 当成编造数字：用户回答 "2000"，LLM 自然写成 "2,000" 就被拒 | 比较数字前先去掉千分位逗号（`rewrite_applier._numbers`）；涉及用户补充数据的检查要用「同一个数的不同写法」做测试 | SystemCode/backend/app/resume/rewrite_applier.py
 [2026-10-04] | 在 Bash 工具里用 `<<'PYEOF'` heredoc 写 Python 编辑脚本，脚本里的 `"\\n"` 落到文件里变成了真换行，生成 `"` + 换行 + `".join(` 导致 SyntaxError | 含反斜杠转义的编辑脚本用 Write 工具写成文件再执行，或直接用 Edit 工具改；heredoc 只用于不含 `\\` 的内容 | 本机环境
 [2026-10-04] | 用 `SystemCode/backend/.venv/Scripts/python.exe -m pytest` 跑测试，加载 conftest 时报 `ModuleNotFoundError: No module named 'sqlalchemy'` | `.venv`（2026-09-15 那条用 uv 建的）没跟上 PostgreSQL 迁移后的依赖，已过时；跑测试/alembic 一律用 conda 环境的解释器 `/d/APP/Downloads/anaconda3/envs/careerpilot-backend/python.exe`（Git Bash 里没有 `conda` 命令，见 2026-09-22 那条） | SystemCode/backend/.venv, requirements.txt
