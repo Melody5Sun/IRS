@@ -1,13 +1,12 @@
 # IRS Project Primer
 
-> 最后更新: 2026-10-04（简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
+> 最后更新: 2026-10-09（前端按 feature 分层重构 + react-router + 中英文切换；简历改写分「直接改写 / 待补充」两类块 + `POST /resumes/rewrite/fill` 多轮补全；`GET /jobs/library-status`；画像响应带 `updated_at`）
 
 ## ⏭️ 下一步
 - [ ] 最早的 83 道面试题（agent-interview-hub 导入）的 `keywords_json` 仍是旧的中文小节标题（如 "一、Agent 核心面试题"），不是真正的关键词——`question_text_en`/`standard_answer_en`/`role` 已经回填完，只剩这一项历史遗留问题没修
 - [ ] 0voice 仓库只有 110 道可用的结构化题目（远少于最初设想的约 200）：`01.阿里篇`(29)/`02.华为篇`(12)/`03.百度篇`(2)/`05.美团篇`(1)/`06.头条篇`(1)/`08.京东篇`(1)/`09.MySQL篇`(10)/`10.Redis篇`(10)/`11.MongoDB篇`(25)/`12.Zookeeper篇`(19)；其余"公司篇"目录（腾讯/滴滴/Nginx/算法/内存/CPU/磁盘/网络通信/安全/并发）只有占位 `.gitkeep`，`21.面经` 是非结构化的个人面经叙述（未导入）
 - [ ] Devinterview-io 每个仓库的 README 只公开前 15 道题的完整答案（第 16 题起要跳转官网付费查看），本次只从 11 个仓库各挑了 1~2 道凑够 200+；如果还想从这个组织继续补充，同一个仓库最多还能再挖 13 道左右（已用掉的 repo：python/sql/java/react/aws/docker/javascript/data-structures/software-architecture/golang/node-interview-questions），还有 20 多个未碰过的仓库（typescript/css/html5/mongodb/microservices/concurrency/django/net-core/computer-vision/express/nlp/oop 等）
 - [ ] 前端对接目标岗位页（接口和四步完成条件见 `SystemCode/frontend/API.md` 页面 05；「设为目标岗位」后才能跳转改写页）
-- [ ] 前端对接新的画像流程：`parse-pdf` 响应改为整条上传记录 `{id, filename, name, uploaded_at, resume}`（about 在 `resume` 里，前端自行预填 notes）；`POST /history/{id}/apply` 已删除，换成 `GET /resumes/history/{id}`；`PUT /profile` 必须带 `resume_upload_id`；`POST /ranking` 不再传请求体、无画像时 409。现有 `ResumeUpload.tsx`/`ProfileForm.tsx`/`profileStorage.ts`（localStorage 历史）是按旧接口写的，也还没有补全简历字段的表单
 - [ ] 用真实 PDF 简历走一遍 `/parse-pdf` → `PUT /profile` → `POST /ranking`，检查排序结果和技能评分质量（解析质量本身已用真实简历验证过，见下）
 - [ ] 与 DB 同事对齐：`classify_company_industry` 对词典外公司返回默认 "Software & IT Services"（"没查到"被当成"查到了"），最终 ~1000 条数据公司变多后，规则 6 会据此静默剔除这些岗位；建议词典外返回 `not_stated`。最终数据到位后用合成画像重跑 `python -m app.rule_engine <profile.json> --stats`
 - [ ] 待讨论怎么开发（规则层扩展）：**A** 更多硬约束——`deadline_at`/`posted_at`/`min_experience_years`/`visa`/`seniority` 已被 schema 迁移有意删除，做之前先定数据侧是否加回；另需先定 `target_roles/target_industries` 由规则硬筛还是由评分文档预留的 35 分（职业意向契合度）软评。**B** 简历改写的事实一致性检查器（已完成，见 `app/resume/rewrite_applier.py`）。**D** 技能差距 → 建议/准备进度推导，若做成多层推导，是 Experta 前向链最能体现价值的地方
@@ -79,7 +78,7 @@
 - MIND 上游少量 `impliesKnowingSkills` 关系指向未定义技能，加载器会统计但不会阻断应用启动
 - 提案「决策自动化」里提到的签证约束已按需求删除；经验年限、截止日期也已从岗位 schema 删除，规则层目前只有 6 条（见上）
 - `/ranking` 的 `partial_score` 最高 65（职责相似度、职业意向契合度未实现），不是最终匹配分
-- 前端最小工程已打通“上传简历→解析→localStorage 缓存→编辑求职约束→PUT 保存画像”全链路，但没有接 `PATCH /profile`（只用 `PUT` 整体保存），也没有登录态/多用户概念；`SystemCode/frontend/IT CareerPilot demo.html` 仍是独立的静态打包文件，两者未打通
+- 前端（2026-10-09 重构）按 feature 分层：`src/app/`（react-router-dom v6 路由，路径 `/`、`/profile`、`/jobs`、`/rewrite`、`/interview`、`/targets`，旧 `#page` 书签自动跳转）、`src/features/<页面>/`（页面 + `useXxx` 状态/接口 hook + 纯函数及单测 + 该页 CSS）、`src/i18n/`（自写中英文切换，右上角用户下方 EN/中文 按钮，存 localStorage `careerpilot:lang`；面试题在中文下显示 `question_text`/`standard_answer`，其余后端数据只有英文保持原样）；`src/api/` 与 `src/types/api.ts` 未动。仪表盘和简历改写页仍是示例数据，未接接口；`/jobs` 页高度公式 `calc(100vh - 157px)` 依赖顶栏高度
 - 仓库里没有样例简历，prompt 效果只能靠各自本地的真实简历人工验证
 - 后端使用 Conda 环境 `careerpilot-backend`；依赖安装命令为 `conda activate careerpilot-backend` 后执行 `python -m pip install -r SystemCode/backend/requirements.txt`
 - 各自机器要在仓库根目录 `.env` 里填入 `DATABASE_URL`（本地 Docker 为 `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`）和真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）

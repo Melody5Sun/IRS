@@ -1,0 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap");
+
+:root {
+  --paper: #f3f2f0;
+  --ink: #142435;
+  --muted: #68717a;
+  --line: #d4d1cd;
+  --accent: #b56e1c;
+  --dark: #8a5014;
+  --soft: #f5e7d1;
+  --green: #285f3a;
+  --red: #9b3028;
+  --serif: "Cormorant Garamond",Georgia,serif;
+  --sans: Inter,"Segoe UI",sans-serif;
+}

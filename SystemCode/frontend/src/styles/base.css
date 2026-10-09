@@ -1,0 +1,232 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.ghost {
+  border: 0;
+  background: transparent;
+  padding: 4px 7px;
+  color: #52606b;
+}
+
+.primary,
+.secondary {
+  border-radius: 4px;
+  min-height: 36px;
+  padding: 7px 15px;
+  background: transparent;
+}
+
+.primary {
+  border: 1px solid var(--accent);
+  color: var(--dark);
+}
+
+.primary:hover {
+  background: var(--soft);
+}
+
+.secondary {
+  border: 1px solid var(--line);
+}
+
+.secondary:hover {
+  border-color: var(--accent);
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff1;
+}
+
+.progress {
+  height: 5px;
+  border-radius: 4px;
+  background: #e6e3df;
+  overflow: hidden;
+  margin: 8px 0;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  background: #d99a46;
+}
+
+.page {
+  padding-bottom: 68px;
+}
+
+.interview-state .primary {
+  margin-top: 10px;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .25;
+  }
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.form-message {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 10px 13px;
+  margin: 0 0 18px;
+  font: 12px/1.6 var(--serif);
+}
+
+.form-message.error {
+  border-color: #c99189;
+  background: #f5e8e6;
+  color: #7e2d27;
+}
+
+.form-message.success {
+  border-color: #91aa98;
+  background: #e9f0ea;
+  color: #244e31;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 20px;
+  background: #18212ab0;
+}
+
+.profile-dialog {
+  width: min(460px,100%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--paper);
+  padding: 20px;
+  box-shadow: 0 14px 46px #0003;
+}
+
+.profile-dialog h2 {
+  font-size: 21px;
+}
+
+.profile-dialog p {
+  font: 12.5px/1.7 var(--serif);
+  text-align: justify;
+  margin: 12px 0;
+}
+
+.profile-dialog small {
+  font: 11px/1.6 var(--serif);
+  color: var(--muted);
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.interview-state {
+  border: 1px dashed #aaa49d;
+  border-radius: 4px;
+  text-align: center;
+  padding: 52px 20px;
+  margin-top: 22px;
+}
+
+.interview-state h2 {
+  font-size: 23px;
+  margin-bottom: 7px;
+}
+
+.interview-state p {
+  font: 13px/1.7 var(--serif);
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* 分段按钮：岗位筛选与语言切换共用 */
+.seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.seg button {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  padding: 7px 12px;
+  font: 11px var(--serif);
+}
+
+.seg button:last-child {
+  border-right: 0;
+}
+
+.seg button.active {
+  background: var(--soft);
+  color: var(--dark);
+}

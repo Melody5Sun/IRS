@@ -1,0 +1,177 @@
+.shell {
+  min-height: 100vh;
+  padding: 28px clamp(18px,4vw,52px) 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 13px;
+}
+
+.brand {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.brand span {
+  font: 500 20px/1 var(--serif);
+}
+
+.brand small {
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.userbar {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font: 12px var(--serif);
+  color: #53606a;
+}
+
+.userbar i {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+}
+
+.userbar b {
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 500 12px var(--serif);
+}
+
+/* 右上角账户区：用户信息下方放中英文切换 */
+.topbar-account {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.seg.lang-switch button {
+  padding: 3px 9px;
+  font: 10px var(--sans);
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.crumb button {
+  border: 0;
+  background: transparent;
+  padding: 4px 7px;
+  color: #52606b;
+}
+
+.crumb span {
+  font-size: 12px;
+  color: #7a8187;
+}
+
+.page-header {
+  display: flex;
+  gap: 48px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--ink);
+  padding: 14px 0 16px;
+  margin-bottom: 18px;
+}
+
+.page-header>div {
+  flex: 1;
+  min-width: 300px;
+}
+
+.page-header h1 {
+  font-size: 34px;
+  line-height: 1;
+  margin: 7px 0 0;
+}
+
+.page-header p {
+  flex: 1;
+  max-width: 560px;
+  min-width: 280px;
+  font: 12px/1.65 var(--serif);
+  text-align: justify;
+  margin: 0;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 14px 0 20px;
+  font: 10px var(--serif);
+  color: var(--muted);
+}
+
+.float {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  background: #f8f7f5;
+  color: var(--dark);
+  font: 24px var(--serif);
+  box-shadow: 0 3px 10px #0001;
+}
+
+.float small {
+  display: block;
+  font-size: 9px;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 18px 14px 0;
+  }
+  .userbar>span:first-child,
+  .userbar i {
+    display: none;
+  }
+  .page-header {
+    gap: 14px;
+  }
+  .float {
+    width: 50px;
+    height: 50px;
+    right: 16px;
+    bottom: 16px;
+  }
+  .userbar span,
+  .userbar i {
+    display: none;
+  }
+  .userbar {
+    gap: 0;
+  }
+  .page-header>div,
+  .page-header p {
+    min-width: 0;
+  }
+}

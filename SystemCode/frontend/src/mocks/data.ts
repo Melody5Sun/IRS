@@ -1,4 +1,4 @@
-import type { InterviewQuestion, Job, ResumeRewriteBlock } from "../types/domain";
+import type { Job, ResumeRewriteBlock } from "../types/domain";
 
 export const JOBS: Job[] = [
   { id: 92, score: 87, title: "Backend Engineer Intern", company: "Lumen Pay", location: "Singapore", type: "Internship", summary: "Your Spring Boot and payment platform experience align strongly with this role's API and transaction-processing responsibilities.", skills: ["Java", "Spring Boot", "REST APIs", "PostgreSQL"], strengths: ["Built backend APIs with Spring Boot", "Reduced P99 latency in a payment workflow", "FinTech is one of your target industries"], gaps: ["Add evidence of distributed systems work", "Strengthen cloud deployment examples"] },
@@ -6,15 +6,6 @@ export const JOBS: Job[] = [
   { id: 18, score: 80, title: "Backend Developer Intern", company: "Arcadia Exchange", location: "Singapore", type: "Internship", summary: "Your API and database experience are relevant, with transferable skills for trading infrastructure.", skills: ["Python", "FastAPI", "SQL", "Redis"], strengths: ["API evidence appears in two projects", "SQL directly matches a required skill"], gaps: ["Redis is not evidenced", "Add an event-driven system example"] },
   { id: 44, score: 76, title: "Software Engineer", company: "Northstar Systems", location: "Singapore", type: "Full-time", summary: "The role is directionally relevant, while your resume currently shows stronger backend than product delivery evidence.", skills: ["Java", "React", "Git", "CI/CD"], strengths: ["Strong Java foundation", "Several collaborative projects"], gaps: ["Add production frontend evidence", "Demonstrate CI/CD ownership"] },
   { id: 11, score: 72, title: "Data Engineer Intern", company: "Meridian Labs", location: "Singapore", type: "Internship", summary: "Your Python and SQL background transfers well, but pipeline orchestration needs clearer evidence.", skills: ["Python", "SQL", "Airflow", "Spark"], strengths: ["Python and SQL directly match", "Research shows data processing"], gaps: ["Airflow and Spark are not evidenced", "Show pipeline scale"] },
-];
-
-export const QUESTIONS: InterviewQuestion[] = [
-  { id: 1, difficulty: "Easy", type: "Basic programming", text: "What is the difference between a process and a thread?", answer: "A process has its own memory space, while threads share memory within a process. Threads are lighter but require careful synchronization." },
-  { id: 2, difficulty: "Easy", type: "Role specific", text: "How would you design a REST endpoint for creating a payment?", answer: "Use POST with validated input, an idempotency key, clear status codes, and a durable transaction record before calling downstream providers." },
-  { id: 3, difficulty: "Medium", type: "Role specific", text: "How would you make a payment callback handler idempotent?", answer: "Persist the provider event ID, reject duplicates transactionally, and make state transitions conditional on the current payment state." },
-  { id: 4, difficulty: "Medium", type: "Basic programming", text: "When can a database index hurt performance?", answer: "Indexes improve reads but consume storage and add write overhead. Low-selectivity or excessive indexes can be counterproductive." },
-  { id: 5, difficulty: "Hard", type: "Role specific", text: "Design a highly available payment processing service.", answer: "Use durable queues, idempotent consumers, a transactional outbox, retries, observability, and reconciliation." },
-  { id: 6, difficulty: "Hard", type: "Role specific", text: "How would you investigate a sudden increase in P99 latency?", answer: "Segment by endpoint and dependency, inspect traces and saturation, compare recent changes, mitigate, and validate with the same percentile." },
 ];
 
 export const REWRITE_BLOCKS: ResumeRewriteBlock[] = [

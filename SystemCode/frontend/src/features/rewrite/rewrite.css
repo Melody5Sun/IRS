@@ -1,0 +1,203 @@
+.savebar {
+  position: sticky;
+  bottom: 0;
+  margin-top: 28px;
+  border-top: 1px solid var(--ink);
+  background: #f3f2f0f2;
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 5;
+}
+
+.savebar span {
+  font: 12px var(--serif);
+  color: var(--muted);
+}
+
+.savebar button {
+  margin-left: auto;
+}
+
+.savebar.dirty span {
+  color: var(--dark);
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  border: 1px solid var(--line);
+  min-height: 570px;
+}
+
+.workspace aside {
+  border-right: 1px solid var(--line);
+}
+
+.aside-head {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+}
+
+.aside-head h3 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.aside-head span {
+  margin-left: auto;
+  font: 10px var(--serif);
+  color: var(--muted);
+}
+
+.workspace aside>button {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  text-align: left;
+  padding: 13px;
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 2px 9px;
+}
+
+.workspace aside>button.active {
+  background: var(--soft);
+}
+
+.workspace aside>button span {
+  grid-row: 1/3;
+  font: 400 18px var(--serif);
+  color: var(--dark);
+}
+
+.workspace aside>button b {
+  font: 500 13px/1.35 var(--serif);
+}
+
+.workspace aside>button small {
+  font: 10px var(--serif);
+  color: var(--muted);
+}
+
+.editor {
+  padding: 24px;
+  min-width: 0;
+}
+
+.editor>h2 {
+  font-size: 24px;
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--line);
+  margin-top: 18px;
+}
+
+.compare section:first-child {
+  border-right: 1px solid var(--line);
+}
+
+.compare header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font: 9px var(--serif);
+  letter-spacing: .1em;
+  color: var(--muted);
+}
+
+.compare p,
+.compare textarea {
+  margin: 0;
+  padding: 16px;
+  min-height: 160px;
+  font: 13px/1.8 var(--serif);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  resize: none;
+}
+
+.compare p {
+  background: #f5eae8;
+  color: #7e2d27;
+}
+
+.compare textarea {
+  background: #ebf2ec;
+  color: #244e31;
+}
+
+.reason {
+  border-top: 1px solid var(--line);
+  margin-top: 20px;
+  padding-top: 14px;
+}
+
+.reason h3 {
+  font-size: 17px;
+  margin-bottom: 4px;
+}
+
+.reason p {
+  font: 12px/1.65 var(--serif);
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.editor details {
+  border-top: 1px solid var(--line);
+  margin-top: 16px;
+  padding-top: 12px;
+  font: 12px/1.65 var(--serif);
+}
+
+.editor summary {
+  cursor: pointer;
+  color: var(--dark);
+}
+
+.editor details p {
+  margin-top: 10px;
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    grid-template-columns: 250px 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace aside {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 220px;
+    overflow: auto;
+  }
+  .compare section:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .workspace {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .compare {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .savebar {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding: 11px 14px;
+  }
+}

@@ -19,14 +19,6 @@ export type Job = {
   gaps: string[];
 };
 
-export type InterviewQuestion = {
-  id: number;
-  difficulty: "Easy" | "Medium" | "Hard";
-  type: "Basic programming" | "Role specific";
-  text: string;
-  answer: string;
-};
-
 export type ResumeRewriteBlock = {
   title: string;
   original: string;
