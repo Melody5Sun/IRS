@@ -1,0 +1,350 @@
+{
+  "pair_count": 200,
+  "resume_count": 10,
+  "fold_count": 5,
+  "seed": 42,
+  "ndcg_k": 10,
+  "evaluation": "Each resume is evaluated once in its held-out fold.",
+  "controlled_factors": [
+    "Preferred-skill bonus remains enabled for every configuration.",
+    "Missing-component renormalization is identical to production scoring.",
+    "Career intent is excluded from professional-fit relevance and evaluation."
+  ],
+  "folds": [
+    {
+      "fold": 1,
+      "test_resume_ids": [
+        "R08",
+        "R07"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R08": 0.7741694266284467,
+          "R07": 0.8300962351745829
+        },
+        "without_direct_skill": {
+          "R08": 0.6341941726225423,
+          "R07": 0.73993325267079
+        },
+        "without_responsibility": {
+          "R08": 0.775050089451077,
+          "R07": 0.7310113422217743
+        },
+        "without_knowledge_graph": {
+          "R08": 0.7470085431665053,
+          "R07": 0.7224951127235564
+        },
+        "direct_skill_only": {
+          "R08": 0.7257164391977384,
+          "R07": 0.7257738353014731
+        },
+        "responsibility_only": {
+          "R08": 0.602270319838964,
+          "R07": 0.7563814043449115
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "test_resume_ids": [
+        "R04",
+        "R10"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R04": 0.9751700940782119,
+          "R10": 0.8992936605844585
+        },
+        "without_direct_skill": {
+          "R04": 0.9725080615079446,
+          "R10": 0.8992936605844585
+        },
+        "without_responsibility": {
+          "R04": 0.9116841198776768,
+          "R10": 0.8020780161468208
+        },
+        "without_knowledge_graph": {
+          "R04": 0.9332406138810401,
+          "R10": 0.850955992254019
+        },
+        "direct_skill_only": {
+          "R04": 0.8687295904513409,
+          "R10": 0.7593588628116215
+        },
+        "responsibility_only": {
+          "R04": 0.9332406138810401,
+          "R10": 0.900586737218865
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "test_resume_ids": [
+        "R03",
+        "R05"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R03": 0.802855527134423,
+          "R05": 0.8596863415902661
+        },
+        "without_direct_skill": {
+          "R03": 0.7011437348382805,
+          "R05": 0.8230433226750135
+        },
+        "without_responsibility": {
+          "R03": 0.8361580317767224,
+          "R05": 0.8717295519743651
+        },
+        "without_knowledge_graph": {
+          "R03": 0.7841967358929901,
+          "R05": 0.8532455450526031
+        },
+        "direct_skill_only": {
+          "R03": 0.7562305990787985,
+          "R05": 0.8240695784739278
+        },
+        "responsibility_only": {
+          "R03": 0.6906425558971014,
+          "R05": 0.7969711395230676
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "test_resume_ids": [
+        "R09",
+        "R01"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R09": 0.9540774709474269,
+          "R01": 0.8224522533913327
+        },
+        "without_direct_skill": {
+          "R09": 0.9549687530350321,
+          "R01": 0.8236396041544582
+        },
+        "without_responsibility": {
+          "R09": 0.9751700940782119,
+          "R01": 0.6562736634343614
+        },
+        "without_knowledge_graph": {
+          "R09": 0.9506697371236612,
+          "R01": 0.8394984777654436
+        },
+        "direct_skill_only": {
+          "R09": 0.8973356401797525,
+          "R01": 0.5425045676526794
+        },
+        "responsibility_only": {
+          "R09": 0.9245718126074098,
+          "R01": 0.8996822755874665
+        }
+      }
+    },
+    {
+      "fold": 5,
+      "test_resume_ids": [
+        "R06",
+        "R02"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R06": 0.6227966636431528,
+          "R02": 0.9127398955446153
+        },
+        "without_direct_skill": {
+          "R06": 0.6777740223934322,
+          "R02": 0.890128441453416
+        },
+        "without_responsibility": {
+          "R06": 0.5700120206348596,
+          "R02": 0.9149512232906517
+        },
+        "without_knowledge_graph": {
+          "R06": 0.682952717895425,
+          "R02": 0.9038714423889874
+        },
+        "direct_skill_only": {
+          "R06": 0.5384947714133657,
+          "R02": 0.9161940470380069
+        },
+        "responsibility_only": {
+          "R06": 0.567544290043286,
+          "R02": 0.9287622858351057
+        }
+      }
+    }
+  ],
+  "summary": {
+    "full_model": {
+      "weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "mean_ndcg": 0.8453337568716917,
+      "std_ndcg": 0.09669084251880297,
+      "min_ndcg": 0.6227966636431528,
+      "max_ndcg": 0.9751700940782119,
+      "mean_delta_vs_full": 0.0,
+      "mean_drop_from_full": -0.0,
+      "better_resume_count": 0,
+      "equal_resume_count": 10,
+      "worse_resume_count": 0,
+      "ndcg_by_resume": {
+        "R01": 0.8224522533913327,
+        "R02": 0.9127398955446153,
+        "R03": 0.802855527134423,
+        "R04": 0.9751700940782119,
+        "R05": 0.8596863415902661,
+        "R06": 0.6227966636431528,
+        "R07": 0.8300962351745829,
+        "R08": 0.7741694266284467,
+        "R09": 0.9540774709474269,
+        "R10": 0.8992936605844585
+      }
+    },
+    "without_direct_skill": {
+      "weights": {
+        "required_direct": 0.0,
+        "responsibility": 0.75,
+        "required_graph": 0.25
+      },
+      "mean_ndcg": 0.8116627025935368,
+      "std_ndcg": 0.11282627764435742,
+      "min_ndcg": 0.6341941726225423,
+      "max_ndcg": 0.9725080615079446,
+      "mean_delta_vs_full": -0.03367105427815488,
+      "mean_drop_from_full": 0.03367105427815488,
+      "better_resume_count": 3,
+      "equal_resume_count": 1,
+      "worse_resume_count": 6,
+      "ndcg_by_resume": {
+        "R01": 0.8236396041544582,
+        "R02": 0.890128441453416,
+        "R03": 0.7011437348382805,
+        "R04": 0.9725080615079446,
+        "R05": 0.8230433226750135,
+        "R06": 0.6777740223934322,
+        "R07": 0.73993325267079,
+        "R08": 0.6341941726225423,
+        "R09": 0.9549687530350321,
+        "R10": 0.8992936605844585
+      }
+    },
+    "without_responsibility": {
+      "weights": {
+        "required_direct": 0.5,
+        "responsibility": 0.0,
+        "required_graph": 0.5
+      },
+      "mean_ndcg": 0.8044118152886521,
+      "std_ndcg": 0.11898216695783542,
+      "min_ndcg": 0.5700120206348596,
+      "max_ndcg": 0.9751700940782119,
+      "mean_delta_vs_full": -0.04092194158303956,
+      "mean_drop_from_full": 0.04092194158303956,
+      "better_resume_count": 5,
+      "equal_resume_count": 0,
+      "worse_resume_count": 5,
+      "ndcg_by_resume": {
+        "R01": 0.6562736634343614,
+        "R02": 0.9149512232906517,
+        "R03": 0.8361580317767224,
+        "R04": 0.9116841198776768,
+        "R05": 0.8717295519743651,
+        "R06": 0.5700120206348596,
+        "R07": 0.7310113422217743,
+        "R08": 0.775050089451077,
+        "R09": 0.9751700940782119,
+        "R10": 0.8020780161468208
+      }
+    },
+    "without_knowledge_graph": {
+      "weights": {
+        "required_direct": 0.25,
+        "responsibility": 0.75,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.8268134918144231,
+      "std_ndcg": 0.08591316336706434,
+      "min_ndcg": 0.682952717895425,
+      "max_ndcg": 0.9506697371236612,
+      "mean_delta_vs_full": -0.01852026505726855,
+      "mean_drop_from_full": 0.01852026505726855,
+      "better_resume_count": 2,
+      "equal_resume_count": 0,
+      "worse_resume_count": 8,
+      "ndcg_by_resume": {
+        "R01": 0.8394984777654436,
+        "R02": 0.9038714423889874,
+        "R03": 0.7841967358929901,
+        "R04": 0.9332406138810401,
+        "R05": 0.8532455450526031,
+        "R06": 0.682952717895425,
+        "R07": 0.7224951127235564,
+        "R08": 0.7470085431665053,
+        "R09": 0.9506697371236612,
+        "R10": 0.850955992254019
+      }
+    },
+    "direct_skill_only": {
+      "weights": {
+        "required_direct": 1.0,
+        "responsibility": 0.0,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.7554407931598704,
+      "std_ndcg": 0.1255814760081052,
+      "min_ndcg": 0.5384947714133657,
+      "max_ndcg": 0.9161940470380069,
+      "mean_delta_vs_full": -0.08989296371182119,
+      "mean_drop_from_full": 0.08989296371182119,
+      "better_resume_count": 1,
+      "equal_resume_count": 0,
+      "worse_resume_count": 9,
+      "ndcg_by_resume": {
+        "R01": 0.5425045676526794,
+        "R02": 0.9161940470380069,
+        "R03": 0.7562305990787985,
+        "R04": 0.8687295904513409,
+        "R05": 0.8240695784739278,
+        "R06": 0.5384947714133657,
+        "R07": 0.7257738353014731,
+        "R08": 0.7257164391977384,
+        "R09": 0.8973356401797525,
+        "R10": 0.7593588628116215
+      }
+    },
+    "responsibility_only": {
+      "weights": {
+        "required_direct": 0.0,
+        "responsibility": 1.0,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.8000653434777217,
+      "std_ndcg": 0.13300699943296226,
+      "min_ndcg": 0.567544290043286,
+      "max_ndcg": 0.9332406138810401,
+      "mean_delta_vs_full": -0.045268413393969906,
+      "mean_drop_from_full": 0.045268413393969906,
+      "better_resume_count": 3,
+      "equal_resume_count": 0,
+      "worse_resume_count": 7,
+      "ndcg_by_resume": {
+        "R01": 0.8996822755874665,
+        "R02": 0.9287622858351057,
+        "R03": 0.6906425558971014,
+        "R04": 0.9332406138810401,
+        "R05": 0.7969711395230676,
+        "R06": 0.567544290043286,
+        "R07": 0.7563814043449115,
+        "R08": 0.602270319838964,
+        "R09": 0.9245718126074098,
+        "R10": 0.900586737218865
+      }
+    }
+  }
+}

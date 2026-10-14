@@ -1,0 +1,375 @@
+{
+  "pair_count": 200,
+  "resume_count": 10,
+  "fold_count": 5,
+  "seed": 42,
+  "grid_step": 0.05,
+  "ndcg_k": 10,
+  "require_direct_gte_graph": true,
+  "weight_order": [
+    "required_direct",
+    "responsibility",
+    "required_graph"
+  ],
+  "baseline_weights": {
+    "required_direct": 0.3,
+    "responsibility": 0.45,
+    "required_graph": 0.25
+  },
+  "candidate_weights": {
+    "required_direct": 0.2,
+    "responsibility": 0.6,
+    "required_graph": 0.2
+  },
+  "folds": [
+    {
+      "fold": 1,
+      "train_resume_ids": [
+        "R01",
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R09",
+        "R10"
+      ],
+      "test_resume_ids": [
+        "R08",
+        "R07"
+      ],
+      "selected_weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "direct_weight_gte_graph_weight": true,
+      "train_ndcg": 0.8561339883642359,
+      "selected_test_ndcg": 0.8021328309015148,
+      "baseline_test_ndcg": 0.7689176392391388,
+      "candidate_test_ndcg": 0.8021328309015148,
+      "selected_test_by_resume": {
+        "R08": 0.7741694266284467,
+        "R07": 0.8300962351745829
+      },
+      "baseline_test_by_resume": {
+        "R08": 0.7765089393753506,
+        "R07": 0.761326339102927
+      },
+      "candidate_test_by_resume": {
+        "R08": 0.7741694266284467,
+        "R07": 0.8300962351745829
+      }
+    },
+    {
+      "fold": 2,
+      "train_resume_ids": [
+        "R01",
+        "R02",
+        "R03",
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R09"
+      ],
+      "test_resume_ids": [
+        "R04",
+        "R10"
+      ],
+      "selected_weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "direct_weight_gte_graph_weight": true,
+      "train_ndcg": 0.8223592267567807,
+      "selected_test_ndcg": 0.9372318773313352,
+      "baseline_test_ndcg": 0.9178124644381157,
+      "candidate_test_ndcg": 0.9372318773313352,
+      "selected_test_by_resume": {
+        "R04": 0.9751700940782119,
+        "R10": 0.8992936605844585
+      },
+      "baseline_test_by_resume": {
+        "R04": 0.989364666418029,
+        "R10": 0.8462602624582024
+      },
+      "candidate_test_by_resume": {
+        "R04": 0.9751700940782119,
+        "R10": 0.8992936605844585
+      }
+    },
+    {
+      "fold": 3,
+      "train_resume_ids": [
+        "R01",
+        "R02",
+        "R04",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "test_resume_ids": [
+        "R03",
+        "R05"
+      ],
+      "selected_weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "direct_weight_gte_graph_weight": true,
+      "train_ndcg": 0.8488494624990285,
+      "selected_test_ndcg": 0.8312709343623446,
+      "baseline_test_ndcg": 0.8214893629207582,
+      "candidate_test_ndcg": 0.8312709343623446,
+      "selected_test_by_resume": {
+        "R03": 0.802855527134423,
+        "R05": 0.8596863415902661
+      },
+      "baseline_test_by_resume": {
+        "R03": 0.8039356891745518,
+        "R05": 0.8390430366669647
+      },
+      "candidate_test_by_resume": {
+        "R03": 0.802855527134423,
+        "R05": 0.8596863415902661
+      }
+    },
+    {
+      "fold": 4,
+      "train_resume_ids": [
+        "R02",
+        "R03",
+        "R04",
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R10"
+      ],
+      "test_resume_ids": [
+        "R09",
+        "R01"
+      ],
+      "selected_weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "direct_weight_gte_graph_weight": true,
+      "train_ndcg": 0.8346009805472696,
+      "selected_test_ndcg": 0.8882648621693798,
+      "baseline_test_ndcg": 0.8598718458702863,
+      "candidate_test_ndcg": 0.8882648621693798,
+      "selected_test_by_resume": {
+        "R09": 0.9540774709474269,
+        "R01": 0.8224522533913327
+      },
+      "baseline_test_by_resume": {
+        "R09": 0.9540774709474269,
+        "R01": 0.7656662207931458
+      },
+      "candidate_test_by_resume": {
+        "R09": 0.9540774709474269,
+        "R01": 0.8224522533913327
+      }
+    },
+    {
+      "fold": 5,
+      "train_resume_ids": [
+        "R01",
+        "R03",
+        "R04",
+        "R05",
+        "R07",
+        "R08",
+        "R09",
+        "R10"
+      ],
+      "test_resume_ids": [
+        "R06",
+        "R02"
+      ],
+      "selected_weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "direct_weight_gte_graph_weight": true,
+      "train_ndcg": 0.8647251261911436,
+      "selected_test_ndcg": 0.767768279593884,
+      "baseline_test_ndcg": 0.7387850702545269,
+      "candidate_test_ndcg": 0.767768279593884,
+      "selected_test_by_resume": {
+        "R06": 0.6227966636431528,
+        "R02": 0.9127398955446153
+      },
+      "baseline_test_by_resume": {
+        "R06": 0.569200895511082,
+        "R02": 0.9083692449979718
+      },
+      "candidate_test_by_resume": {
+        "R06": 0.6227966636431528,
+        "R02": 0.9127398955446153
+      }
+    }
+  ],
+  "summary": {
+    "selected": {
+      "mean_ndcg": 0.8453337568716917,
+      "std_ndcg": 0.09669084251880297,
+      "min_ndcg": 0.6227966636431528,
+      "max_ndcg": 0.9751700940782119
+    },
+    "baseline": {
+      "mean_ndcg": 0.8213752765445652,
+      "std_ndcg": 0.11267124299356658,
+      "min_ndcg": 0.569200895511082,
+      "max_ndcg": 0.989364666418029
+    },
+    "candidate": {
+      "mean_ndcg": 0.8453337568716917,
+      "std_ndcg": 0.09669084251880297,
+      "min_ndcg": 0.6227966636431528,
+      "max_ndcg": 0.9751700940782119
+    },
+    "selected_weight_counts": {
+      "0.20/0.60/0.20": 5
+    },
+    "candidate_vs_baseline": {
+      "mean_delta": 0.023958480327126462,
+      "improved_resume_count": 6,
+      "unchanged_resume_count": 1,
+      "worse_resume_count": 3
+    },
+    "selected_vs_baseline": {
+      "mean_delta": 0.023958480327126462,
+      "improved_resume_count": 6,
+      "unchanged_resume_count": 1,
+      "worse_resume_count": 3
+    }
+  },
+  "by_target_role": {
+    "AI Engineer": {
+      "baseline": {
+        "resume_count": 4,
+        "mean_ndcg": 0.8589985761615307
+      },
+      "candidate": {
+        "resume_count": 4,
+        "mean_ndcg": 0.8910615828568799
+      },
+      "selected": {
+        "resume_count": 4,
+        "mean_ndcg": 0.8910615828568799
+      }
+    },
+    "Agent Engineer": {
+      "baseline": {
+        "resume_count": 5,
+        "mean_ndcg": 0.8842826584662251
+      },
+      "candidate": {
+        "resume_count": 5,
+        "mean_ndcg": 0.893459048219202
+      },
+      "selected": {
+        "resume_count": 5,
+        "mean_ndcg": 0.893459048219202
+      }
+    },
+    "Algorithm Engineer": {
+      "baseline": {
+        "resume_count": 1,
+        "mean_ndcg": 0.7765089393753506
+      },
+      "candidate": {
+        "resume_count": 1,
+        "mean_ndcg": 0.7741694266284467
+      },
+      "selected": {
+        "resume_count": 1,
+        "mean_ndcg": 0.7741694266284467
+      }
+    },
+    "Backend Developer": {
+      "baseline": {
+        "resume_count": 2,
+        "mean_ndcg": 0.7634962799480365
+      },
+      "candidate": {
+        "resume_count": 2,
+        "mean_ndcg": 0.8262742442829578
+      },
+      "selected": {
+        "resume_count": 2,
+        "mean_ndcg": 0.8262742442829578
+      }
+    },
+    "Full Stack Developer": {
+      "baseline": {
+        "resume_count": 1,
+        "mean_ndcg": 0.8039356891745518
+      },
+      "candidate": {
+        "resume_count": 1,
+        "mean_ndcg": 0.802855527134423
+      },
+      "selected": {
+        "resume_count": 1,
+        "mean_ndcg": 0.802855527134423
+      }
+    },
+    "LLM Engineer": {
+      "baseline": {
+        "resume_count": 3,
+        "mean_ndcg": 0.8589488909269933
+      },
+      "candidate": {
+        "resume_count": 3,
+        "mean_ndcg": 0.8758468527201106
+      },
+      "selected": {
+        "resume_count": 3,
+        "mean_ndcg": 0.8758468527201106
+      }
+    },
+    "MLOps Engineer": {
+      "baseline": {
+        "resume_count": 1,
+        "mean_ndcg": 0.569200895511082
+      },
+      "candidate": {
+        "resume_count": 1,
+        "mean_ndcg": 0.6227966636431528
+      },
+      "selected": {
+        "resume_count": 1,
+        "mean_ndcg": 0.6227966636431528
+      }
+    },
+    "Platform Engineer": {
+      "baseline": {
+        "resume_count": 1,
+        "mean_ndcg": 0.569200895511082
+      },
+      "candidate": {
+        "resume_count": 1,
+        "mean_ndcg": 0.6227966636431528
+      },
+      "selected": {
+        "resume_count": 1,
+        "mean_ndcg": 0.6227966636431528
+      }
+    }
+  },
+  "notes": [
+    "All 20 pairs for a resume remain in the same held-out fold.",
+    "A resume with multiple target roles contributes to each listed role summary.",
+    "The grid requires direct-skill weight to be at least graph weight."
+  ]
+}

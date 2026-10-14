@@ -1,0 +1,72 @@
+[
+  {
+    "resume_id": "R01",
+    "resume_json": "resume test/parsed/resume_test_AgentBackendDeveloper_CN.json",
+    "resume_pdf": "resume test/resume_test_AgentBackendDeveloper_CN.pdf",
+    "target_roles": ["Agent Engineer", "Backend Developer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R02",
+    "resume_json": "resume test/parsed/resume_test_AgentDeveloper_EN.json",
+    "resume_pdf": "resume test/resume_test_AgentDeveloper_EN.pdf",
+    "target_roles": ["Agent Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R03",
+    "resume_json": "resume test/parsed/resume_test_AgentFullStackDeveloper_EN.json",
+    "resume_pdf": "resume test/resume_test_AgentFullStackDeveloper_EN.pdf",
+    "target_roles": ["Agent Engineer", "Full Stack Developer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R04",
+    "resume_json": "resume test/parsed/resume_test_AIAgentApplicationDeveloper_EN.json",
+    "resume_pdf": "resume test/resume_test_AIAgentApplicationDeveloper_EN.pdf",
+    "target_roles": ["Agent Engineer", "AI Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R05",
+    "resume_json": "resume test/parsed/resume_test_AIApplicationDeveloper_CN.json",
+    "resume_pdf": "resume test/resume_test_AIApplicationDeveloper_CN.pdf",
+    "target_roles": ["AI Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R06",
+    "resume_json": "resume test/parsed/resume_test_AIInfraEngineer_EN.json",
+    "resume_pdf": "resume test/resume_test_AIInfraEngineer_EN.pdf",
+    "target_roles": ["MLOps Engineer", "Platform Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R07",
+    "resume_json": "resume test/parsed/resume_test_JavaBackendAIDeveloper_CN.json",
+    "resume_pdf": "resume test/resume_test_JavaBackendAIDeveloper_CN.pdf",
+    "target_roles": ["Backend Developer", "AI Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R08",
+    "resume_json": "resume test/parsed/resume_test_LLMApplicationAlgorithmEngineer_CN.json",
+    "resume_pdf": "resume test/resume_test_LLMApplicationAlgorithmEngineer_CN.pdf",
+    "target_roles": ["LLM Engineer", "Algorithm Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R09",
+    "resume_json": "resume test/parsed/resume_test_LLMApplicationIntern_EN.json",
+    "resume_pdf": "resume test/resume_test_LLMApplicationIntern_EN.pdf",
+    "target_roles": ["LLM Engineer", "Agent Engineer"],
+    "review_status": "needs_review"
+  },
+  {
+    "resume_id": "R10",
+    "resume_json": "resume test/parsed/resume_test_RAGApplicationDeveloper_CN.json",
+    "resume_pdf": "resume test/resume_test_RAGApplicationDeveloper_CN.pdf",
+    "target_roles": ["LLM Engineer", "AI Engineer"],
+    "review_status": "needs_review"
+  }
+]
