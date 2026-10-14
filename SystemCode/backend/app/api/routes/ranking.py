@@ -19,7 +19,7 @@ ranking_service = RankingService(
 
 @router.post("", response_model=RankingResponse)
 def rank_jobs() -> RankingResponse:
-    # 入口：规则初筛 -> 四项核心评分 + 加分技能 -> 返回轻量 Top 30。
+    # 入口：规则初筛 -> 专业匹配度 + 加分技能 -> 岗位意向轻量重排 -> Top 30。
     # 用库里保存的画像实时计算，画像更新后再调用就是重排后的结果
     profile = profile_service.get()
     if profile is None:

@@ -17,9 +17,9 @@ export const LEVELS: Record<LevelKey, { labelKey: MessageKey; rank: number }> = 
 
 // 推荐等级阈值（final_score 为 0–100）
 export function recommendationLevel(score: number): LevelKey {
-  if (score >= 50) return "highly";
-  if (score >= 30) return "recommended";
-  if (score >= 15) return "potential";
+  if (score >= 13) return "highly";
+  if (score >= 7) return "recommended";
+  if (score >= 1) return "potential";
   return "limited";
 }
 

@@ -45,9 +45,9 @@ def test_block_issues_from_scores() -> None:
     )
     skill_score = SkillScoreResponse(
         required_skills_calculable=True, preferred_skills_available=False,
-        required_direct_coverage=100, required_direct_points=40, required_graph_coverage=0, required_graph_points=0,
+        required_direct_coverage=100, required_direct_points=20, required_graph_coverage=0, required_graph_points=0,
         preferred_direct_coverage=0, preferred_graph_coverage=0, preferred_skill_coverage=0, preferred_bonus=0,
-        partial_score=40,
+        partial_score=20,
         direct_required_matches=[
             DirectSkillMatch(jd_skill="python", candidate_skill="python"),
             DirectSkillMatch(jd_skill="docker", candidate_skill="docker"),

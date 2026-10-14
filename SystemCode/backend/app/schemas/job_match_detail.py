@@ -22,7 +22,12 @@ GapType = Literal[
     "intent_gap",
 ]
 GapImportance = Literal["required", "preferred", "responsibility", "career_intent"]
-MatchLevel = Literal["excellent", "strong", "moderate", "developing"]
+MatchLevel = Literal[
+    "highly_recommended",
+    "recommended",
+    "potential_match",
+    "limited_match",
+]
 ImprovementPriorityLevel = Literal["high", "medium", "low"]
 
 
@@ -43,8 +48,8 @@ class JobMatchDetailJob(BaseModel):
 
 
 class JobMatchComponentPoints(BaseModel):
-    required_skill_direct: float = Field(..., ge=0, le=40)
-    responsibility: float = Field(..., ge=0, le=30)
+    required_skill_direct: float = Field(..., ge=0, le=20)
+    responsibility: float = Field(..., ge=0, le=60)
     required_skill_graph: float = Field(..., ge=0, le=20)
     career_intent: float = Field(..., ge=0, le=10)
 
@@ -52,6 +57,8 @@ class JobMatchComponentPoints(BaseModel):
 class JobMatchDetailScore(BaseModel):
     calculable: bool
     final_score: float = Field(..., ge=0, le=100)
+    professional_score: float = Field(..., ge=0, le=100)
+    intent_fit: float | None = Field(default=None, ge=0, le=100)
     core_score: float = Field(..., ge=0, le=100)
     preferred_skill_bonus: float = Field(..., ge=0, le=5)
     active_core_weight: float = Field(..., ge=0, le=100)

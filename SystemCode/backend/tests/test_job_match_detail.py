@@ -67,14 +67,14 @@ class FakeSkillService:
             required_skills_calculable=True,
             preferred_skills_available=True,
             required_direct_coverage=50,
-            required_direct_points=20,
+            required_direct_points=15,
             required_graph_coverage=50,
-            required_graph_points=10,
+            required_graph_points=12.5,
             preferred_direct_coverage=50,
             preferred_graph_coverage=0,
             preferred_skill_coverage=35,
             preferred_bonus=3.5,
-            partial_score=33.5,
+            partial_score=31,
             direct_required_matches=[
                 DirectSkillMatch(jd_skill="Python", candidate_skill="Python")
             ],
@@ -104,7 +104,7 @@ class FakeResponsibilityService:
             responsibility_count=2,
             evidence_count=1,
             responsibility_coverage=50,
-            responsibility_points=15,
+            responsibility_points=22.5,
             matches=[
                 ResponsibilityEvidenceMatch(
                     responsibility="Develop REST APIs",
@@ -160,17 +160,19 @@ def test_detail_returns_job_score_recommendation_evidence_and_gaps() -> None:
     response = make_service().get_detail(1, make_profile())
 
     assert response.job.job_id == 1
-    assert response.match.final_score == 56.5
+    assert response.match.professional_score == 53.5
+    assert response.match.intent_fit == 80
+    assert response.match.final_score == 53.5
     assert response.match.component_points.model_dump() == {
-        "required_skill_direct": 20.0,
-        "responsibility": 15.0,
-        "required_skill_graph": 10.0,
+        "required_skill_direct": 15.0,
+        "responsibility": 22.5,
+        "required_skill_graph": 12.5,
         "career_intent": 8.0,
     }
     assert response.recommendation.highlights
-    assert response.recommendation.level == "moderate"
-    assert response.recommendation.level_label == "Moderate match"
-    assert response.recommendation.summary == "Your profile has a useful foundation for this role."
+    assert response.recommendation.level == "highly_recommended"
+    assert response.recommendation.level_label == "Highly Recommended"
+    assert response.recommendation.summary == "This role is highly recommended for your current profile."
     assert response.recommendation.highlights == [
         "Your Python skills meet required skill expectations.",
         "Your Docker experience provides a transferable foundation for the required Kubernetes skills.",

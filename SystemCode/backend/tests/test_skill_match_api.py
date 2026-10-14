@@ -33,12 +33,12 @@ def test_skill_match_api_scores_formatted_resume_against_structured_jd() -> None
     assert response.status_code == 200
     body = response.json()
     assert body["required_direct_coverage"] == 33.33
-    assert body["required_direct_points"] == 13.33
-    assert body["required_graph_coverage"] == 43.33
-    assert body["required_graph_points"] == 8.67
+    assert body["required_direct_points"] == 6.67
+    assert body["required_graph_coverage"] == 10.0
+    assert body["required_graph_points"] == 2.0
     assert body["preferred_skill_coverage"] == 50.0
     assert body["preferred_bonus"] == 2.5
-    assert body["partial_score"] == 24.5
+    assert body["partial_score"] == 11.17
     assert body["direct_required_matches"] == [
         {"jd_skill": "python", "candidate_skill": "Python"}
     ]

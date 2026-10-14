@@ -7,11 +7,11 @@ const job = (job_id: number, employment_type: string, final_score: number): Rank
 
 describe("recommendation helpers", () => {
   it("maps scores to levels at the documented thresholds", () => {
-    expect([0, 14.9, 15, 29.9, 30, 49.9, 50, 90].map(recommendationLevel)).toEqual(["limited", "limited", "potential", "potential", "recommended", "recommended", "highly", "highly"]);
+    expect([0, 0.9, 1, 6.9, 7, 12.9, 13, 90].map(recommendationLevel)).toEqual(["limited", "limited", "potential", "potential", "recommended", "recommended", "highly", "highly"]);
   });
 
   it("filters by employment type and minimum level", () => {
-    const jobs = [job(1, "internship", 60), job(2, "full_time", 35), job(3, "internship", 10)];
+    const jobs = [job(1, "internship", 60), job(2, "full_time", 35), job(3, "internship", 0.5)];
     expect(filterJobs(jobs, "all", "all").map((item) => item.job_id)).toEqual([1, 2, 3]);
     expect(filterJobs(jobs, "internship", "all").map((item) => item.job_id)).toEqual([1, 3]);
     expect(filterJobs(jobs, "all", "recommended").map((item) => item.job_id)).toEqual([1, 2]);

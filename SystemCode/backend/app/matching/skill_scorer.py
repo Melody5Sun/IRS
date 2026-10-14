@@ -37,11 +37,11 @@ class SkillScorer:
         required = self._score_group(candidate_skills, job.required_skills)
         preferred = self._score_group(candidate_skills, job.preferred_skills)
 
-        required_direct_points = 0.40 * required.direct_coverage
+        required_direct_points = 0.20 * required.direct_coverage
         required_graph_points = 0.20 * required.expanded_coverage
-        preferred_skill_coverage = (
-            0.70 * preferred.direct_coverage
-            + 0.30 * preferred.expanded_coverage
+        preferred_skill_coverage = min(
+            100.0,
+            preferred.direct_coverage + 0.30 * preferred.expanded_coverage,
         )
         preferred_bonus = 0.05 * preferred_skill_coverage
 
@@ -92,7 +92,6 @@ class SkillScorer:
                         candidate_skill=direct_candidate.original,
                     )
                 )
-                expanded_total += 1.0
                 continue
 
             graph_match = self._best_graph_match(candidate_skills, jd_skill)
@@ -166,6 +165,10 @@ class SkillScorer:
             set(source_skill.relations.get("technicalDomains", ()))
             & set(target_skill.relations.get("technicalDomains", ()))
         )
+        same_application_domain = bool(
+            set(source_skill.relations.get("associatedToApplicationDomains", ()))
+            & set(target_skill.relations.get("associatedToApplicationDomains", ()))
+        )
         if same_type and same_domain and shared_foundations:
             shared_skill = max(
                 (source_implied[key] for key in shared_foundations),
@@ -196,6 +199,15 @@ class SkillScorer:
                 target,
                 relation="required_skill_builds_on_candidate_skill",
                 score=0.3,
+                path=[source_skill.name, target_skill.name],
+            )
+
+        if same_application_domain:
+            return self._make_graph_match(
+                candidate,
+                target,
+                relation="same_application_domain",
+                score=0.2,
                 path=[source_skill.name, target_skill.name],
             )
 

@@ -38,7 +38,7 @@ class JobMatchDetailAnalysisUnavailableError(RuntimeError):
 
 
 class JobMatchDetailService:
-    ALGORITHM_VERSION = "job-match-detail-v3"
+    ALGORITHM_VERSION = "job-match-detail-v4"
 
     def __init__(
         self,
@@ -113,6 +113,8 @@ class JobMatchDetailService:
             match=JobMatchDetailScore(
                 calculable=overall_score.calculable,
                 final_score=overall_score.final_score,
+                professional_score=overall_score.professional_score,
+                intent_fit=overall_score.intent_fit,
                 core_score=overall_score.core_score,
                 preferred_skill_bonus=overall_score.preferred_bonus,
                 active_core_weight=overall_score.active_core_weight,
@@ -501,15 +503,27 @@ class JobMatchDetailService:
 
     @staticmethod
     def _match_assessment(score: float) -> tuple[str, str, str]:
-        if score >= 80:
-            return "excellent", "Excellent match", "This role is an excellent match for your current profile."
-        if score >= 60:
-            return "strong", "Strong match", "This role is a strong match for your current profile."
-        if score >= 40:
-            return "moderate", "Moderate match", "Your profile has a useful foundation for this role."
+        if score >= 13:
+            return (
+                "highly_recommended",
+                "Highly Recommended",
+                "This role is highly recommended for your current profile.",
+            )
+        if score >= 7:
+            return (
+                "recommended",
+                "Recommended",
+                "This role is recommended for your current profile.",
+            )
+        if score >= 1:
+            return (
+                "potential_match",
+                "Potential Match",
+                "Your profile has a useful foundation for this role.",
+            )
         return (
-            "developing",
-            "More preparation needed",
+            "limited_match",
+            "Limited Match",
             "Additional skills and evidence would strengthen your readiness for this role.",
         )
 

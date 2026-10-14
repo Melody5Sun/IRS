@@ -27,8 +27,7 @@ def _job(responsibilities: list[str]) -> JobRequirementDocument:
 def test_each_responsibility_uses_its_best_resume_evidence() -> None:
     experience_text = "Experience: Backend Intern. Built and maintained REST APIs."
     project_text = (
-        "Project: Deployment Platform. Role: Developer. Automated cloud deployments. "
-        "Technologies: Docker, AWS."
+        "Project: Deployment Platform. Role: Developer. Automated cloud deployments."
     )
     provider = FakeEmbeddingProvider(
         {
@@ -65,7 +64,7 @@ def test_each_responsibility_uses_its_best_resume_evidence() -> None:
     assert result.responsibilities_calculable is True
     assert result.resume_evidence_available is True
     assert result.responsibility_coverage == 100.0
-    assert result.responsibility_points == 30.0
+    assert result.responsibility_points == 60.0
     assert [match.evidence_type for match in result.matches] == [
         "experience",
         "project",
@@ -98,7 +97,7 @@ def test_similarity_between_thresholds_is_linearly_mapped() -> None:
     )
 
     assert result.responsibility_coverage == 50.0
-    assert result.responsibility_points == 15.0
+    assert result.responsibility_points == 30.0
     assert result.matches[0].similarity == 0.55
     assert result.matches[0].status == "partial"
 
@@ -206,4 +205,54 @@ def test_research_summary_can_be_the_best_evidence() -> None:
 
     assert result.matches[0].evidence_type == "research"
     assert result.matches[0].evidence_index == 0
-    assert result.responsibility_points == 30.0
+    assert result.responsibility_points == 60.0
+
+
+def test_resume_blocks_are_split_into_section_aware_evidence() -> None:
+    class RecordingProvider:
+        def __init__(self) -> None:
+            self.calls: list[list[str]] = []
+
+        def encode(self, texts: list[str]) -> list[list[float]]:
+            self.calls.append(texts)
+            return [[1.0, 0.0] for _ in texts]
+
+    provider = RecordingProvider()
+    scorer = ResponsibilityScorer(provider)
+    prepared = scorer.prepare_candidate(
+        ResumeDocument(
+            projects=[
+                Project(
+                    title="Agent Platform",
+                    role="Developer",
+                    summary=(
+                        "Agent Runtime: Built a controlled LangGraph workflow.\n"
+                        "RAG Evaluation: Added retrieval metrics and trace analysis."
+                    ),
+                    technologies=["Python", "LangGraph"],
+                )
+            ]
+        )
+    )
+
+    assert [unit.text for unit in prepared.evidence] == [
+        "Project: Agent Platform. Role: Developer. Agent Runtime: Built a controlled LangGraph workflow.",
+        "Project: Agent Platform. Role: Developer. RAG Evaluation: Added retrieval metrics and trace analysis.",
+    ]
+    assert all(unit.evidence_index == 0 for unit in prepared.evidence)
+    assert all("Technologies:" not in unit.text for unit in prepared.evidence)
+
+
+def test_long_single_line_is_chunked_below_embedding_limit() -> None:
+    class RecordingProvider:
+        def encode(self, texts: list[str]) -> list[list[float]]:
+            return [[1.0, 0.0] for _ in texts]
+
+    scorer = ResponsibilityScorer(RecordingProvider())
+    long_summary = " ".join(f"word{index}" for index in range(145))
+    prepared = scorer.prepare_candidate(
+        ResumeDocument(projects=[Project(title="Large Project", summary=long_summary)])
+    )
+
+    assert len(prepared.evidence) == 3
+    assert max(len(unit.text.split()) for unit in prepared.evidence) <= 73

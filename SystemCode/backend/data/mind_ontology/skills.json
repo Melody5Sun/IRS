@@ -35292,8 +35292,13 @@
         "type": [
             "Service"
         ],
-        "technicalDomains": [],
-        "impliesKnowingSkills": [],
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Agentic AI",
+            "Tool Calling"
+        ],
         "impliesKnowingConcepts": [],
         "conceptualAspects": [],
         "architecturalPatterns": [],
@@ -72190,7 +72195,12 @@
         ],
         "impliesKnowingConcepts": [],
         "adapterForToolOrService": [],
-        "impliesKnowingSkills": [],
+        "impliesKnowingSkills": [
+            "Agentic AI",
+            "RAG",
+            "Prompt Engineering",
+            "Tool Calling"
+        ],
         "associatedToApplicationDomains": [
             "LLM Development & RAG Frameworks"
         ]
@@ -90311,5 +90321,173 @@
         "impliesKnowingConcepts": [],
         "conceptualAspects": [],
         "architecturalPatterns": []
+    },
+    {
+        "name": "Agentic AI",
+        "synonyms": [
+            "agentic ai",
+            "AI Agents",
+            "AI Agent Development"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models",
+            "Tool Calling"
+        ],
+        "associatedToApplicationDomains": [
+            "AI Agent Development",
+            "AI Agent Orchestration"
+        ]
+    },
+    {
+        "name": "RAG",
+        "synonyms": [
+            "rag",
+            "Retrieval-Augmented Generation",
+            "Retrieval Augmented Generation"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Generative AI"
+        ],
+        "associatedToApplicationDomains": [
+            "LLM Development & RAG Frameworks"
+        ]
+    },
+    {
+        "name": "Prompt Engineering",
+        "synonyms": [
+            "prompt engineering",
+            "prompt design"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models"
+        ],
+        "associatedToApplicationDomains": [
+            "LLM Development & RAG Frameworks"
+        ]
+    },
+    {
+        "name": "MCP",
+        "synonyms": [
+            "mcp",
+            "Model Context Protocol"
+        ],
+        "type": "Protocol",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Agentic AI",
+            "Tool Calling"
+        ],
+        "associatedToApplicationDomains": [
+            "AI Agent Development",
+            "AI Agent Orchestration"
+        ]
+    },
+    {
+        "name": "Tool Calling",
+        "synonyms": [
+            "tool calling",
+            "Function Calling",
+            "Tool Use"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models"
+        ],
+        "associatedToApplicationDomains": [
+            "AI Agent Development",
+            "AI Agent Orchestration"
+        ]
+    },
+    {
+        "name": "AI Evaluation",
+        "synonyms": [
+            "ai evaluation",
+            "LLM Evaluation",
+            "Agent Evaluation"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models"
+        ],
+        "associatedToApplicationDomains": [
+            "AI Agent Development",
+            "LLM Development & RAG Frameworks"
+        ]
+    },
+    {
+        "name": "AI Guardrails",
+        "synonyms": [
+            "ai guardrails",
+            "Guardrails",
+            "LLM Guardrails"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI",
+            "Cybersecurity"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models"
+        ],
+        "associatedToApplicationDomains": [
+            "AI Agent Development",
+            "LLM Development & RAG Frameworks"
+        ]
+    },
+    {
+        "name": "Generative AI",
+        "synonyms": [
+            "generative ai",
+            "GenAI",
+            "Gen AI"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [
+            "Large Language Models"
+        ],
+        "associatedToApplicationDomains": [
+            "LLM Development & RAG Frameworks"
+        ]
+    },
+    {
+        "name": "Large Language Models",
+        "synonyms": [
+            "large language models",
+            "Large Language Model",
+            "LLM",
+            "LLMs"
+        ],
+        "type": "Skill",
+        "technicalDomains": [
+            "ML/AI"
+        ],
+        "impliesKnowingSkills": [],
+        "associatedToApplicationDomains": [
+            "LLM Development & RAG Frameworks",
+            "LLM Platforms & Services"
+        ]
     }
 ]

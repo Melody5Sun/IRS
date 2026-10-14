@@ -2,7 +2,8 @@
 
 This module implements the skill-based part of the IT CareerPilot matching score.
 It does not yet include responsibility similarity or career-intent fit, so the
-returned `partial_score` has a maximum of 65 points.
+returned `partial_score` has a maximum of 45 points, including the 5-point
+preferred-skill bonus.
 
 ## Input
 
@@ -14,7 +15,7 @@ returned `partial_score` has a maximum of 65 points.
 ## Formula
 
 ```text
-required_direct_points = 0.40 * required_direct_coverage
+required_direct_points = 0.20 * required_direct_coverage
 required_graph_points = 0.20 * required_graph_coverage
 
 preferred_skill_coverage =
@@ -31,9 +32,9 @@ partial_score =
 
 Coverage values use a 0-100 scale. Point values use the final score scale.
 
-For graph coverage, a directly matched skill contributes `1.0`. An unmatched JD
-skill is compared with every candidate skill, and only the highest-scoring graph
-relationship is retained.
+Direct and graph coverage are mutually exclusive. Only a JD skill that has no
+direct or alias match is compared with every candidate skill through the graph,
+and only the highest-scoring graph relationship is retained.
 
 ## Graph relationship weights
 
@@ -43,11 +44,12 @@ relationship is retained.
 | Same type and domain with a shared foundation | 0.6 |
 | Two-hop implication | 0.3 |
 | Required skill builds on the candidate skill | 0.3 |
+| Same application domain | 0.2 |
 | Same type and technical domain only | 0.1 |
 | No supported relationship | 0.0 |
 
-Graph traversal is limited to two hops. Direct matches do not produce a second
-graph-match record, but they count as fully covered in graph coverage.
+Graph traversal is limited to two hops. Direct matches do not produce a graph
+match and do not count toward graph coverage.
 
 ## API
 

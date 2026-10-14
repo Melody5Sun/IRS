@@ -123,10 +123,13 @@
   {
     total_jobs, passed_count, returned_count,
     rejected_by_rule: {"status": n, "degree": n, "work_mode": n, "employment_type": n, "candidate_type": n, "industry": n},
-    results: [{rank, job_id, company, title, location: {city, country} | null, employment_type, final_score}]
+    results: [{rank, job_id, company, title, location: {city, country} | null, employment_type, professional_score, intent_fit, final_score}]
   }
   ```
-- 流程：规则引擎硬筛选（状态/学历/工作模式/雇佣类型/候选人类型/行业）→ 匹配评分 → 按 `final_score`（0–100）降序取前 30
+- 流程：规则引擎硬筛选（状态/学历/工作模式/雇佣类型/候选人类型/行业）→ 专业匹配度（必须技能直接匹配 20：职责匹配 60：知识图谱可迁移技能 20，对可计算项归一化）→ 加分技能奖励 → 按专业分划分推荐等级 → 同等级内按岗位意向降序重排 → 取前 30
+- `professional_score`：不含岗位意向的专业匹配分，包含最高 5 分加分技能奖励。
+- `intent_fit`：岗位与用户目标岗位的相关度（0–100）；只在同一推荐等级内参与排序。未填写目标岗位时为 `null`。
+- `final_score = professional_score`，用于前端显示推荐等级。数据优化后的等级顺序为 `Highly Recommended (≥13)` → `Recommended (≥7)` → `Potential Match (≥1)` → `Limited Match (<1)`。
 - 列表只有轻量字段；推荐理由、技能标签、证据要展开时调 `match-detail`
 - 分页、「最低匹配度」筛选由前端在这 30 条里做
 - `rejected_by_rule` 是各规则单独剔除的数量，一个岗位可能被多条规则剔除，各项相加可能大于 `total_jobs - passed_count`
@@ -136,8 +139,9 @@
 - 请求：完整的 `UserProfile`（前端先 `GET /profile` 拿到后原样传）
 - 响应：
   - `job`：`{job_id, source, company, title, location, employment_type, url（申请链接）, description, summary, responsibilities[], required_skills[], preferred_skills[], collected_at（抓取时间）}`
-  - `match`：`{final_score, core_score, preferred_skill_bonus, component_points: {required_skill_direct(≤40), responsibility(≤30), required_skill_graph(≤20), career_intent(≤10)}, ...}`
-  - `recommendation`：`{level: excellent|strong|moderate|developing, level_label, summary（推荐理由）, highlights[], evidence[]}`
+  - `match`：`{final_score, professional_score, intent_fit, core_score, preferred_skill_bonus, component_points: {required_skill_direct(≤20), responsibility(≤60), required_skill_graph(≤20), career_intent(≤10)}, ...}`
+    - `component_points.career_intent` 仅用于解释意向强弱，不再直接加入专业匹配分。
+  - `recommendation`：`{level: highly_recommended|recommended|potential_match|limited_match, level_label, summary（推荐理由）, highlights[], evidence[]}`
     - `evidence[]`：`{requirement（JD 要求）, candidate_evidence（简历命中内容）, evidence_source: skills|experience|project|research|career_intent, match_type: direct_skill|knowledge_graph|responsibility_semantic|career_intent|preferred_skill, similarity, relation, path[]}`
   - `gaps[]`：`{name, gap_type: transferable|hard_gap|optional_gap|experience_gap|intent_gap, importance: required|preferred|responsibility|career_intent, current_evidence, reason, suggestion}`
   - `improvement_plan`：`{summary, priorities: [{priority: high|medium|low, title, items[], advice}], next_action}`

@@ -57,14 +57,14 @@ class SkillScoreResponse(BaseModel):
     required_skills_calculable: bool
     preferred_skills_available: bool
     required_direct_coverage: float = Field(..., ge=0, le=100)
-    required_direct_points: float = Field(..., ge=0, le=40)
+    required_direct_points: float = Field(..., ge=0, le=20)
     required_graph_coverage: float = Field(..., ge=0, le=100)
     required_graph_points: float = Field(..., ge=0, le=20)
     preferred_direct_coverage: float = Field(..., ge=0, le=100)
     preferred_graph_coverage: float = Field(..., ge=0, le=100)
     preferred_skill_coverage: float = Field(..., ge=0, le=100)
     preferred_bonus: float = Field(..., ge=0, le=5)
-    partial_score: float = Field(..., ge=0, le=65)
+    partial_score: float = Field(..., ge=0, le=45)
     direct_required_matches: list[DirectSkillMatch] = Field(default_factory=list)
     graph_required_matches: list[GraphSkillMatch] = Field(default_factory=list)
     missing_required_skills: list[str] = Field(default_factory=list)
@@ -96,7 +96,7 @@ class ResponsibilityScoreResponse(BaseModel):
     responsibility_count: int = Field(..., ge=0)
     evidence_count: int = Field(..., ge=0)
     responsibility_coverage: float = Field(..., ge=0, le=100)
-    responsibility_points: float = Field(..., ge=0, le=30)
+    responsibility_points: float = Field(..., ge=0, le=60)
     matches: list[ResponsibilityEvidenceMatch] = Field(default_factory=list)
     unmatched_responsibilities: list[str] = Field(default_factory=list)
 

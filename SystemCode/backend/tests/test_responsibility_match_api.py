@@ -56,7 +56,7 @@ def test_responsibility_match_api_returns_explainable_score(monkeypatch) -> None
     body = response.json()
     assert body["job_id"] == 38
     assert body["responsibility_coverage"] == 100.0
-    assert body["responsibility_points"] == 30.0
+    assert body["responsibility_points"] == 60.0
     assert body["matches"] == [
         {
             "responsibility": "Develop and maintain backend APIs",

@@ -8,7 +8,7 @@ from app.main import app
 def test_packaged_mind_knowledge_graph_loads() -> None:
     graph = get_mind_knowledge_graph()
 
-    assert graph.stats.skill_count == 3333
+    assert graph.stats.skill_count == 3342
     assert graph.stats.concept_count == 974
     assert graph.stats.relation_count > 10000
     assert app.state.mind_knowledge_graph is graph
@@ -24,6 +24,24 @@ def test_skill_and_concept_aliases_resolve() -> None:
     assert react.name == "React"
     assert logging is not None
     assert logging.name == "Logging"
+
+
+def test_agent_skill_aliases_resolve() -> None:
+    graph = get_mind_knowledge_graph()
+
+    expected = {
+        "AI Agents": "Agentic AI",
+        "Retrieval-Augmented Generation": "RAG",
+        "Model Context Protocol": "MCP",
+        "Function Calling": "Tool Calling",
+        "Guardrails": "AI Guardrails",
+        "LLM": "Large Language Models",
+    }
+
+    assert {
+        alias: graph.get_skill(alias).name if graph.get_skill(alias) else None
+        for alias in expected
+    } == expected
 
 
 def test_skill_relationships_are_available_without_running_matching() -> None:

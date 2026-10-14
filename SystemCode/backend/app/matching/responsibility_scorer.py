@@ -17,6 +17,11 @@ from app.schemas.resume import ResumeDocument
 
 EvidenceType = Literal["experience", "project", "research"]
 
+_SECTION_HEADING = re.compile(r"^(?P<heading>[^:：\n]{2,60})[:：]\s*(?P<body>.+)$")
+_SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?。！？])\s+|[;；]\s+(?=[A-Z0-9])")
+_MAX_SEGMENT_WORDS = 70
+_MIN_TRAILING_WORDS = 8
+
 
 @dataclass(frozen=True)
 class _EvidenceUnit:
@@ -114,7 +119,7 @@ class ResponsibilityScorer:
             responsibility_count=len(responsibilities),
             evidence_count=len(evidence),
             responsibility_coverage=self._round(coverage),
-            responsibility_points=self._round(0.30 * coverage),
+            responsibility_points=self._round(0.60 * coverage),
             matches=matches,
             unmatched_responsibilities=[
                 match.responsibility
@@ -200,42 +205,108 @@ class ResponsibilityScorer:
         evidence: list[_EvidenceUnit] = []
 
         for index, experience in enumerate(candidate.experiences):
-            description = ResponsibilityScorer._clean(experience.description)
-            if not description:
-                continue
             title = ResponsibilityScorer._clean(experience.title)
-            text = f"Experience: {title}. {description}" if title else description
-            evidence.append(_EvidenceUnit("experience", index, title, text))
+            for segment in ResponsibilityScorer._split_evidence_text(
+                experience.description
+            ):
+                text = f"Experience: {title}. {segment}" if title else segment
+                evidence.append(_EvidenceUnit("experience", index, title, text))
 
         for index, project in enumerate(candidate.projects):
-            summary = ResponsibilityScorer._clean(project.summary)
-            if not summary:
-                continue
             title = ResponsibilityScorer._clean(project.title)
-            parts = [f"Project: {title}." if title else "Project."]
-            if role := ResponsibilityScorer._clean(project.role or ""):
-                parts.append(f"Role: {role}.")
-            parts.append(summary)
-            technologies = [
-                clean
-                for item in project.technologies
-                if (clean := ResponsibilityScorer._clean(item))
-            ]
-            if technologies:
-                parts.append(f"Technologies: {', '.join(technologies)}.")
-            evidence.append(
-                _EvidenceUnit("project", index, title, ResponsibilityScorer._clean(" ".join(parts)))
-            )
+            role = ResponsibilityScorer._clean(project.role or "")
+            for segment in ResponsibilityScorer._split_evidence_text(project.summary):
+                parts = [f"Project: {title}." if title else "Project."]
+                if role:
+                    parts.append(f"Role: {role}.")
+                parts.append(segment)
+                evidence.append(
+                    _EvidenceUnit(
+                        "project",
+                        index,
+                        title,
+                        ResponsibilityScorer._clean(" ".join(parts)),
+                    )
+                )
 
         for index, research in enumerate(candidate.research):
-            summary = ResponsibilityScorer._clean(research.summary)
-            if not summary:
-                continue
             title = ResponsibilityScorer._clean(research.title)
-            text = f"Research: {title}. {summary}" if title else summary
-            evidence.append(_EvidenceUnit("research", index, title, text))
+            for segment in ResponsibilityScorer._split_evidence_text(research.summary):
+                text = f"Research: {title}. {segment}" if title else segment
+                evidence.append(_EvidenceUnit("research", index, title, text))
 
         return evidence
+
+    @classmethod
+    def _split_evidence_text(cls, value: str) -> list[str]:
+        segments: list[str] = []
+        for raw_line in value.splitlines():
+            line = cls._clean(raw_line.lstrip("-•▪◦\t "))
+            if not line:
+                continue
+
+            heading = ""
+            body = line
+            if match := _SECTION_HEADING.match(line):
+                heading = cls._clean(match.group("heading"))
+                body = cls._clean(match.group("body"))
+
+            heading_words = len(heading.split()) + (1 if heading else 0)
+            body_limit = max(20, _MAX_SEGMENT_WORDS - heading_words)
+            for chunk in cls._chunk_text(body, body_limit):
+                segment = f"{heading}: {chunk}" if heading else chunk
+                segments.append(cls._clean(segment))
+
+        return cls._unique_nonempty(segments)
+
+    @classmethod
+    def _chunk_text(cls, text: str, word_limit: int) -> list[str]:
+        if len(text.split()) <= word_limit:
+            return [text]
+
+        sentences = [
+            cls._clean(part)
+            for part in _SENTENCE_BOUNDARY.split(text)
+            if cls._clean(part)
+        ]
+        chunks: list[str] = []
+        current: list[str] = []
+        current_words = 0
+
+        for sentence in sentences:
+            words = sentence.split()
+            if len(words) > word_limit:
+                if current:
+                    chunks.append(" ".join(current))
+                    current = []
+                    current_words = 0
+                chunks.extend(cls._word_chunks(words, word_limit))
+                continue
+
+            if current and current_words + len(words) > word_limit:
+                chunks.append(" ".join(current))
+                current = []
+                current_words = 0
+            current.append(sentence)
+            current_words += len(words)
+
+        if current:
+            chunks.append(" ".join(current))
+        return chunks
+
+    @staticmethod
+    def _word_chunks(words: list[str], word_limit: int) -> list[str]:
+        chunks = [
+            words[index : index + word_limit]
+            for index in range(0, len(words), word_limit)
+        ]
+        if (
+            len(chunks) > 1
+            and len(chunks[-1]) < _MIN_TRAILING_WORDS
+            and len(chunks[-2]) + len(chunks[-1]) <= _MAX_SEGMENT_WORDS
+        ):
+            chunks[-2].extend(chunks.pop())
+        return [" ".join(chunk) for chunk in chunks]
 
     @staticmethod
     def _unique_nonempty(values: list[str]) -> list[str]:

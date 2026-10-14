@@ -125,7 +125,10 @@ def jd_alignments(
     for unit, vector in zip(prepared.evidence, prepared.embeddings, strict=True):
         similarities = [ResponsibilityScorer._cosine_similarity(vector, job_vector) for job_vector in job_embeddings]
         best = max(range(len(similarities)), key=similarities.__getitem__)
-        alignments[(unit.evidence_type, unit.evidence_index)] = (similarities[best], responsibilities[best])
+        key = (unit.evidence_type, unit.evidence_index)
+        candidate = (similarities[best], responsibilities[best])
+        if key not in alignments or candidate[0] > alignments[key][0]:
+            alignments[key] = candidate
     return alignments
 
 

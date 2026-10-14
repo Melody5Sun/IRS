@@ -15,8 +15,32 @@ from app.services.skill_match_service import SkillMatchService
 RANKING_RESULT_LIMIT = 30
 
 
+def recommendation_level_rank(professional_score: float) -> int:
+    """Mirror the four recommendation levels displayed by the frontend."""
+    if professional_score >= 13:
+        return 3
+    if professional_score >= 7:
+        return 2
+    if professional_score >= 1:
+        return 1
+    return 0
+
+
+def ranking_sort_key(
+    professional_score: float,
+    intent_fit: float | None,
+    job_id: int | None,
+) -> tuple[float, float, float, float]:
+    return (
+        -recommendation_level_rank(professional_score),
+        -(intent_fit if intent_fit is not None else 0.0),
+        -professional_score,
+        job_id if job_id is not None else float("inf"),
+    )
+
+
 class RankingService:
-    """Apply hard constraints, calculate all match components, and rank by final score."""
+    """Rank by professional-fit tier, then career intent within each tier."""
 
     def __init__(
         self,
@@ -38,7 +62,7 @@ class RankingService:
 
     def run(self, profile: UserProfile) -> RankingResponse:
         screened = self.rules_screening_service.run(profile)
-        scored_jobs: list[tuple[float, JobRequirementDocument]] = []
+        scored_jobs: list[tuple[float, float, float | None, JobRequirementDocument]] = []
         prepared_evidence = self.responsibility_match_service.prepare_candidate(
             profile.resume
         )
@@ -61,13 +85,21 @@ class RankingService:
                 responsibility_score,
                 career_intent_score,
             )
-            scored_jobs.append((overall_score.final_score, job))
+            scored_jobs.append(
+                (
+                    overall_score.final_score,
+                    overall_score.professional_score,
+                    overall_score.intent_fit,
+                    job,
+                )
+            )
 
-        # 稳定排序：分数相同的岗位按 job_id 升序，前端翻页时顺序不会漂移。
+        # 先保证专业匹配等级顺序，再在同一等级内按用户意向重排。
         scored_jobs.sort(
-            key=lambda item: (
-                -item[0],
-                item[1].job_id if item[1].job_id is not None else float("inf"),
+            key=lambda item: ranking_sort_key(
+                item[1],
+                item[2],
+                item[3].job_id,
             )
         )
         results = [
@@ -78,9 +110,11 @@ class RankingService:
                 title=job.title,
                 location=job.location,
                 employment_type=job.employment_type,
+                professional_score=professional_score,
+                intent_fit=intent_fit,
                 final_score=final_score,
             )
-            for index, (final_score, job) in enumerate(
+            for index, (final_score, professional_score, intent_fit, job) in enumerate(
                 scored_jobs[:RANKING_RESULT_LIMIT],
                 start=1,
             )

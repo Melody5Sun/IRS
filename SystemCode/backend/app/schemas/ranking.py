@@ -10,6 +10,8 @@ class OverallScore(BaseModel):
     normalized_contributions: dict[str, float] = Field(default_factory=dict)
     core_score: float = Field(..., ge=0, le=100)
     preferred_bonus: float = Field(..., ge=0, le=5)
+    professional_score: float = Field(..., ge=0, le=100)
+    intent_fit: float | None = Field(default=None, ge=0, le=100)
     final_score: float = Field(..., ge=0, le=100)
 
 
@@ -20,6 +22,8 @@ class RankedJob(BaseModel):
     title: str
     location: Location | None = None
     employment_type: EmploymentType = "not_stated"
+    professional_score: float = Field(..., ge=0, le=100)
+    intent_fit: float | None = Field(default=None, ge=0, le=100)
     final_score: float = Field(..., ge=0, le=100)
 
 
@@ -29,5 +33,5 @@ class RankingResponse(BaseModel):
     passed_count: int
     returned_count: int
     rejected_by_rule: dict[str, int] = Field(default_factory=dict)
-    # 只返回通过硬约束后的前 30 个岗位，按 final_score 降序。
+    # 只返回通过硬约束后的前 30 个岗位，按意向轻量重排后的 final_score 降序。
     results: list[RankedJob] = Field(default_factory=list)
