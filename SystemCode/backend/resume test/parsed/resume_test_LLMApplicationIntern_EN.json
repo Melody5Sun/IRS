@@ -97,7 +97,9 @@
       "start_date": "2022-06",
       "end_date": "2026-09",
       "country": "China",
-      "school_tier": "211"
+      "school_tier": "211",
+      "gpa": "4.8/5.0",
+      "ranking": "Top 5%"
     }
   ],
   "certificates": [
@@ -134,7 +136,5 @@
       "date": null
     }
   ],
-  "additional_info": [
-    "GPA: 4.8/5.0 (Top 5%)"
-  ]
+  "additional_info": []
 }

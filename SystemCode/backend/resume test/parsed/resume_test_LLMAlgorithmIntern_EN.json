@@ -1,0 +1,192 @@
+{
+  "name": "Chen Siyu",
+  "email": "chensiyu2027@163.com",
+  "phone": "138-0000-0000",
+  "about": "Job Intent: LLM Algorithm / LLM Application Development (Intern)",
+  "experiences": [],
+  "projects": [
+    {
+      "title": "CampGPT-X: LLM Training and Campus Intelligent Q&A",
+      "summary": "LLM systems, intelligent Q&A\nProject Summary: Built a 2B-parameter decoder-only MoE large language model following the complete Pretraining → SFT → DPO pipeline, adapting a general language model to the campus Q&A domain; completed distributed training and inference optimization on a 4×A800 cluster and finally deployed a campus intelligent Q&A system.\nModel Architecture & Pre-training: Implemented a GPT-like architecture (RMSNorm, RoPE, SwiGLU, GQA) with 8-expert top-2 routing plus shared experts, mitigating expert collapse through load balancing; completed 100B-token pre-training, with validation PPL dropping from 38 to 17 and stable convergence.\nData Pipeline Construction: Built domain data construction pipelines for the SFT/DPO stages, designing an automated \"model generation + rule filtering\" Pipeline that filters low-quality samples with relevance and consistency rules, reaching an 88% valid-sample ratio; finally built 10k instruction samples and 10k preference samples.\nInstruction Tuning & Alignment: Performed full-parameter SFT for domain adaptation, raising answer accuracy on the campus Q&A evaluation set from about 5% to 75%; further DPO preference optimization raised the pairwise win rate by about 15% and significantly reduced hallucinations.\nTraining & Inference Optimization: Targeting memory and compute bottlenecks, used FSDP (ZeRO-2) for gradient and optimizer-state sharding during training, combined with Gradient Checkpointing and FlashAttention-2 to optimize memory and compute efficiency, reducing overall memory usage by 32% and increasing training throughput about 6×; at inference, reduced KV Cache overhead through GQA, cutting inference latency by about 40% and increasing throughput by about 60%.",
+      "technologies": [
+        "Mixture-of-Experts",
+        "RMSNorm",
+        "RoPE",
+        "SwiGLU",
+        "GQA",
+        "SFT",
+        "DPO",
+        "FSDP",
+        "ZeRO-2",
+        "Gradient Checkpointing",
+        "FlashAttention-2"
+      ],
+      "role": null,
+      "start_date": "2025-12",
+      "end_date": "2026-03"
+    },
+    {
+      "title": "Aero-Engine Damage Intelligent Detection and Deployment",
+      "summary": "Industrial damage recognition\nProject Summary: Facing scarce aero-engine borescope image data and inefficient manual inspection, implemented damage recognition and terminal-device deployment based on YOLOv9.\nCore Work: Responsible for borescope image annotation and data construction; expanded the sample size with a multi-region stitching Mixup method, then completed model fine-tuning and training-pipeline setup with transfer learning, finally achieving edge deployment (ONNX/TensorRT) to support inspection on embedded devices.",
+      "technologies": [
+        "YOLOv9",
+        "Mixup",
+        "Transfer Learning",
+        "ONNX",
+        "TensorRT"
+      ],
+      "role": null,
+      "start_date": "2024-02",
+      "end_date": "2024-05"
+    }
+  ],
+  "research": [
+    {
+      "type": "paper",
+      "title": "Text-Routed Mixture-of-Experts for Explainable Multimodal Sentiment Analysis",
+      "institution": null,
+      "summary": "AAAI-2026; CCF-A, student first author",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Explanation-Guided Multimodal Emotion Reasoning with Temporal Pre-Fusion",
+      "institution": null,
+      "summary": "ACM MM-2025 Challenge; CCF-A, first author",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Mamba-based Cross-Modal Temporal Fusion for Multimodal Large Language Models",
+      "institution": null,
+      "summary": "NeurIPS-2026, under review; CCF-A, student first author",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Research on Deep Learning-Based Aero-Engine Damage Recognition Technology",
+      "institution": null,
+      "summary": "Peking University Core Journal 2024; student first author",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "software_copyright",
+      "title": "Research on Deep Learning-Based Aero-Engine Damage Recognition Technology",
+      "institution": null,
+      "summary": "",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "patent",
+      "title": "Research on Deep Learning-Based Aero-Engine Damage Recognition Technology",
+      "institution": null,
+      "summary": "",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "research_project",
+      "title": "Text-Routed Mixture-of-Experts Multimodal Sentiment Analysis",
+      "institution": null,
+      "summary": "Video sentiment analysis, temporal modeling, explainability\nProject Summary: To address the core problems in multimodal sentiment analysis that \"text is dominant but under-utilized\" and \"audio-visual temporal information is hard to align\", proposed a unified framework of \"explanation-driven alignment + temporal modeling + text-routed mixture of experts\", enhancing model interpretability while improving performance.\nExplanation-driven Alignment: Introduced an MLLM to generate emotional explanations of the audio and video modalities as an intermediate semantic bridge, mitigating cross-modal semantic inconsistency.\nTemporal Alignment Modeling: Designed Temporal Alignment to effectively model long- and short-term dependencies and synchronization between audio and video while keeping linear complexity.\nText-Routed MoE: Proposed using text semantics as the routing signal to select expert networks, reinforcing the \"text-dominant\" property and reducing interference from ineffective modalities.\nExperimental Results: Outperformed existing methods on MOSI, MOSEI, CH-SIMS and other datasets; MAE on CH-SIMS dropped to 0.353 (↓13.5%).",
+      "start_date": "2024-11",
+      "end_date": "2025-08"
+    },
+    {
+      "type": "research_project",
+      "title": "Multimodal Emotion Reasoning and Explanation Generation",
+      "institution": null,
+      "summary": "Multimodal video understanding, emotion reasoning\nProject Summary: To address scarce annotation data in multimodal emotion recognition and the loss of temporal emotional information during LLM tokenization, proposed a unified \"data augmentation + temporal pre-fusion\" framework, achieving cross-modal emotion reasoning and natural-language explanation generation and significantly improving emotional consistency and interpretability.\nMultimodal Emotion Reasoning Data: Used AffectGPT fine-tuned on OV-MERD to generate reasoning-style emotion descriptions for SIMSv2; after Qwen3 consistency filtering and manual correction, built 4,403 high-quality emotion reasoning samples, effectively mitigating annotation scarcity and improving human-like reasoning ability.\nMamba Temporal pre-Fusion: Before entering the LLM, performed cross-modal pre-fusion of audio and visual frame sequences, using SSM to model long-range temporal dependencies with linear complexity, then generated gating signals via Conv1d+SiLU to achieve bidirectional audio↔visual interaction through element-wise modulation; the fused features are projected into a unified multimodal representation that preserves temporal information, avoiding the loss of temporal dynamics and cross-modal synchronization caused by independent tokenization.\nMultimodal Prompt Reasoning: Built a structured Prompt combining fusion tokens, unimodal global tokens and subtitles, guiding Qwen2.5-7B to generate natural-language explanations with emotional reasoning chains. In the competition's official human evaluation, ranked 3rd overall on the authenticity and fluency of the generated explanations.",
+      "start_date": "2025-05",
+      "end_date": "2025-09"
+    }
+  ],
+  "skills": [
+    "PyTorch",
+    "Transformer",
+    "PEFT",
+    "VLM",
+    "CLIP",
+    "BLIP-2",
+    "LLaVA",
+    "Qwen-VL",
+    "Reinforcement Learning",
+    "PPO",
+    "DPO",
+    "GRPO",
+    "MLLM",
+    "Mixture-of-Experts",
+    "Mamba",
+    "SSM",
+    "AffectGPT",
+    "Qwen3",
+    "Qwen2.5-7B",
+    "RMSNorm",
+    "RoPE",
+    "SwiGLU",
+    "GQA",
+    "SFT",
+    "FSDP",
+    "ZeRO-2",
+    "Gradient Checkpointing",
+    "FlashAttention-2",
+    "YOLOv9",
+    "Mixup",
+    "Transfer Learning",
+    "ONNX",
+    "TensorRT"
+  ],
+  "skill_groups": [
+    {
+      "category": "LLM Fundamentals",
+      "description": "Familiar with PyTorch and Transformer, understand the principles and training workflows of mainstream LLMs, and master efficient fine-tuning methods such as PEFT."
+    },
+    {
+      "category": "Multimodal",
+      "description": "Familiar with VLM architectures such as CLIP, BLIP-2, LLaVA and Qwen-VL; master image-text alignment mechanisms and multimodal instruction tuning."
+    },
+    {
+      "category": "Reinforcement Learning",
+      "description": "Master RL fundamentals and can use mainstream alignment algorithms (PPO, DPO, GRPO, etc.) for model alignment and multi-objective optimization."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Guangdong University of Technology",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Artificial Intelligence",
+      "start_date": "2024-09",
+      "end_date": "2027-06",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    },
+    {
+      "institution": "Guangdong University of Technology",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2020-09",
+      "end_date": "2024-06",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    }
+  ],
+  "certificates": [],
+  "languages": [],
+  "awards": [],
+  "additional_info": []
+}
