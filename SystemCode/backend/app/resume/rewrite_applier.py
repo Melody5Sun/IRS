@@ -155,7 +155,7 @@ def _check_skill_groups(
 
 def _check_placeholders(change: ResumeChange) -> tuple[RejectionReason, str] | None:
     """改写稿里新出现的占位必须和 needs_user_input 一一对应：有占位就得有问题可问，提了问就得有地方回填。"""
-    new = placeholders(_as_text(change.value)) - placeholders(_as_text(change.original))
+    new = placeholders(as_text(change.value)) - placeholders(as_text(change.original))
     asked = {item.placeholder for item in change.needs_user_input}
     if new != asked or len(asked) != len(change.needs_user_input):
         return "placeholder_mismatch", f"占位 {sorted(new)} 与问询 {sorted(asked)} 不对应"
@@ -182,6 +182,10 @@ def check_facts(
 
     skill_text 不为空时只在这段文本里查新技能（技能栏用它排除分类名），数字和公司名仍查整个 value。
     """
+    # [...] 占位是向用户要的数据，不是写进去的事实：如 "[database load change]" 不能当成新技能 databases
+    value = _PLACEHOLDER.sub(" ", value)
+    if skill_text is not None:
+        skill_text = _PLACEHOLDER.sub(" ", skill_text)
     # 去掉千分位逗号再比：用户答 "2000"，改写成 "2,000" 不算编造
     new_numbers = _numbers(value) - _numbers(evidence)
     if new_numbers:
@@ -198,7 +202,7 @@ def check_facts(
     return None
 
 
-def _as_text(value: str | list[str] | list[SkillGroup]) -> str:
+def as_text(value: str | list[str] | list[SkillGroup]) -> str:
     if isinstance(value, str):
         return value
     if all(isinstance(item, SkillGroup) for item in value):

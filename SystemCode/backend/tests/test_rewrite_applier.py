@@ -1,6 +1,7 @@
 import pytest
 
-from app.resume.rewrite_applier import apply_changes
+from app.parsers.text_parser import extract_skills
+from app.resume.rewrite_applier import apply_changes, check_facts
 from app.schemas.resume import Experience, Project, ResumeDocument, SkillGroup
 from app.schemas.resume_rewrite import ResumeChange
 
@@ -129,6 +130,14 @@ def test_invalid_changes_are_rejected_with_reason(overrides: dict[str, object], 
 
     assert [r.reason for r in result.rejected_changes] == [reason]
     assert result.rewritten_resume == _resume()
+
+
+def test_placeholder_text_is_not_checked_as_facts() -> None:
+    # 占位里的 "database" 不是写进简历的技能，"[2x]" 也不是编造的数字
+    value = "Built REST APIs with Python, cutting [database load change] by [2x]."
+    known = set(extract_skills(DESCRIPTION))
+    assert check_facts(DESCRIPTION, value, DESCRIPTION, known, "Shopee") is None
+    assert check_facts(DESCRIPTION, value + " Used Kubernetes.", DESCRIPTION, known, "Shopee")[0] == "new_skill"
 
 
 def test_second_change_to_same_field_is_rejected() -> None:
