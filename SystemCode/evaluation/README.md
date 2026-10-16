@@ -62,6 +62,7 @@ python -m scripts.prune_eval_cache [--apply]              # 删掉当前评测�
 
 R1–R4-前-解析 是本地会话里的中间状态，代码和回答都没有保留，这几次的数字只能按本文档引用，不能重跑。
 仓库里只有 R4 实际命中的 68 个回答，在 `SystemCode/backend/` 下重跑评测脚本即可得到第 4 节的 R4 数字。
+**要在评测分支的末端 `065fac6` 上重跑**（`git switch --detach 065fac6`）：合并进 main 后，同事改了职责 / 技能评分（`responsibility_scorer`、`skill_scorer`、`jd_alignments`），发给 LLM 的改写提示随之变化，在 main 上跑改写评测会有 22 个待答（10-16 实测）。解析评测不受影响。
 
 ## 3. 优化过程
 
