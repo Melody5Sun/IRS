@@ -1,0 +1,302 @@
+{
+ "M01": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R24"
+ },
+ "M02": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R27"
+ },
+ "M03": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R17"
+ },
+ "M04": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R27"
+ },
+ "M05": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R08"
+ },
+ "M06": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R15"
+ },
+ "M07": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R13"
+ },
+ "M08": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R24"
+ },
+ "M09": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R28"
+ },
+ "M10": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R26"
+ },
+ "M11": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R30"
+ },
+ "M12": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R07"
+ },
+ "M13": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R16"
+ },
+ "M14": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R05"
+ },
+ "M15": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R06"
+ },
+ "M16": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R02"
+ },
+ "M17": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R01"
+ },
+ "M18": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R19"
+ },
+ "M19": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R13"
+ },
+ "M20": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R06"
+ },
+ "M21": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R09"
+ },
+ "M22": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R23"
+ },
+ "M23": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R15"
+ },
+ "M24": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R03"
+ },
+ "M25": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R07"
+ },
+ "M26": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R19"
+ },
+ "M27": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R14"
+ },
+ "M28": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R25"
+ },
+ "M29": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R09"
+ },
+ "M30": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R02"
+ },
+ "M31": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R11"
+ },
+ "M32": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R26"
+ },
+ "M33": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R21"
+ },
+ "M34": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R30"
+ },
+ "M35": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R10"
+ },
+ "M36": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R04"
+ },
+ "M37": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R16"
+ },
+ "M38": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R18"
+ },
+ "M39": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R12"
+ },
+ "M40": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R29"
+ },
+ "M41": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R20"
+ },
+ "M42": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R28"
+ },
+ "M43": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R29"
+ },
+ "M44": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R25"
+ },
+ "M45": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R18"
+ },
+ "M46": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R04"
+ },
+ "M47": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R21"
+ },
+ "M48": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R23"
+ },
+ "M49": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R11"
+ },
+ "M50": {
+  "version": "before",
+  "arm": "rag",
+  "source_id": "R22"
+ },
+ "M51": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R03"
+ },
+ "M52": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R08"
+ },
+ "M53": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R01"
+ },
+ "M54": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R22"
+ },
+ "M55": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R10"
+ },
+ "M56": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R20"
+ },
+ "M57": {
+  "version": "after",
+  "arm": "no_rag",
+  "source_id": "R14"
+ },
+ "M58": {
+  "version": "before",
+  "arm": "no_rag",
+  "source_id": "R12"
+ },
+ "M59": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R05"
+ },
+ "M60": {
+  "version": "after",
+  "arm": "rag",
+  "source_id": "R17"
+ }
+}

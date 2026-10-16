@@ -1,0 +1,33 @@
+{
+  "changes": [
+    {
+      "section": "skills",
+      "index": 0,
+      "field": "skill_groups",
+      "original": [{"category": "LLM Fundamentals", "description": "Familiar with PyTorch and Transformer, understand the principles and training workflows of mainstream LLMs, and master efficient fine-tuning methods such as PEFT."}, {"category": "Multimodal", "description": "Familiar with VLM architectures such as CLIP, BLIP-2, LLaVA and Qwen-VL; master image-text alignment mechanisms and multimodal instruction tuning."}, {"category": "Reinforcement Learning", "description": "Master RL fundamentals and can use mainstream alignment algorithms (PPO, DPO, GRPO, etc.) for model alignment and multi-objective optimization."}],
+      "value": [{"category": "LLM Fundamentals", "description": "Familiar with PyTorch and Transformer, understand the principles and training workflows of mainstream LLMs, and master efficient fine-tuning methods such as PEFT."}, {"category": "Reinforcement Learning", "description": "Master RL fundamentals and can use mainstream alignment algorithms (PPO, DPO, GRPO, etc.) for model alignment and multi-objective optimization."}, {"category": "Multimodal", "description": "Familiar with VLM architectures such as CLIP, BLIP-2, LLaVA and Qwen-VL; master image-text alignment mechanisms and multimodal instruction tuning."}],
+      "reasons": [
+        {
+          "issue_type": "irrelevant_content",
+          "explanation": {
+            "en": "The Multimodal group (CLIP, BLIP-2, LLaVA, Qwen-VL) is the part least tied to predictive trading models, so it now sits last. The Reinforcement Learning group moves up because its model optimization skills are closer to the job's focus on developing predictive trading models.",
+            "zh": "多模态组（CLIP、BLIP-2、LLaVA、Qwen-VL）与预测性交易模型的关联最弱，因此移到最后。强化学习组前移，因为其中的模型优化技能更贴近岗位对开发预测性交易模型的要求。"
+          },
+          "guideline_keys": [],
+          "jd_responsibility": null
+        },
+        {
+          "issue_type": "unsurfaced_skill",
+          "explanation": {
+            "en": "PyTorch is required by the job but appears only in this skills list, not in any project entry, so mention it in the project entries where you actually used it. The LLM Fundamentals group that leads with PyTorch stays first.",
+            "zh": "岗位明确要求 PyTorch，但它目前只出现在技能列表中，没有出现在任何项目条目里，因此需要在你实际使用它的项目条目中补充提及。包含 PyTorch 的 LLM Fundamentals 组仍保持在最前。"
+          },
+          "guideline_keys": [],
+          "jd_responsibility": null
+        }
+      ],
+      "needs_user_input": []
+    }
+  ],
+  "deletions": []
+}

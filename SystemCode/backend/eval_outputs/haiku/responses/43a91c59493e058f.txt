@@ -1,0 +1,1 @@
+{"removed_skills": ["LLM fundamentals", "RAG techniques", "Query Rewriting", "Chunking", "Rerank", "Embedding", "on-demand Skills loading", "MCP protocol", "Memory layering", "Multi-Agent", "LangChain", "LangGraph", "Codex", "write and tune prompts", "break down tasks", "CET-4: 586", "CET-6: 527"], "added_skills": []}

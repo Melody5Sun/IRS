@@ -1,0 +1,1 @@
+{"removed_skills": ["Large Multimodal Models (LMMs)", "DiT architectures", "object detection", "image segmentation (SAM)", "multimodal alignment", "full RLHF pipeline", "RAG technology stack (Naive/Light/Graph)", "Agentic Workflows"], "added_skills": []}
