@@ -22,9 +22,18 @@ _BULLET = re.compile(r"^\s*(?:[-*•·▪●]|\d+[.)])\s*")
 _LABEL = re.compile(r"^([^:：]{1,60})[:：]\s+")
 MAX_LABEL_WORDS = 6
 # 这些小标题的行只是项目名/技术栈/链接，不是成果要点，不做行级检测
-_HEADER_LABELS = {"project", "tech stack", "technology stack", "core technologies", "technologies", "github", "link", "demo"}
+_HEADER_LABELS = {"project", "tech stack", "technology stack", "core technologies", "technologies", "github", "link", "demo", "keywords"}
+# 论文署名/期刊会议等级行（"First Author, CCF-A, ICCV-25"），只认短行：长的研究摘要里也可能顺带提到 first author
+_AUTHOR_LINE = re.compile(
+    r"\b(?:first|second|third|corresponding|co-first)\s+(?:student\s+)?author\b|\bCCF-[ABC]\b|\bCAS Q[1-4]\b",
+    re.IGNORECASE,
+)
+MAX_AUTHOR_LINE_WORDS = 15
+# 主题标签行（"Video sentiment analysis, temporal modeling, explainability"）：每段不超过这么多词、不以句号结尾
+MAX_TAG_WORDS = 3
 _WEAK_VERB = re.compile(
-    r"^(?:responsible for|in charge of|helped|helping|assisted|assisting|worked on|working on|"
+    # 允许前面有 "As project owner," 这样的身份前缀
+    r"^(?:as [^,]{1,40},\s*)?(?:responsible for|in charge of|helped|helping|assisted|assisting|worked on|working on|"
     r"participated in|involved in|tasked with|duties included|took part in|contributed to)\b",
     re.IGNORECASE,
 )
@@ -38,11 +47,13 @@ _PASSIVE = re.compile(
 _BUZZWORD = re.compile(
     r"\b(?:leverag(?:e|ed|ing)|spearhead(?:ed|ing)?|synerg(?:y|ies)|cutting[- ]edge|state[- ]of[- ]the[- ]art|"
     r"best[- ]in[- ]class|world[- ]class|ai[- ]powered|successfully|seamless(?:ly)?|passionate|results[- ]driven|"
-    r"innovative|utiliz(?:e|ed|ing)|various)\b",
+    r"innovative|utiliz(?:e|ed|ing)|various|significantly|greatly|effectively)\b",
     re.IGNORECASE,
 )
+# 型号版本里的数字（Qwen3-8b、GPT-4o、Top-20）和 three-layer、five-level 这类结构描述不算量化
 _QUANTITY = re.compile(
-    r"\d|\b(?:two|three|four|five|six|seven|eight|nine|ten|dozens?|hundreds?|thousands?|millions?|billions?)\b",
+    r"(?<![A-Za-z-])\d|\b(?:two|three|four|five|six|seven|eight|nine|ten)\b(?!-)"
+    r"|\b(?:dozens?|hundreds?|thousands?|millions?|billions?)\b",
     re.IGNORECASE,
 )
 # ponytail: 只按结果类词语判断是否写了结果，"Built X for Y team" 这类隐含结果的句子也会被报 missing_outcome；
@@ -51,7 +62,8 @@ _OUTCOME = re.compile(
     r"%|\b(?:result(?:ed|ing)? in|lead(?:ing)? to|led to|so that|enabl(?:e|ed|ing)|allow(?:ed|ing)|"
     r"reduc\w*|improv\w*|increas\w*|decreas\w*|cut(?:ting)?|sav(?:e|ed|ing)|boost\w*|achiev\w*|"
     r"accelerat\w*|lower\w*|rais(?:e|ed|ing)|gr[eo]w\w*|speed\w* up|faster|shorten\w*|eliminat\w*|"
-    r"prevent\w*|adopted|praised|award\w*|won)\b",
+    r"prevent\w*|adopted|praised|award\w*|won|"
+    r"ensur\w*|guarantee\w*|solv\w*|avoid\w*|safeguard\w*|strengthen\w*|standardiz\w*|mitigat\w*|protect\w*)\b",
     re.IGNORECASE,
 )
 # 少于这么多词的行（小标题、"Tech: ..." 之类）不做行级检测
@@ -87,14 +99,16 @@ class BlockIssues:
         return bool(self.lines or self.block_issues)
 
 
-def line_issues(text: str) -> list[IssueType]:
-    """一行要点的规则检测，一行可同时报多个问题类型。"""
+def line_issues(text: str, section: str | None = None) -> list[IssueType]:
+    """一行要点的规则检测，一行可同时报多个问题类型。
+    主题标签行只在研究块里跳过："Built REST APIs, wrote unit tests, deployed services" 这类经历要点也是逗号分隔的短段。"""
     line = _BULLET.sub("", text).strip()
     if (label := _LABEL.match(line)) and len(label.group(1).split()) <= MAX_LABEL_WORDS:
-        if label.group(1).strip().casefold() in _HEADER_LABELS:
+        # "Technical Department. Tech stack: ..." 这类前面带部门名的标题行，取最后一句判断
+        if label.group(1).strip().casefold().rsplit(". ", 1)[-1] in _HEADER_LABELS:
             return []
         line = line[label.end():]
-    if len(line.split()) < MIN_LINE_WORDS:
+    if len(line.split()) < MIN_LINE_WORDS or _is_author_line(line) or (section == "research" and _is_tag_line(line)):
         return []
     issues: list[IssueType] = []
     if _WEAK_VERB.match(line):
@@ -108,6 +122,15 @@ def line_issues(text: str) -> list[IssueType]:
     if not _OUTCOME.search(line):
         issues.append("missing_outcome")
     return issues
+
+
+def _is_author_line(line: str) -> bool:
+    return bool(_AUTHOR_LINE.search(line)) and len(line.split()) <= MAX_AUTHOR_LINE_WORDS
+
+
+def _is_tag_line(line: str) -> bool:
+    parts = [part for part in re.split(r"[,;]", line) if part.strip()]
+    return len(parts) >= 2 and not line.rstrip().endswith(".") and all(len(part.split()) <= MAX_TAG_WORDS for part in parts)
 
 
 def jd_alignments(
@@ -146,7 +169,7 @@ def detect_issues(
     for section, index, heading, text, technologies in entries:
         block = BlockIssues(section=section, index=index, heading=heading, text=text)
         for number, line in enumerate(text.split("\n")):
-            if issues := line_issues(line):
+            if issues := line_issues(line, section):
                 block.lines.append(LineIssues(number, line.strip(), issues))
         if text.strip() and not extract_skills(text) and not technologies:
             block.block_issues.append("unclear_tech_stack")
