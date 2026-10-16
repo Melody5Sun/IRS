@@ -88,6 +88,13 @@ def test_one_candidate_skill_can_support_multiple_jd_skills_with_separate_paths(
     )
 
 
+def test_react_agent_paradigm_does_not_match_react_framework() -> None:
+    result = SkillScorer().score(ResumeDocument(skills=["ReAct", "Python"]), _job(required_skills=["react", "python"]))
+
+    assert [match.jd_skill for match in result.direct_required_matches] == ["python"]
+    assert all(match.candidate_skill != "ReAct" for match in result.graph_required_matches)
+
+
 def test_no_preferred_skills_means_no_bonus_and_no_penalty() -> None:
     result = SkillScorer().score(
         ResumeDocument(skills=["Python"]),

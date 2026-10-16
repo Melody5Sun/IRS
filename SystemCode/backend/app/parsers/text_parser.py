@@ -5,6 +5,8 @@ from app.parsers.skill_lexicon import SKILL_SYNONYMS
 EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 PHONE_PATTERN = re.compile(r"(?:\+?\d[\d\s().-]{7,}\d)")
 EXPERIENCE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)", re.IGNORECASE)
+# 转小写后会撞上技能别名的普通写法：ReAct 是 Agent 推理范式不是 React；夹在英文单词之间的小写 go 是动词不是 Go 语言
+FALSE_ALIAS_PATTERN = re.compile(r"(?<![\w+#])ReAct(?![\w+#])|(?<=[A-Za-z] )go\b|\bgo(?= [A-Za-z])")
 
 
 def extract_email(text: str) -> str | None:
@@ -27,7 +29,7 @@ def extract_skills(text: str) -> list[str]:
 
 
 def find_skill_matches(text: str) -> list[tuple[str, str]]:
-    normalized_text = text.lower()
+    normalized_text = FALSE_ALIAS_PATTERN.sub(" ", text).lower()
     matches: dict[str, str] = {}
     for skill, aliases in SKILL_SYNONYMS.items():
         for alias in aliases:

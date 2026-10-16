@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from app.knowledge.mind_ontology import MindKnowledgeGraph, MindSkill, get_mind_knowledge_graph
-from app.parsers.text_parser import find_skill_matches
+from app.parsers.text_parser import FALSE_ALIAS_PATTERN, find_skill_matches
 from app.schemas.job import JobRequirementDocument
 from app.schemas.match import DirectSkillMatch, GraphSkillMatch, SkillScoreResponse
 from app.schemas.resume import ResumeDocument
@@ -240,6 +240,10 @@ class SkillScorer:
         for raw_name in skill_names:
             clean_name = raw_name.strip()
             if not clean_name:
+                continue
+            if FALSE_ALIAS_PATTERN.fullmatch(clean_name):
+                # ReAct 这类写法不按小写归一到同名技能（React），也不查图谱，单独成一项
+                normalized.setdefault(clean_name, _NormalizedSkill(original=clean_name, key=clean_name, graph_skill=None))
                 continue
             graph_skill = self.graph.get_skill(clean_name)
             canonical_name = graph_skill.name if graph_skill is not None else self._lexicon_name(clean_name)
