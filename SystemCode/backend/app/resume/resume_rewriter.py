@@ -16,7 +16,7 @@ from app.matching.embedding_provider import EmbeddingProvider, SentenceTransform
 from app.repositories.resume_guideline_repository import GuidelineMatch, ResumeGuidelineRepository
 from app.resume.issue_detector import BlockIssues, detect_issues, jd_alignments
 from app.parsers.text_parser import extract_skills
-from app.resume.rewrite_applier import MIN_EXTRA_WORDS, apply_changes, check_facts, placeholders
+from app.resume.rewrite_applier import MIN_EXTRA_WORDS, apply_changes, as_text, check_facts, placeholders
 from app.schemas.job import JobRequirementDocument
 from app.schemas.match import SkillScoreRequest
 from app.schemas.resume import ResumeDocument
@@ -27,6 +27,7 @@ from app.schemas.resume_rewrite import (
     DeletionSuggestion,
     PlaceholderAnswer,
     RejectedDeletion,
+    ResumeChange,
     ResumeChangeSet,
     ResumeRewriteResult,
     RewriteReason,
@@ -48,6 +49,8 @@ ISSUE_QUERIES: dict[str, str] = {
     "weak_jd_alignment": "Align the entry with the job description: put the job-relevant work first and use the job's terminology.",
 }
 # 经历/项目/研究块：可改写的文本字段、在 ResumeDocument 上的列表名
+# 一条改动最多新增几个占位：占位一多，用户要补一长串数据，改写稿也读不通
+MAX_NEW_PLACEHOLDERS = 2
 TEXT_FIELD = {"experience": "description", "project": "summary", "research": "summary"}
 LIST_ATTR = {"experience": "experiences", "project": "projects", "research": "research"}
 
@@ -86,12 +89,12 @@ Output schema:
 Editable fields (anything else will be rejected): experience -> "description"; project -> "summary" or "technologies"; research -> "summary"; skills (index 0) -> "skill_groups". Change each field at most once.
 
 Rules:
-1. No fabrication. Use only facts already in the block. Never add numbers, percentages, durations or scale that are not in the original; never add a skill, tool or technology that this block (its text or its technologies list) does not already mention; never mention the job's company. Never upgrade the strength of a contribution: "participated in", "assisted" or "helped" may become "contributed to" or "co-designed", never "led", "owned" or "spearheaded". For "unclear_tech_stack", surface only technologies this block already names; if none fit, write a placeholder such as "[framework/tool used]" and ask the user. When a guideline asks for data the block does not contain (a metric, an outcome, a scale), write a short bracketed placeholder such as "[number of users]" in value and add a needs_user_input item with the same placeholder, a question for the user and why it matters. Every new placeholder in value must have exactly one needs_user_input item and every needs_user_input item must have its placeholder in value; otherwise the change is rejected. Use placeholders only for information the block really lacks.
+1. No fabrication. Use only facts already in the block. Never add numbers, percentages, durations or scale that are not in the original; never add a skill, tool or technology that this block (its text or its technologies list) does not already mention; never mention the job's company. Never upgrade the strength of a contribution: "participated in", "assisted" or "helped" may become "contributed to" or "co-designed", never "led", "owned" or "spearheaded". For "unclear_tech_stack", surface only technologies this block already names; if none fit, write a placeholder such as "[framework/tool used]" and ask the user. When a guideline asks for data the block does not contain (a metric, an outcome, a scale), write a short bracketed placeholder such as "[number of users]" in value and add a needs_user_input item with the same placeholder, a question for the user and why it matters. Every new placeholder in value must have exactly one needs_user_input item and every needs_user_input item must have its placeholder in value; otherwise the change is rejected. Use placeholders only for information the block really lacks, and add at most """ + str(MAX_NEW_PLACEHOLDERS) + """ new placeholders per change: ask only for the one or two figures that matter most for this job, and write the other bullets without numbers.
 2. Copy "original" exactly (same wording and line breaks). Keep one bullet per line joined with "\\n", keep the same bullets in the same order unless merging is clearly better, and keep value at most 1.8 times the length of the original.
 3. "technologies": only reorder the existing items by relevance to the job; never add or remove items.
-4. "skill_groups" (value is the complete new skills section as [{"category": "string|null", "description": "string"}]): consider both SKILLS and the original skill_groups; keep only skills useful for the job, ordered by importance to the job (groups and skills inside each group); you may add skills that are in SKILLS but missing from the original skill_groups; you may drop irrelevant skills.
-5. Only change blocks that have issues, and only to fix them. Write the resume text in English.
-6. reasons: every change needs at least one reason. explanation is 1-2 plain sentences addressed to the student: what is weak in THIS text, what the cited guideline recommends, and WHY, by paraphrasing that guideline's rationale in your own words (do not copy it and do not write guideline keys in it). Write it in English (en) and Simplified Chinese (zh). guideline_keys may only contain keys listed in that block's guidelines under the same issue type as the reason.
+4. "skill_groups" (value is the complete new skills section as [{"category": "string|null", "description": "string"}]): consider both SKILLS and the original skill_groups; keep only skills useful for the job, ordered by importance to the job (groups and skills inside each group); you may add skills that are in SKILLS but missing from the original skill_groups; you may drop irrelevant skills. Keep proficiency qualifiers as written (e.g. "Proficient in", "Familiar with"); never move a skill to a stronger level.
+5. Only change blocks that have issues, and only to fix them. Write the resume text in English. When rewriting an experience, project or research block, align it with its aligned_job_responsibility: put the facts from the block that support that responsibility first and describe them with the job's terminology where the block's facts allow, and copy that responsibility into jd_responsibility of the reason. Do not add generic phrases (e.g. "performance-oriented", "scalable", "robust") just to sound aligned. If a block has "irrelevant_content", do not polish its wording: suggest deleting it, or shorten it to the transferable skills that matter for this job.
+6. reasons: every change needs at least one reason. explanation is 1-2 plain sentences addressed to the student: what is weak in THIS text, what the cited guideline recommends, and WHY, by paraphrasing that guideline's rationale in your own words (do not copy it and do not write guideline keys in it). The explanation must describe only edits you actually made between original and value: mention only skills, tools and terms that appear in original, value or the JOB; if you removed, merged or weakened any claim, say so; never say the job asks for something the JOB does not state. Write it in English (en) and Simplified Chinese (zh). guideline_keys may only contain keys listed in that block's guidelines under the same issue type as the reason.
 7. deletions: only for blocks whose issues include "irrelevant_content". Suggest deleting the whole entry, or single lines that do not support the job. Do not also rewrite an entry you suggest deleting entirely. The user confirms every deletion, so explain why in reasons.
 8. If nothing needs to change, return {"changes": [], "deletions": []}."""
 
@@ -152,8 +155,12 @@ class ResumeRewriter:
             for by_issue in retrieved.values() for matches in by_issue.values() for m in matches
         }
 
+        def soft_check(change_set: ResumeChangeSet) -> str | None:
+            problems = [text for change in change_set.changes for _, text in change_problems(change, resume, job)]
+            return "；".join(problems) or None
+
         change_set = self._complete_json(
-            SYSTEM_PROMPT, self._user_prompt(resume, job, blocks, retrieved), ResumeChangeSet
+            SYSTEM_PROMPT, self._user_prompt(resume, job, blocks, retrieved), ResumeChangeSet, soft_check, strict=False
         )
         for item in [*change_set.changes, *change_set.deletions]:
             _keep_known_keys(item.reasons, retrieved.get((item.section, item.index), {}))
@@ -298,10 +305,13 @@ class ResumeRewriter:
         user_prompt: str,
         model: type[_T],
         check: Callable[[_T], str | None] | None = None,
+        strict: bool = True,
     ) -> _T:
-        """最多调两次 LLM：输出不是合法 JSON，或没通过 check（返回错误说明），就带上错误重试一次。"""
+        """最多调两次 LLM：输出不是合法 JSON，或没通过 check（返回错误说明），就带上错误重试一次。
+        strict=False 时 check 只是软约束：重试后仍不满足，就返回最后一次 JSON 合法的输出。"""
         prompt = user_prompt
         error = ""
+        fallback: _T | None = None
         for _ in range(2):
             raw = self.client.complete(system_prompt=system_prompt, user_prompt=prompt)
             try:
@@ -311,12 +321,34 @@ class ResumeRewriter:
             else:
                 if (error := check(result) if check else None) is None:
                     return result
+                if not strict:
+                    fallback = result
             prompt = (
                 f"{user_prompt}\n\n"
                 f"上一次的输出没有通过校验，错误信息：{error}\n"
                 "请重新只输出一个符合 schema 的 JSON 对象。"
             )
+        if fallback is not None:
+            return fallback
         raise ResumeRewriteError(f"LLM 重试后仍未能返回合法的输出：{error}")
+
+
+def change_problems(change: ResumeChange, resume: ResumeDocument, job: JobRequirementDocument) -> list[tuple[str, str]]:
+    """改动的软约束（违反时带着说明重试一次，仍违反就照常输出）：新增占位不超过上限；
+    理由里点名的技能必须出现在原文、改写或 JD 里，否则理由描述的是没做的改动或 JD 没提的要求。"""
+    # (类型, 说明)：类型 too_many_placeholders / unsupported_reason，评测按类型计数
+    problems: list[tuple[str, str]] = []
+    original, value = as_text(change.original), as_text(change.value)
+    if len(new := placeholders(value) - placeholders(original)) > MAX_NEW_PLACEHOLDERS:
+        problems.append(("too_many_placeholders", f"{change.section}[{change.index}] 新增了 {len(new)} 个占位，最多 {MAX_NEW_PLACEHOLDERS} 个"))
+    evidence = [original, value, job.summary, *job.responsibilities, *job.required_skills, *job.preferred_skills]
+    if change.section == "skills":
+        evidence += resume.skills
+    known = set(extract_skills("\n".join(evidence)))
+    for reason in change.reasons:
+        if unknown := set(extract_skills(reason.explanation.en)) - known:
+            problems.append(("unsupported_reason", f"{change.section}[{change.index}] 的理由提到 {sorted(unknown)}，原文、改写和 JD 里都没有"))
+    return problems
 
 
 def _guideline_payload(match: GuidelineMatch) -> dict[str, object]:

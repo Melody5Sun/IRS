@@ -135,6 +135,25 @@ def test_rewrite_raises_after_two_invalid_outputs() -> None:
         _rewriter(FakeChatClient("bad", "still bad"), FakeGuidelineRepository()).rewrite(_resume(), _job(), [])
 
 
+def test_soft_check_retries_once_then_keeps_the_output() -> None:
+    # 3 个新占位超过上限；理由提到原文、改写和 JD 里都没有的 Kubernetes
+    value = "Built REST APIs with Python and FastAPI for [a] teams, [b] users and [c] requests.\nWrote weekly reports for the team."
+    ask = {"question": {"en": "?", "zh": "？"}, "reason": {"en": "r", "zh": "r"}}
+    reason = {**REASON, "explanation": {"en": "Added Kubernetes to match the job.", "zh": "补了 Kubernetes。"}}
+    bad = json.dumps({"changes": [{
+        "section": "experience", "index": 0, "field": "description", "original": DESCRIPTION, "value": value,
+        "reasons": [reason], "needs_user_input": [{"placeholder": p, **ask} for p in ("[a]", "[b]", "[c]")],
+    }]})
+    client = FakeChatClient(bad, bad)
+
+    result = _rewriter(client, FakeGuidelineRepository()).rewrite(_resume(), _job(), [])
+
+    assert client.calls == 2
+    assert "3 个占位" in client.prompts[1] and "kubernetes" in client.prompts[1]
+    # 软约束：重试后仍不满足也照常输出，不报错
+    assert result.blocks[0].changes[0].value == value
+
+
 class IssueKeyedGuidelineRepository:
     """每个问题类型返回一条只带该标签的条目（key = g-<问题类型>），记录每次检索带的问题类型。"""
 
