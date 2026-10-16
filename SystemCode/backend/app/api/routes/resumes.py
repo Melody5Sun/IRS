@@ -2,13 +2,13 @@ from io import BytesIO
 
 from fastapi import APIRouter, File, HTTPException, Response, UploadFile
 from openai import APIError
-from pdfminer.high_level import extract_text
 
 from app.repositories.job_repository import JobRepository
 from app.repositories.job_semantic_repository import JobSemanticRepository
 from app.repositories.resume_history_repository import ResumeRewriteRepository
 from app.repositories.target_job_repository import TargetJobRepository
 from app.resume.llm_resume_parser import ResumeParsingError
+from app.resume.resume_parser import pdf_text
 from app.resume.resume_rewriter import LIST_ATTR, TEXT_FIELD, ResumeRewriteError, ResumeRewriter
 from app.resume.rewrite_applier import placeholders
 from app.schemas.job import JobRequirementDocument
@@ -42,7 +42,7 @@ def parse_resume_pdf(file: UploadFile = File(...)) -> ResumeUpload:
     ).lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="只支持上传 PDF 文件")
 
-    text = extract_text(BytesIO(file.file.read())).strip()
+    text = pdf_text(BytesIO(file.file.read()))
     if not text:
         raise HTTPException(
             status_code=422, detail="无法从 PDF 中提取文本，可能是扫描件图片版 PDF"

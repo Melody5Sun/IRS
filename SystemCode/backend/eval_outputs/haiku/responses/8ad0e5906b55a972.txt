@@ -1,0 +1,35 @@
+{
+  "name": null, "email": null, "phone": null,
+  "about": null,
+  "experiences": [],
+  "projects": [{
+    "title": "Xcode Agent",
+    "summary": "Built an AI programming assistant Agent framework in Python, supporting parallel multi-Agent delegation, RAG long-term memory recall, and declarative Skills loading with MCP tool extension, enabling decomposition, execution, memory accumulation and capability reuse for complex programming tasks.\n1. Multi-Agent parallel delegation architecture: to address the low efficiency of serial execution in a single Agent and context overflow in long conversations, implemented sub-Agent parallel delegation based on ThreadPoolExecutor, using heartbeat probing and stale-state degradation to guard against stuck sub-Agents. Limited recursive delegation through leaf / orchestrator role grading and nesting-depth guards, restricted sub-Agent toolsets to a whitelist converged from the parent set, and injected approval callbacks for dangerous commands through the thread pool initializer to avoid TUI deadlocks. Built a cross-Agent file state registry to detect concurrent conflicts where a sub-Agent rewrites files the parent Agent has already read, and returns re-read reminders to keep parallel writes consistent. Parallel delegation of multiple independent sub-tasks reduced end-to-end time by 77.6% compared with serial execution.\n2. Long-term conversation memory recall: to address loss of Agent memory across sessions and long conversations exceeding the context window, implemented a historical session retrieval pipeline based on SQLite FTS5, with an extra trigram index for Chinese retrieval. Matched content is summarized by a lightweight auxiliary model and only the focused summary is re-injected instead of the raw transcript, adding cross-session long-term memory while keeping the main Agent context window compact.\n3. Skills and MCP extension mechanism: to address the difficulty of reusing Agent tool capabilities and the high cost of extending scenarios, designed a declarative skill loading mechanism based on SKILL.md. YAML frontmatter describes skill metadata, combined with platform filtering and disable configuration to achieve on-demand, lightweight loading with no heavy dependencies. Dynamically connected external tool chains through the MCP protocol, allowing the Agent to declaratively compose code analysis, file operations, terminal execution, browser automation and other capabilities by task, improving system extensibility and engineering reuse.",
+    "technologies": ["Python", "ThreadPoolExecutor", "SQLite", "FTS5", "MCP", "YAML", "Subprocess"],
+    "role": null,
+    "start_date": "2026-04", "end_date": "2026-06"
+  }, {
+    "title": "Lifepulse Smart Lifestyle Platform",
+    "summary": "A lifestyle services platform focused on intelligent user review analysis and merchant information services, implementing modules such as merchant information query, coupon flash sales and proactive message push. It also provides precise, personalized responses through an intelligent customer service module, balancing system performance and user experience.\n1. Merchant caching with Redis: adopts the Cache Aside update strategy, ensuring data consistency through timeout eviction, updating the database first and then deleting the cache.\n2. Multi-level caching: builds a two-level cache architecture with Caffeine local cache and Redis cache to speed up hot data access and reduce Redis pressure. QPS increased from 12494 req/s to 26686 req/s, and average latency decreased from 79.75ms to 35.37ms.\n3. Flash sale anti-overselling and one-order-per-user: Redis stores inventory and orders, combined with Lua scripts to perform atomic order eligibility checks, guaranteeing no overselling and one order per user.\n4. Cache optimization: uses logical expiration to address cache breakdown on hot keys, applies null-value caching to handle cache penetration, ensuring the stability of the cache service.\n5. Data consistency guarantee: ensures consistency between cache and database through updating the database before deleting the cache, message queue compensation retries, and TTL fallback.",
+    "technologies": ["SpringBoot", "Caffeine", "Redis", "MySQL", "Nginx", "MyBatis", "MCP", "Lua"],
+    "role": null,
+    "start_date": "2026-01", "end_date": "2026-03"
+  }],
+  "research": [],
+  "skills": ["ReAct", "MCP", "Context compression", "Token budgeting", "Short-term and long-term memory", "RAG", "SKILL.md", "YAML", "Spring", "SpringBoot", "MyBatis", "IOC", "AOP", "MySQL", "SQL optimization", "Transactions", "Indexing", "Locks", "Redis", "Cache penetration", "Cache avalanche", "Cache breakdown", "Python", "ThreadPoolExecutor", "SQLite", "FTS5", "Subprocess", "Caffeine", "Nginx", "Lua", "Cache Aside"],
+  "skill_groups": [
+    {"category": "Agent Framework and LLM Engineering", "description": "Familiar with the ReAct tool-calling Agent main loop and the MCP tool protocol"},
+    {"category": "Context and Memory Engineering", "description": "Mastery of context compression (structured summarization), token budgeting and context window management, short-term / long-term memory layering, RAG session retrieval, and declarative Skills loading (SKILL.md + YAML frontmatter)"},
+    {"category": "Frameworks and Backend", "description": "Familiar with open-source frameworks such as Spring, SpringBoot and MyBatis; understands IOC and AOP mechanisms"},
+    {"category": "Databases and Caching", "description": "Familiar with MySQL schema design and SQL optimization; understands transactions, indexes and locks; knows Redis data structures and persistence, and understands cache penetration, avalanche and breakdown"}
+  ],
+  "educations": [{
+    "institution": "Beijing University of Posts and Telecommunications", "entry_type": "degree", "degree": "bachelor",
+    "major": "Computer Science and Technology", "start_date": "2024-09", "end_date": "2028-06", "country": null,
+    "school_tier": "211, Double First-Class", "research_direction": null, "gpa": null, "ranking": null, "courses": []
+  }],
+  "certificates": [],
+  "languages": [],
+  "awards": [],
+  "additional_info": []
+}

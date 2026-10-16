@@ -1,0 +1,142 @@
+{
+  "changes": [
+    {
+      "section": "experience",
+      "index": 0,
+      "field": "description",
+      "original": "Built an automated data processing pipeline in Python, cutting manual configuration time on the Simulink/Amesim platforms by about 70% and greatly improving work efficiency.\nBuilt regression neural network models for thermal management and brake disc temperature, optimizing the engineering simulation workflow and improving simulation analysis efficiency and prediction accuracy.\nDeveloped data extraction and automatic report generation plugins based on the NX/UG API, standardizing engineering data management.",
+      "value": "Built an automated data processing pipeline in Python that cut manual configuration time on the Simulink/Amesim platforms by about 70%.\nBuilt regression neural network models for thermal management and brake disc temperature, improving simulation analysis and prediction accuracy, measured by [error metric and value].\nDeveloped data extraction and automatic report generation plugins based on the NX/UG API, standardizing engineering data management, with [hours saved per report] compared with manual reporting.",
+      "reasons": [
+        {
+          "issue_type": "buzzword",
+          "explanation": {
+            "en": "The phrase 'greatly improving work efficiency' was vague praise, so it was removed and the 70% result now stands alone as the concrete outcome. Describing what changed, rather than how impressive it sounds, makes the bullet easier to verify.",
+            "zh": "“greatly improving work efficiency”只是笼统的夸赞，因此已删除，让具体的 70% 结果单独呈现。写明实际改变了什么，而不是评价它有多出色，读者更容易核实。"
+          },
+          "guideline_keys": ["action-verb-03"],
+          "jd_responsibility": "Work with production-level data and systems."
+        },
+        {
+          "issue_type": "missing_quantification",
+          "explanation": {
+            "en": "The regression bullet claims better prediction accuracy but gives no error figure, and the vague phrase about optimizing the workflow was dropped. The guideline recommends an error metric so an accuracy claim can be judged, and the bracket asks you for that figure.",
+            "zh": "回归模型那条声称预测精度提高，却没有误差数值，因此已删去“optimizing the engineering simulation workflow”这类笼统说法。指南建议给出误差指标，使精度说法可以被判断，方括号内容即请你补充该数值。"
+          },
+          "guideline_keys": ["ai-20"],
+          "jd_responsibility": "Work with production-level data and systems."
+        },
+        {
+          "issue_type": "missing_quantification",
+          "explanation": {
+            "en": "The report-automation bullet shows no time or effort saved, so its benefit is hard to see. The guideline recommends stating time saved per run or manual steps removed, and the bracket asks you for that figure.",
+            "zh": "报告自动化那条没有体现节省的时间或工作量，读者难以看出其收益。指南建议写明每次运行节省的时间或减少的人工步骤，方括号内容即请你补充该数值。"
+          },
+          "guideline_keys": ["quantify-07"],
+          "jd_responsibility": "Work with production-level data and systems."
+        },
+        {
+          "issue_type": "weak_jd_alignment",
+          "explanation": {
+            "en": "No job keyword was added unless the original already showed it, and no production experience was claimed. The bullets now state concrete results in plain terms, which makes the data-handling work easier to match to the job's data responsibility.",
+            "zh": "除原文已体现的内容外，未添加任何岗位关键词，也未声称有生产环境经验。条目现在用直白的语言写出具体结果，便于与岗位的数据职责对应。"
+          },
+          "guideline_keys": ["jd-align-05"],
+          "jd_responsibility": "Work with production-level data and systems."
+        }
+      ],
+      "needs_user_input": [
+        {
+          "placeholder": "[error metric and value]",
+          "question": {
+            "en": "What error metric did the regression models report (for example MAE or MAPE), and what was its value, compared with a baseline?",
+            "zh": "回归模型报告了什么误差指标（例如 MAE 或 MAPE），数值是多少，与基线相比如何？"
+          },
+          "reason": {
+            "en": "Without an error figure, a reviewer cannot judge the prediction accuracy claim.",
+            "zh": "缺少误差数值，审核者无法判断预测精度的说法。"
+          }
+        },
+        {
+          "placeholder": "[hours saved per report]",
+          "question": {
+            "en": "Roughly how many hours did the automatic report generation save per report, compared with the manual process?",
+            "zh": "与手动流程相比，自动报告生成每份报告大约节省多少小时？"
+          },
+          "reason": {
+            "en": "Time saved turns the plugin work into a benefit any reader can understand.",
+            "zh": "节省的时间能把插件工作转化为读者可以直观理解的收益。"
+          }
+        }
+      ]
+    },
+    {
+      "section": "project",
+      "index": 0,
+      "field": "summary",
+      "original": "Built an end-to-end RAG system covering HotpotQA and FinanceBench, implementing financial report PDF parsing, in-page chunking, embedding, FAISS indexing, evidence retrieval, structured generation and page-number citations, supporting BM25, Dense, Hybrid RRF and a Cross-Encoder reranker.\nCompared retrieval schemes on a fixed HotpotQA Dev/Test split; the Cross-Encoder reached Recall@10 90.94%, Complete@10 80.00% and MRR 93.78%, quantified a CPU reranking cost of 427.8ms per question, and corrected inflated metrics by evaluating generation and citation separately.\nIntegrated the real FinanceBench financial report corpus, parsing and aligning evidence for 62 PDFs, 114 covered questions, 8,987 pages and 18,975 in-page chunks, and verified zero index data leakage; Dense reached GlobalDocumentHit@10 97.37% and EvidencePageHit@10 59.65%.\nDesigned a structured QA flow of 'LLM selects financial definitions and line items - generates a calculation plan - PythonCalculator verifies and executes', built item-by-item evaluation and error attribution covering answers, citations, refusals, structural anomalies, latency and token consumption, and delivered a FastAPI demo with 75 automated tests.",
+      "value": "Built an end-to-end RAG system on HotpotQA and FinanceBench with FAISS indexing, BM25, Dense and Hybrid RRF retrieval, and a Cross-Encoder reranker.\nCompared retrieval schemes on a fixed HotpotQA Dev/Test split; the Cross-Encoder reached Recall@10 90.94%, MRR 93.78% and a CPU reranking cost of 427.8ms per question, and evaluated generation and citation separately.\nIntegrated the FinanceBench corpus (62 PDFs, 18,975 in-page chunks) with zero index data leakage; Dense reached EvidencePageHit@10 59.65%.\nDesigned a structured QA flow verified by PythonCalculator, built item-by-item evaluation and error attribution, and delivered a FastAPI demo with 75 automated tests.",
+      "reasons": [
+        {
+          "issue_type": "irrelevant_content",
+          "explanation": {
+            "en": "The summary was cut to its strongest bullets: the retrieval comparison, the FinanceBench results and the QA evaluation with 75 tests. Removed were the page-number citation and structured generation details, the Complete@10 figure, the point about correcting inflated metrics, and the 114-question and 8,987-page counts.",
+            "zh": "摘要已精简为最有力的几条：检索对比、FinanceBench 结果，以及带 75 个测试的问答评估。删去的内容包括页码引用与结构化生成细节、Complete@10 指标、修正指标虚高的说明，以及 114 个问题和 8,987 页的统计数字。"
+          },
+          "guideline_keys": ["javaguide-12"],
+          "jd_responsibility": "Work with production-level data and systems."
+        }
+      ],
+      "needs_user_input": []
+    },
+    {
+      "section": "project",
+      "index": 1,
+      "field": "summary",
+      "original": "Built a medical QA SFT data pipeline on MedQuAD with exact/near-duplicate deduplication, data leakage control and Train/Validation/Test isolation; fine-tuned Llama-3-8B-Instruct with 4-bit QLoRA, training only 0.92% of parameters, with peak GPU memory of 6.37 GiB on a Tesla T4 and about 2.9h per epoch.\nDesigned a paired Base vs Fine-tuned evaluation framework, assessing fine-tuning gains on a fixed 300-item test set with ROUGE, BERTScore and Paired Bootstrap 95% CI; BERTScore F1 0.586 to 0.682, ROUGE-L 0.190 to 0.333, with 82.3% of samples improved.\nRan a safety audit, LoRA rank ablation and PubMedQA transfer experiments, identifying the safety trade-off introduced by domain SFT; rank 8 kept similar validation loss with 50% fewer parameters, and PubMedQA accuracy went from 0.73 to 0.79.\nEngineered the training and evaluation workflow and experiment asset management, supporting checkpoint recovery, experiment config/result tracking and independent adapter persistence; hosted the QLoRA adapter on Hugging Face and verified recoverability of model artifacts via SHA256 and deterministic inference.",
+      "value": "Built a medical QA SFT data pipeline on MedQuAD with exact/near-duplicate deduplication and Train/Validation/Test isolation, and fine-tuned Llama-3-8B-Instruct with 4-bit QLoRA.\nDesigned a paired Base vs Fine-tuned evaluation on a fixed 300-item test set with ROUGE, BERTScore and Paired Bootstrap 95% CI; BERTScore F1 rose from 0.586 to 0.682.\nEngineered the training and evaluation workflow with checkpoint recovery and experiment config/result tracking.",
+      "reasons": [
+        {
+          "issue_type": "irrelevant_content",
+          "explanation": {
+            "en": "The entry was cut to its three core points, and the safety audit, LoRA rank ablation, PubMedQA transfer, Hugging Face hosting and SHA256 details were removed. Fewer, deeper points give an interviewer something concrete to probe.",
+            "zh": "该条目已精简为三个核心要点，删去了安全审计、LoRA rank 消融、PubMedQA 迁移、Hugging Face 托管和 SHA256 校验等内容。更少但更深入的要点，便于面试官追问。"
+          },
+          "guideline_keys": ["javaguide-12"],
+          "jd_responsibility": "Work with production-level data and systems."
+        }
+      ],
+      "needs_user_input": []
+    },
+    {
+      "section": "skills",
+      "index": 0,
+      "field": "skill_groups",
+      "original": [
+        {"category": "Programming and Engineering", "description": "Python, C++, Linux, Git, Docker, FastAPI; experienced in model training, data processing and service deployment"},
+        {"category": "Machine Learning and Deep Learning", "description": "PyTorch, Hugging Face Transformers, scikit-learn; familiar with supervised learning, model evaluation and experiment reproduction"},
+        {"category": "LLM/NLP", "description": "Transformer, RAG, BM25/Dense/Hybrid Retrieval, Cross-Encoder Reranker, LoRA/QLoRA"},
+        {"category": "Evaluation and Retrieval", "description": "Recall@K, MRR, NDCG, EM/F1, ROUGE, BERTScore"},
+        {"category": "Language Skills", "description": "CET-6 (score 580); reads English technical materials and papers fluently"}
+      ],
+      "value": [
+        {"category": "Programming and Engineering", "description": "Python, C++, Linux, Git, Docker, FastAPI; experienced in model training, data processing and service deployment"},
+        {"category": "Machine Learning and Deep Learning", "description": "PyTorch, Hugging Face Transformers, scikit-learn; familiar with supervised learning, model evaluation and experiment reproduction"},
+        {"category": "LLM/NLP", "description": "Transformer, RAG, BM25/Dense/Hybrid Retrieval, Cross-Encoder Reranker, LoRA/QLoRA"},
+        {"category": "Evaluation and Retrieval", "description": "Recall@K, MRR, NDCG, EM/F1, ROUGE, BERTScore"}
+      ],
+      "reasons": [
+        {
+          "issue_type": "irrelevant_content",
+          "explanation": {
+            "en": "The CET-6 score and the English reading line were removed from the technical skills, since language ability and certificates belong in their own section. Make sure they appear under a separate languages or certificates heading on your resume.",
+            "zh": "CET-6 成绩和英语阅读能力两项已从技术技能中移除，因为语言能力和证书应放在独立板块中。请确保简历中另设语言或证书标题并列出这些内容。"
+          },
+          "guideline_keys": ["skills-22"],
+          "jd_responsibility": null
+        }
+      ],
+      "needs_user_input": []
+    }
+  ],
+  "deletions": []
+}

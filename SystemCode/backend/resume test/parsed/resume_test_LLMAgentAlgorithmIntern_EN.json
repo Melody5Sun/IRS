@@ -1,0 +1,165 @@
+{
+  "name": "Liu Yichen",
+  "email": "liuyichen2025@163.com",
+  "phone": "138-0000-0000",
+  "about": "2025 Peking University Master's Student · Job Intent: LLM / Multimodal Agent Internship",
+  "experiences": [
+    {
+      "company": "Shenlan Intelligence Technology Co., Ltd.",
+      "title": "LLM Algorithm Intern",
+      "employment_type": "internship",
+      "start_date": "2026-06",
+      "end_date": "present",
+      "description": "Keywords: Agent Skill, LLM Infra, KTransformers.\nSkill-driven Evaluation Automation Pipeline: Orchestrated 6 Skills with Agent Skill, chaining the whole flow in a loop where \"each call advances exactly one action\", connecting the complete loop from automatic discovery of new models and quantization-configuration search, to lm-eval evaluation, automatic error fixing and automatic result upload; supports concurrent scheduling, checkpoint resume and idempotent retry, and has stably completed 410 tasks.\nWorkflowMaker Session Workflow Replay System: Participated in implementing automatic distillation of Agent session tool-call chains: session histories are parsed into timelines, summarized by an LLM into Workflow JSON containing commands and evidence, stored in a SQLite FTS5 search index, and exposed through an MCP Server for any Agent to query and replay, turning team experience into reusable assets.\nInference Evaluation of an Ultra-Large MoE Model: On a single machine with 8×H20 96GB + 4TB system memory, completed inference evaluation of the Qwen3.8-Flash-2.4T ultra-large MoE model with a KTransformers + SGLang heterogeneous inference scheme: part of the expert weights are offloaded to CPU while attention computation stays on GPU, achieving observable throughput under limited GPU memory and connecting the full chain of weight loading, service deployment and evaluation execution.",
+      "country": null
+    },
+    {
+      "company": "Xingyao Vision Technology Co., Ltd.",
+      "title": "Algorithm Intern",
+      "employment_type": "internship",
+      "start_date": "2025-02",
+      "end_date": "2025-05",
+      "description": "Keywords: Generative model deployment, model quantization, U-Net, CNN\nProject Description: Mainly responsible for training and quantizing image enhancement and super-resolution models; the business serves picture-quality restoration in live video streaming.\nPersonal Work: Modified the single-step super-resolution diffusion model S3Diff (CVPR 2024) and tried applying it to 1:1 image restoration and quality enhancement, training and fine-tuning on the company's closed-source dataset; used NVIDIA open-source libraries to take part in optimizing the online image enhancement model, attempting FP8 quantization to meet the business's high real-time requirements.",
+      "country": null
+    }
+  ],
+  "projects": [
+    {
+      "title": "MiniQwen3VL – Vision-Language Alignment and On-Device Instruction-Following Optimization for a Small Multimodal LLM",
+      "summary": "Keywords: MLLM, Qwen3-VL, dynamic resolution, M-RoPE, DeepStack, SFT\nModel Architecture: Converted the MiniMind text decoder into a 0.7B-scale VLM (language side ~0.3B), integrated the Qwen3VL-SigLIP2 vision encoder and dynamic-resolution sampling, and implemented Interleaved M-RoPE and YaRN extrapolation, supporting spatial position modeling for interleaved image-text sequences.\nData Construction: Organized Chinese-English bilingual image-text data based on ALLaVA-4V, building about 1.27M pre-training samples and 2.9M SFT samples, covering image-text instructions, captions, text-only capability retention, and Gemini/Claude/GPT-4o synthetic augmentation data.\nTraining Optimization: Designed a three-stage training pipeline of text pre-training, vision-language Projection alignment and multimodal SFT; froze the vision encoder and trained dual Projection layers, and introduced DeepStack intermediate-layer visual feature injection and a square-root reweighted loss, mitigating generation degradation caused by token-length differences between long and short samples.\nResults: The 0.7B version reached 71.8% accuracy on VQAv2; in caption and multi-turn image-text dialogue tasks it recognizes fine-grained scene features and generates coherent Chinese and English descriptions.",
+      "technologies": [
+        "MLLM",
+        "Qwen3-VL",
+        "Dynamic Resolution",
+        "M-RoPE",
+        "DeepStack",
+        "SFT",
+        "MiniMind",
+        "VLM",
+        "Qwen3VL-SigLIP2",
+        "YaRN",
+        "Gemini",
+        "Claude",
+        "GPT-4o"
+      ],
+      "role": null,
+      "start_date": "2026-03",
+      "end_date": null
+    },
+    {
+      "title": "MiniOneRec – Generative Recommendation Framework",
+      "summary": "Keywords: Generative recommendation, RQ-VAE, semantic ID, GRPO\nProject Description: Reproduced the full generative recommendation (GenRec) pipeline based on the open-source MiniOneRec framework, aiming to replace the traditional \"retrieval-ranking\" architecture with an end-to-end sequence generation task.\nPersonal Work: Implemented item semantic IDs, performed supervised fine-tuning on recommendation and semantic-alignment tasks, and reproduced GRPO-based preference optimization, configuring rule rewards and DCG ranking-aware rewards.\nResults: With SFT-GRPO on Qwen2.5-0.5B, reproduced about 14% HR@10, surpassing the larger 3B-SFT baseline (HR@10 about 12%) and verifying the further performance gain from RL.",
+      "technologies": [
+        "Generative Recommendation",
+        "RQ-VAE",
+        "Semantic ID",
+        "GRPO",
+        "MiniOneRec",
+        "SFT",
+        "Qwen2.5-0.5B"
+      ],
+      "role": null,
+      "start_date": "2026-01",
+      "end_date": null
+    }
+  ],
+  "research": [],
+  "skills": [
+    "Reinforcement Learning",
+    "PPO",
+    "GRPO",
+    "DAPO",
+    "GSPO",
+    "Teamwork",
+    "Communication",
+    "Agent Skill",
+    "LLM Infra",
+    "KTransformers",
+    "lm-eval",
+    "Model Quantization",
+    "SQLite FTS5",
+    "MCP",
+    "SGLang",
+    "MoE",
+    "Generative Model Deployment",
+    "U-Net",
+    "CNN",
+    "Diffusion Models",
+    "Super-Resolution",
+    "FP8 Quantization",
+    "MLLM",
+    "Qwen3-VL",
+    "Dynamic Resolution",
+    "M-RoPE",
+    "DeepStack",
+    "SFT",
+    "MiniMind",
+    "VLM",
+    "Qwen3VL-SigLIP2",
+    "YaRN",
+    "Generative Recommendation",
+    "RQ-VAE",
+    "Semantic ID",
+    "Qwen2.5"
+  ],
+  "skill_groups": [
+    {
+      "category": "Research & Engineering",
+      "description": "Familiar with the principles of RL algorithms such as PPO, GRPO, DAPO and GSPO; strong abilities in literature reading, thinking and hands-on implementation."
+    },
+    {
+      "category": "Teamwork",
+      "description": "Good team spirit and communication skills; willing to learn from the team and contribute practical effort."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "School of Software & Microelectronics, Peking University",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Artificial Intelligence",
+      "start_date": "2025-09",
+      "end_date": "present",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    },
+    {
+      "institution": "School of Informatics, Xiamen University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Computer Science and Technology",
+      "start_date": "2021-09",
+      "end_date": "2025-06",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    }
+  ],
+  "certificates": [],
+  "languages": [],
+  "awards": [
+    {
+      "name": "Academic Excellence Scholarship",
+      "date": null
+    },
+    {
+      "name": "Provincial First Prize, National College Student Mathematical Contest in Modeling",
+      "date": null
+    }
+  ],
+  "additional_info": [
+    "Date of birth: 2003-12-22",
+    "Political affiliation: Communist Youth League member",
+    "Work arrangement: on-site 5 days a week",
+    "Availability: available immediately",
+    "Expected internship duration: 6-12 months",
+    "Interest: personally interested in the LLM / Agent direction"
+  ]
+}

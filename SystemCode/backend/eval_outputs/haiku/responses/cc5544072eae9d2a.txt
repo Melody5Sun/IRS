@@ -1,0 +1,1 @@
+{"removed_skills": ["ReAct tool-calling Agent main loop", "MCP tool protocol", "context compression (structured summaries)", "Token budget and context window management", "short-term / long-term memory layering", "RAG session retrieval", "declarative Skills loading (SKILL.md + YAML frontmatter)"], "added_skills": []}

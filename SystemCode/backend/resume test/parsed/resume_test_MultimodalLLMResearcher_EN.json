@@ -1,0 +1,122 @@
+{
+  "name": null,
+  "email": null,
+  "phone": null,
+  "about": null,
+  "experiences": [],
+  "projects": [
+    {
+      "title": "Innovator-VL: A Multimodal Large Language Model for Scientific Discovery",
+      "summary": "Project Overview: Led the development of a multimodal large language model designed for the scientific domain, open-sourcing Innovator-VL-8B-Instruct (general interaction) and Innovator-VL-8B-Thinking (deep reasoning), aiming to improve cross-disciplinary scientific understanding and reasoning.\nFull-Pipeline Architecture: Built a fully transparent, end-to-end reproducible training pipeline from data cleaning, pre-training and supervised fine-tuning (SFT) to reinforcement learning (RL). Optimized distributed training based on Megatron-LM, achieving efficient training throughput.\nExtreme Data Efficiency: Broke the traditional paradigm of relying on massive domain pre-training data. Through principled data filtering strategies, reached SOTA on multiple scientific and general vision benchmarks with only fewer than 5 million high-quality scientific samples.\nRL Alignment (RLHF): For the Thinking model, introduced the GSPO algorithm and a hierarchical reward mechanism, significantly strengthening multi-step reasoning (CoT); reasoning token efficiency improved 1.4× to 4.3× over comparable models (e.g. Intern-S1-mini).\nOpen-Source Impact: Gained 100+ GitHub Stars and 2000+ HuggingFace downloads shortly after release. Overall performance surpassed mainstream models such as Qwen3-VL-8B and InternVL3.5-8B across 37 benchmarks including Scientists' First Exam and MathVista.\nLinks: [GitHub] [Project Page]",
+      "technologies": [
+        "Multimodal Large Language Models",
+        "Megatron-LM",
+        "Distributed Training",
+        "Supervised Fine-Tuning (SFT)",
+        "Reinforcement Learning (RL)",
+        "RLHF",
+        "GSPO",
+        "Chain-of-Thought (CoT)"
+      ],
+      "role": "Project Lead & First Author",
+      "start_date": "2025-10",
+      "end_date": "2026-02"
+    },
+    {
+      "title": "AI for Service: Proactive Assistance with AI Glasses",
+      "summary": "Architecture Innovation: Proposed the Alpha-Service framework and a \"Trigger-Analysis-Reasoning\" three-level multi-agent architecture; through modular perception–decision–memory design and large/small model cascade scheduling, achieved a balance between low latency and high performance on edge devices.\nDeployment: Built applications such as a game advisor and navigation guide on Xiaomi AI glasses, solving the \"when to intervene\" and \"service strategy\" problems of proactive service; the system accurately understands user intent and proactively offers assistance.\nLinks: [arXiv]",
+      "technologies": [
+        "Multi-Agent Systems",
+        "Model Cascade Scheduling",
+        "Edge Deployment",
+        "Xiaomi AI Glasses"
+      ],
+      "role": "Core Contributor & First Author",
+      "start_date": "2025-07",
+      "end_date": "2025-10"
+    }
+  ],
+  "research": [
+    {
+      "type": "paper",
+      "title": "Activating Proactive Streaming Interaction in Video LLMs without Architectural Changes",
+      "institution": null,
+      "summary": "Background: Addressing the core decision challenge that existing offline video LLMs (VideoLLMs) lack real-time interaction capability (i.e. not knowing \"when\" to speak), proposed a new paradigm that activates streaming video understanding without modifying the model architecture.\nStreaming Evaluation Framework (RealStreamEval): Built the first evaluation framework that models streaming video understanding as frame-level multi-turn dialogue; by introducing a strict redundancy penalty mechanism, it forces the model to decide response timing autonomously in real-time streams, solving traditional evaluation's dependence on external polling or offline segments.\nSelf-Evolving Data Synthesis (EvoStreaming): Designed a zero-human-annotation self-evolving data generation pipeline; through a five-stage pipeline of \"task classification – self-questioning – spatio-temporal anchoring – streaming trajectory synthesis – iterative refinement\", uses the model's own capability to generate high-quality interaction signals. With only 1,000 self-generated samples, successfully activated streaming interaction in mainstream offline models such as Qwen2-VL and InternVL.\nPerformance Breakthrough: Without sacrificing the offline model's general performance, achieved stronger streaming interaction using only 1/100 the data of prior methods, improving by up to 10.8% on OVO-Bench. This work reveals that existing video models already possess latent streaming understanding ability, and the core bottleneck is the lack of correct interaction-timing training signals.\nRole: First Author\nStatus: Under Review [arXiv]",
+      "start_date": "2025-10",
+      "end_date": "2026-02"
+    },
+    {
+      "type": "paper",
+      "title": "Accelerating Streaming Video Understanding via Hierarchical Token Compression",
+      "institution": null,
+      "summary": "Background: Targeting the compute bottleneck of rapidly growing ViT encoding time in streaming video understanding, proposed a plug-and-play, training-free hierarchical acceleration framework (STC), breaking the limitation that traditional compression methods depend on future information or user instructions and achieving full-pipeline acceleration.\nCore Algorithms: Designed STC-Cacher, which uses a Scatter-Update strategy to compute only dynamic tokens and reuse the static background (avoiding 85% visual redundancy); proposed the instruction-free STC-Pruner, which precisely removes redundant features before the LLM based on dual-anchor spatio-temporal novelty.\nPerformance Breakthrough: On four mainstream baselines including ReKV and Dispider, while maintaining 99% accuracy, STC reduced ViT encoding latency by 24.5% and LLM pre-fill latency by 45.3%, significantly outperforming existing SOTA compression methods such as ToMe and VidCom².\nRole: Core Contributor\nStatus: Under Review [arXiv]",
+      "start_date": "2025-07",
+      "end_date": "2025-11"
+    }
+  ],
+  "skills": [
+    "Multimodal Large Language Models",
+    "Megatron-LM",
+    "Distributed Training",
+    "Supervised Fine-Tuning (SFT)",
+    "Reinforcement Learning (RL)",
+    "RLHF",
+    "GSPO",
+    "Chain-of-Thought (CoT)",
+    "Multi-Agent Systems",
+    "Model Cascade Scheduling",
+    "Edge Deployment",
+    "Xiaomi AI Glasses",
+    "Video LLMs",
+    "Streaming Video Understanding",
+    "Data Synthesis",
+    "Token Compression",
+    "Vision Transformer (ViT)",
+    "Qwen2-VL",
+    "InternVL"
+  ],
+  "skill_groups": [],
+  "educations": [
+    {
+      "institution": "Shanghai Jiao Tong University",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Electronic Information",
+      "start_date": "2026-09",
+      "end_date": "2029-03",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    },
+    {
+      "institution": "Shanghai Jiao Tong University",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Software Engineering",
+      "start_date": "2022-09",
+      "end_date": "2026-06",
+      "country": "China",
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": "92.5/100",
+      "ranking": "5/88",
+      "courses": []
+    }
+  ],
+  "certificates": [],
+  "languages": [],
+  "awards": [
+    {
+      "name": "Undergraduate National Scholarship",
+      "date": null
+    }
+  ],
+  "additional_info": [
+    "College (Shanghai Jiao Tong University, Master's): School of Computer Science",
+    "College (Shanghai Jiao Tong University, Bachelor's): School of Computer Science",
+    "Admission type (Master's, Shanghai Jiao Tong University): recommended admission"
+  ]
+}

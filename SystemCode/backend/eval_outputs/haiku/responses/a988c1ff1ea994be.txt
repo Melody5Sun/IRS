@@ -1,0 +1,193 @@
+{
+  "name": "Zhang Xueba",
+  "email": "zhangxueba2027@163.com",
+  "phone": "138-0000-0000",
+  "about": null,
+  "experiences": [
+    {
+      "company": "xx Big Tech Company",
+      "title": "Algorithm Engineer",
+      "employment_type": "internship",
+      "start_date": "2025-05",
+      "end_date": "2025-08",
+      "description": "Main Work: Participated in upgrading the large-scale recall pipeline of the company's main-search \"Guess You Like\" feature, leading the deployment of multi-interest representation and Generative Retrieval (GR). Proposed a hierarchical contrastive learning and vector caching mechanism to replace the traditional inverted index, significantly improving recall diversity and relevance during the Double 11 stress test; online CTR increased by 3.2%.\nTechnical Contributions:\n(1) To mitigate noise interference and long-tail distribution in user behavior sequences, built a Transformer-based multi-interest extraction framework. Introduced an adaptive Noise Contrastive Estimation (NCE) loss to dynamically adjust negative-sample weights, decoupling users' implicit interests into 8 orthogonal vectors; built a billion-scale item index with Faiss, and offline Recall@100 improved by 5.8%.\n(2) To address the poor generalization of traditional recall models on unexposed items, implemented a Diffusion-based Generative Retrieval model. Abandoned traditional Item IDs and instead encoded items as semantic IDs, training a DiT model to generate target semantic-ID sequences directly from the Query; designed a Curriculum Learning training strategy that learns the high-frequency item distribution first and hard samples later; new-item recall rate improved by 12.5%.\n(3) To resolve the engineering bottleneck of high online inference latency and GPU memory usage, developed an adaptive KV Cache quantization and compression module. Applied INT8 quantization to the generative retrieval model with TensorRT-LLM and optimized memory fragmentation with PagedAttention; deployed on an A10 GPU cluster, single inference latency was kept within 15ms and QPS increased by 40%; launched after passing A/B testing.",
+      "country": null
+    },
+    {
+      "company": "xx Big Tech Company",
+      "title": "Algorithm Researcher",
+      "employment_type": "internship",
+      "start_date": "2025-10",
+      "end_date": "present",
+      "description": "Main Work: Responsible for R&D of Diffusion Transformer (DiT)-based large video generation models, focusing on improving motion consistency and instruction following in short-video generation. Participated in building the underlying generation engine of CapCut's \"Image-to-Video\" feature, optimizing inference efficiency on consumer GPUs to support real-time 1080P/24fps video generation.\nTechnical Contributions:\n(1) To address temporal flickering and object deformation in video generation, designed a Spatial-Temporal Joint Attention mechanism. Introduced 3D convolutions in the VAE encoding stage to extract spatio-temporal features, replacing the traditional separate spatial/temporal modules and significantly improving inter-frame continuity; on WebVid-10M, FVD dropped to 128.5, a 15.3% improvement over the baseline.\n(2) To address poor understanding of complex Chinese Prompts, built a million-scale video-text alignment dataset. Proposed a hierarchical Caption annotation Pipeline: first used GPT-4V to produce fine-grained descriptions (objects, actions, lighting) of key video frames, then trained Qwen1.5-14B as a Reward Model (RM) for quality scoring and filtering. Performed full-parameter fine-tuning of Stable Video Diffusion on this data; CLIP Score rose to 0.42 and instruction-following accuracy improved by 22%.\n(3) To break the GPU memory wall of high-resolution video inference, implemented a cascaded Latent Consistency Distillation (LCD) algorithm, compressing the original 50-step sampling to 4 steps, combined with TensorRT FP16 quantization and Kernel Fusion; on an A10 GPU, single-frame inference latency dropped from 3.2s to 0.4s and memory usage decreased by 60%, supporting the gray-release launch of the app's \"One-Click Video\" feature.",
+      "country": null
+    }
+  ],
+  "projects": [],
+  "research": [
+    {
+      "type": "paper",
+      "title": "SAM-Adapter: Lightweight Domain Adaptation for Segment Anything Model via Prompt Tuning",
+      "institution": null,
+      "summary": "First author. Publication venue: ICCV-25 (CCF-A).",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Dual-Granularity Prompt Learning for CLIP-based Incremental Few-Shot Learning",
+      "institution": null,
+      "summary": "Second student author. Publication venue: ACM MM-24 (CCF-B).",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Multi-Scale Fourier Enhanced Vision Transformer for Remote Sensing Change Detection",
+      "institution": null,
+      "summary": "Corresponding author. Publication venue: ISPRS PRS (under review), CAS Q1.",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "paper",
+      "title": "Hypergraph Neural Networks with Cross-Modal Contrastive Learning for Recommendation",
+      "institution": null,
+      "summary": "First author. Publication venue: DASFAA-24 (CCF-B).",
+      "start_date": null,
+      "end_date": null
+    },
+    {
+      "type": "research_project",
+      "title": "Smart Logistics Park Scheduling System",
+      "institution": null,
+      "summary": "Project Overview: In partnership with a leading local logistics company in Sichuan, built a smart logistics park scheduling system integrating lightweight visual detection models and operations-research optimization algorithms, achieving real-time tracking and dynamic path planning for all park elements (unmanned forklifts, sorters, pallets, shelves). By building a large-scale logistics-scene trajectory dataset, trained a dedicated scheduling model and built a Multi-Agent collaborative decision system; the core scheduling module has been integrated into the company's \"Shuyuntong\" WMS for trial operation.\nTechnical Contributions:\n(1) To address severe target occlusion and scarce annotation data under park surveillance views, adopted a semi-supervised learning framework combined with active learning to select highly uncertain samples for manual annotation; used CutMix and Mosaic augmentation to simulate cargo stacking occlusion; used ControlNet with edge-detection maps to generate synthetic data of specific shelf layouts, expanding the training set by 30%; used StyleGAN3 for cross-camera style transfer to improve cross-domain generalization.\n(2) To address difficult fine-grained recognition caused by many unmanned forklift models, adopted a Cascade Mask R-CNN multi-stage detection architecture that cascades three detection heads with progressively higher IoU thresholds, achieving precise recognition from generic industrial vehicles to specific forklift models; mAP50 improved by 4.1%. For missed detection of dense small targets from high overhead views, introduced Deformable Convolution (DCN) to enhance feature extraction and used sliding-window slicing inference; for limited edge compute, applied INT8 quantization to the detection model and optimized the inference engine with TensorRT-LLM, while cascading the tracker with Kalman filtering and the Hungarian algorithm, ultimately achieving stable 45FPS detection and tracking on Jetson Orin.\n(3) For low path-planning efficiency under complex road conditions and decisions that do not require frame-by-frame inference, used an improved A* algorithm with time-window conflict detection for global path planning, and used Deep Reinforcement Learning (PPO) to train a local obstacle-avoidance policy network; the PPO model was trained on 5,000+ hours of collected real park trajectories, 20k+ manually simulated congestion scenarios and 8,000+ scheduling-rule records; task completion rate rose to 96.5%.\n(4) To build a vertical-domain intelligent decision assistant for logistics scheduling, built a large-scale logistics knowledge graph and natural-language interaction system. Extracted order, inventory and capacity data from ERP/WMS via ETL tools to build a knowledge graph with 100k+ entity nodes, stored in Neo4j; fine-tuned Qwen2.5-32B with LoRA on 5,000+ historical scheduling logs and emergency plans as the decision base model; finally built a Multi-Agent collaborative scheduling system using the ReAct agent pattern with Chain-of-Thought (CoT) prompting to optimize decision logic; compared with the traditional rule engine, response speed in abnormal-event handling improved by 12",
+      "start_date": "2024-11",
+      "end_date": "2025-05"
+    }
+  ],
+  "skills": [
+    "Large Multimodal Models (LMMs)",
+    "Diffusion Transformer (DiT)",
+    "Object Detection",
+    "Image Segmentation",
+    "Segment Anything Model (SAM)",
+    "Multimodal Alignment",
+    "RLHF",
+    "PPO",
+    "DPO",
+    "GRPO",
+    "RAG",
+    "Agentic Workflows",
+    "Transformer",
+    "Noise Contrastive Estimation (NCE)",
+    "Faiss",
+    "Generative Retrieval",
+    "Curriculum Learning",
+    "TensorRT-LLM",
+    "PagedAttention",
+    "KV Cache",
+    "INT8 Quantization",
+    "GPT-4V",
+    "Qwen1.5-14B",
+    "Stable Video Diffusion",
+    "Latent Consistency Distillation (LCD)",
+    "Kernel Fusion",
+    "CutMix",
+    "Mosaic Augmentation",
+    "ControlNet",
+    "StyleGAN3",
+    "Cascade Mask R-CNN",
+    "Deformable Convolution (DCN)",
+    "Kalman Filter",
+    "Hungarian Algorithm",
+    "A* Algorithm",
+    "Deep Reinforcement Learning",
+    "Neo4j",
+    "ETL",
+    "Qwen2.5-32B",
+    "LoRA",
+    "ReAct",
+    "Chain-of-Thought (CoT)",
+    "Multi-Agent Systems",
+    "Knowledge Graph"
+  ],
+  "skill_groups": [
+    {
+      "category": "Algorithms",
+      "description": "Solid theoretical foundation in Large Multimodal Models (LMMs) and DiT architectures; proficient in object detection, image segmentation (SAM) and multimodal alignment; deep understanding of the full RLHF pipeline, familiar with the principles and code implementation of preference optimization algorithms such as PPO, DPO and GRPO; familiar with the RAG technology stack (Naive/Light/Graph), capable of designing and developing Agentic Workflows."
+    },
+    {
+      "category": "English",
+      "description": "CET-6; strong ability to read English literature and write academically; follows daily SOTA papers on arXiv, and served as a main author of English technical reports and patents."
+    }
+  ],
+  "educations": [
+    {
+      "institution": "University of Electronic Science and Technology of China",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Electronic Information Engineering",
+      "start_date": "2023-09",
+      "end_date": "present",
+      "country": null,
+      "school_tier": "985, Double First-Class",
+      "research_direction": "Multimodal Large Models, Reinforcement Learning, Agent Development",
+      "gpa": "90/100",
+      "ranking": "Top 5%",
+      "courses": []
+    },
+    {
+      "institution": "University of Electronic Science and Technology of China",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Information and Communication Engineering",
+      "start_date": "2019-09",
+      "end_date": "2023-06",
+      "country": null,
+      "school_tier": "985, Double First-Class",
+      "research_direction": null,
+      "gpa": "90/100",
+      "ranking": "Top 5%",
+      "courses": []
+    }
+  ],
+  "certificates": [
+    {
+      "name": "CET-6",
+      "issuer": null,
+      "issue_date": null,
+      "expiry_date": null,
+      "score": null
+    }
+  ],
+  "languages": ["English"],
+  "awards": [
+    {"name": "National Scholarship", "date": "2022"},
+    {"name": "National Scholarship", "date": "2021"},
+    {"name": "National Scholarship", "date": "2024"},
+    {"name": "National Encouragement Scholarship", "date": "2020"},
+    {"name": "Outstanding Student Scholarship", "date": "2020"},
+    {"name": "Outstanding Student Scholarship", "date": "2021"},
+    {"name": "Outstanding Student Scholarship", "date": "2022"},
+    {"name": "Outstanding Student Scholarship", "date": "2023"},
+    {"name": "xxx Algorithm Challenge - National First Prize", "date": null},
+    {"name": "Graduate Artificial Intelligence Innovation Competition - National First Prize", "date": null},
+    {"name": "National College Student Information Competition - First Prize", "date": null},
+    {"name": "Lanqiao Cup Information Competition - First Prize", "date": null}
+  ],
+  "additional_info": [
+    "Political affiliation: CPC Member",
+    "Hometown: Dongcheng, Beijing",
+    "Gender: Male",
+    "College (University of Electronic Science and Technology of China, Master's): School of Information and Communication Engineering",
+    "Major grade (University of Electronic Science and Technology of China, Master's): A+",
+    "College (University of Electronic Science and Technology of China, Bachelor's): School of Information and Communication Engineering",
+    "Major grade (University of Electronic Science and Technology of China, Bachelor's): A+",
+    "Admission type (University of Electronic Science and Technology of China, Bachelor's): recommended for postgraduate study",
+    "Department (xx Big Tech Company, Algorithm Engineer): xx Department",
+    "Department (xx Big Tech Company, Algorithm Researcher): xx Department",
+    "Role (Smart Logistics Park Scheduling System): Research Lead / One of the Technical Leads",
+    "Cooperation (Smart Logistics Park Scheduling System): University-Enterprise Cooperation with a Large Logistics Company"
+  ]
+}

@@ -1,0 +1,1639 @@
+{
+ "guide": {
+  "来源": "dev：resume test/parsed/ 旧 10 份测试简历的经历、项目、研究描述，按换行拆开的全部 134 行（不抽样），检测器正则是看过这些行后调的；heldout：2026-10-14 新加的 4 份英文算法简历（LLMAgentAlgorithmIntern / LLMAlgorithmIntern / MultimodalLLMResearcher / MultimodalAlgorithmEngineer）同样拆出的 77 行（去重），检测器改完后才标，作留出集",
+  "标注人": "Claude 按下列定义逐行标注，标注时不看检测器输出；属于银标。dev 随机 27 行由另一个子代理盲标复核：135 个判断一致率 0.985、Cohen's κ 0.956，2 处分歧裁决后维持原标",
+  "weak_action_verb": "去掉「小标题:」后以 Responsible for / Participated in / Helped / Took part in 等弱动词开头",
+  "passive_voice": "含有限定动词的被动语态（is/are/was/were/be/been + 过去分词）；作定语的过去分词不算",
+  "buzzword": "无事实支撑的夸张/空洞修饰：successfully、significantly、greatly、effectively、leveraged、cutting-edge 等",
+  "missing_quantification": "没有度量结果或工作规模（用户数、数据量、测试数、效果指标等）；只有设计结构里的数字（三级缓存、Top-50、阈值 80%）、型号版本（Qwen3-8b、GPT-4o）不算量化",
+  "missing_outcome": "只写做了什么/怎么做，没写带来的效果或好处（含定性效果，如 ensuring consistency、to reduce blocking）；只描述功能本身（supporting X、covering Y）算缺结果",
+  "空列表": "项目名、技术栈、链接、部门名这类不是成果要点的行，以及没有问题的行"
+ },
+ "cases": [
+  {
+   "text": "Built an AI coding-assistant Agent framework in Python supporting multi-Agent parallel delegation, RAG long-term memory recall, declarative Skills loading and MCP tool extension, enabling decomposition, execution, memory consolidation and capability reuse for complex programming tasks.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-Agent parallel delegation architecture: to address the low efficiency of serial single-Agent execution and long contexts easily exceeding limits, implemented parallel sub-Agent delegation based on ThreadPoolExecutor, using heartbeat liveness probing and stale-state downgrade to handle stuck sub-Agents. Limited recursive delegation through leaf / orchestrator role tiers plus a nesting-depth guard, narrowed sub-Agent toolsets to a whitelist of the parent set, and injected an approval callback for dangerous commands via the thread-pool initializer to avoid TUI deadlocks; used a cross-Agent file-state registry to detect concurrent conflicts where a sub-Agent rewrites files already read by the parent Agent and to send back re-read reminders, ensuring consistency under parallel writes. Parallel delegation of multiple independent subtasks reduced end-to-end time by 77.6% compared with serial execution.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Long-term conversation memory recall: to solve cross-session memory loss and long conversations exceeding the context window, implemented a historical-session retrieval pipeline based on SQLite FTS5, with an additional trigram index for Chinese retrieval; hits are summarized by a lightweight auxiliary model and only focused summaries (not raw transcripts) are injected back, restoring cross-session long-term memory while keeping the main Agent's context window lean.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Skills and MCP extension mechanism: to address poor reusability of Agent tool capabilities and high cost of scenario extension, designed a declarative skill-loading mechanism based on SKILL.md, describing skill metadata with YAML frontmatter and combining platform filtering and disable configuration for on-demand, lightweight loading without heavy dependencies; dynamically connected external toolchains via the MCP protocol so the Agent can declaratively combine code analysis, file operations, terminal execution and browser automation per task, improving system extensibility and engineering reuse.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "A life-services platform focused on user review analysis and intelligent merchant information services, implementing merchant information query, coupon flash sales, proactive message push and other modules, with an intelligent customer service providing accurate answers and personalized service while balancing system performance and user experience.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Merchant caching with Redis: adopted the Cache Aside update strategy, ensuring data consistency through timeout eviction plus updating the database before deleting the cache.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-level cache: built a two-level cache architecture with Caffeine local cache and Redis, speeding up hot-data access and reducing Redis load; QPS increased from 12494 req/s to 26686 req/s and average latency dropped from 79.75ms to 35.37ms.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Flash-sale overselling prevention and one order per person: stored inventory and orders in Redis and used Lua scripts for atomic order-eligibility checks, guaranteeing no overselling and one order per person.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Cache optimization: used logical expiration to solve cache breakdown of hot keys and cached null values to handle cache penetration, keeping the cache service stable.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Data consistency: ensured cache-database consistency through updating the database before deleting the cache, message-queue compensating retries and TTL as a fallback.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Project: Smart Non-Performing Asset Disposal AI Agent Platform. Core technologies: Python, FastAPI, Java, Spring Boot, ReAct, Plan-and-Execute, MCP, Redis, MySQL, RRF, SSE, Multi-Agent, MinIO.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Project Description: Addressing pain points in non-performing asset disposal at financial institutions, asset management companies and law firms (scattered and siloed data, lengthy due-diligence processes, valuation and recovery paths that rely on personal experience, and strict compliance traceability requirements), developed a smart non-performing asset disposal platform based on a dual-engine architecture of 'Java foundation + Python agent'.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Intent Recognition & Agent Dispatch: Responsible for designing a multi-level intent recognition chain of 'explicit Tab priority + main-model semantic classification + fallback model downgrade + hard-rule safety net', combining regex entity extraction, confidence verification and cross-turn coreference resolution to identify business intents such as enterprise queries, legal Q&A, asset analysis and report generation; completed offline evaluation based on 200 manually annotated samples, with intent recognition accuracy above 92%; low-confidence requests are automatically routed to clarification interaction.",
+   "issues": [
+    "weak_action_verb",
+    "passive_voice"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Harness & Reliability Governance: Participated in the architecture design and research of the Agent Harness layer, establishing a unified governance mechanism around execution boundaries, context quality, result verification and failure recovery, turning open-ended Agent execution into an engineering loop that is constrainable, observable, verifiable and recoverable.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Hybrid RAG & Graph Search: Designed a three-way recall of Milvus vectors, BM25 and MySQL exact query, completing Top-50 candidate deduplication and fusion via RRF, and combining knowledge-graph N-degree relationship path augmentation to strengthen complex-entity retrieval.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Entity-level Multi-Agent Orchestration: Participated in designing an Orchestrator-Worker multi-Agent architecture, where the main Agent completes task decomposition according to the number of query entities and task complexity, dynamically creating one-off SubAgents for entities such as enterprises, natural persons and assets; each Worker loads its corresponding Skill, Tool whitelist and Token budget in an isolated context, independently completes information retrieval and analysis via ReAct, and returns a standardized TaskResult to the main Agent for deduplication, comparison and consolidation, supporting parallel execution of multi-entity tasks and unified result output.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Session Memory & User Memory: Participated in designing a five-layer memory system; Session Memory maintains the last 20 turns of dialogue and entity anchors with 90-day persistence support; User Memory uses composite isolation by tenant, user, memory type and Key, combined with a Redis 24-hour time window and long-term storage to support cross-session recall of user role, analysis preferences and output format.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Project: WeCom To-B Home Services Annual Cleaning Package Booking and Rescheduling Agent System. Tech stack: Java, Spring Boot, Prompt, RESTful API, MySQL.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Project Description: For the scenario where B-side salespeople in WeCom make annual cleaning package bookings on behalf of customers, designed and implemented a booking Agent flow that parses customer chat content into structured business intents and booking parameters, connects the order, address, service provider and capacity APIs, and generates an AI booking draft which, after review by the salesperson, is sent out as a WeCom confirmation card.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Intent Recognition & Slot Extraction: Designed business intent recognition and slot extraction modules to recognize intents such as annual cleaning booking, rescheduling and knowledge consultation, and to extract key fields such as customer, order, address, and booking date and time; combined JSON Schema with missing-field validation, and verified on 500 mock data samples with accuracy reaching 96%.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Business API Adaptation & Field Mapping: Based on the API documentation, sorted out the order, address, service provider and capacity API contracts, encapsulated a unified HTTP Client to complete request assembly, status-code validation and response parsing, and mapped external order numbers, address codes, service provider codes, bookable dates and time slots to internal business models.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Booking Flow & AI Draft Review: Designed a booking Session and state transition mechanism, orchestrating AI draft generation, salesperson review, field validation and confirmation card generation; supports salespeople in supplementing and modifying booking information, and records pre- and post-modification snapshots and field changes to prevent flow skipping.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Backend Validation & Security Control: Implemented deterministic checks on order eligibility, address scope, booking time and capacity, forcibly using real backend business fields; combined confirmation token, customer UID, idempotency key and audit logs to safeguard business security under API exceptions, illegal requests and repeated submissions.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Project Description: For X social media user analysis scenarios, centering on seed user cold start, user topic pool expansion, user profile analysis, construction of four types of graphs and knowledge-graph Q&A, designed and implemented a unified Agent Runtime, achieving an analysis loop from data collection and graph modeling to intelligent Q&A.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Runtime & State Recovery: Referencing the dual-loop design of PiAgent, implemented an outer Lifecycle Loop and an inner Model-Tool Loop; manages user messages and control events through InteractionQueue, supporting Continue, Retry, Cancel and task queuing within the same Session.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Tool & Harness Reliability Governance: Designed a unified Tool protocol and a Registry-HookPipeline-Executor call chain, implementing desensitization, permission, state, idempotency and failure-recovery controls through Redactor, PolicyHook, StateGuard, IdempotencyGuard and RetryPolicy; based on Tool DAG, supports parallel reads and serial writes.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Skill Packaging & Business Orchestration: Packaged seed-node cold start, topic pool expansion, user profile analysis, multi-dimensional graph display and intelligent Q&A into five categories of Skills, with unified natural-language and page-button entry points, supporting linear execution of multiple Skills.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Cold start completes seed discovery through three rounds of human confirmation, reducing search divergence and seed misselection. Topic expansion and profile analysis: topic expansion discovers candidate users from three dimensions and screens them by combining activity, authenticity and bridging coverage gain; user profile analysis extracts 18 types of features such as location, occupation, role and interest topics, building a social relationship graph, a full-attribute graph, a topic graph and a heat map, and has cumulatively processed 200+ users and 250,000+ posts.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "GraphQA five-route Q&A: Routes Q&A requests to five paths (Simple query, vector retrieval, BM25 keyword retrieval, Neo4j knowledge-graph retrieval and Hybrid mixed retrieval): mixed retrieval recalls multi-route results in parallel and merges them via RRF deduplication; after evidence merging and deterministic verification, generates answers carrying EvidenceRef; when there is no valid evidence, refuses to generate conclusions without evidence.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Orchestration: Independently developed a decoupled front-end/back-end AI customer service Agent, using LangGraph to build a looping orchestration of model and tools (StateGraph), covering the full flow of product consultation, order inquiry, after-sales review and human handoff.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Streaming Chat: Designed an SSE-based streaming chat protocol (text chunks + tool progress + session snapshot push), with serial processing per session, atomic rollback on failure, and recovery after service restart.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Security & Concurrency: Order ownership security: buyer_id is injected into tools by server-side runtime configuration and cannot be overridden by the model; unauthorized queries uniformly return a non-queryable result; after-sales submissions use idempotency keys to prevent duplicates, and reviews use version numbers to control concurrent conflicts.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Data & Authentication: Based on SQLAlchemy + Alembic (4 migration versions) + SQLite, persisting 7 types of tables: products / sessions / messages / orders / logistics / after-sales / users; Argon2 password hashing + short-lived Bearer token + rotatable refresh token.",
+   "issues": [
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Testing & Stability: Wrote 148 automated backend tests (model stand-in isolation, no model quota consumed) and 3 Playwright E2E suites; tool-round limits and error isolation keep long conversations stable.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Long-Range Structured Memory: Modeled on Claude Code's hot/cold memory architecture, using two kinds of MD files (a global index + fine-grained archives); in each conversation turn, MemoryTool archives high-value information such as user corrections and anticipated future needs and synchronously updates the index; new sessions read only the lightweight index and load archive fragments on demand, saving over 50% of context usage at a retrieval cost of <5 ms.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "On-Demand Exploration & Restricted Execution: For complex project code maintenance, designed code exploration tools and, following the JIT (Just-in-Time) principle, invoke file-system access on demand; a Subprocess whitelist mechanism blocks unauthorized operations, closing the loop of 'code exploration, problem discovery, plan generation' to ensure execution safety and process coherence.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Adaptive Context Engineering: Drawing on Claude Code, designed a four-layer compression mechanism; large files use AST (Abstract Syntax Tree) to extract code skeletons; progressive handling by context token ratio: early summarization above 60%, structured archiving of non-latest conversation above 85%, full compression above 95%, reducing context redundancy while retaining key information.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Project Introduction: For the scenario where business personnel can 'query enterprise operating data without knowing SQL', built a natural-language data-query Agent, connecting the complete chain of user question, intent recognition, enterprise entity resolution, semantic recall, SQL generation/validation/correction and result return, and built a Trace logging and offline evaluation system.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-stage Agent Orchestration: Using LangGraph, decomposed the task into nodes for intent routing, keyword extraction, enterprise identification, P-code confirmation, field/field-value recall, table filtering, time parsing, SQL generation, SQL validation, SQL correction and execution, with the orchestration layer uniformly controlling state transitions.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Enterprise Entity Resolution: For complex phrasings such as abbreviations, region + abbreviation and branch offices, designed an enterprise candidate resolution chain, combining the database, SQLite FTS5, bigram features and regional filtering for Top-20 recall, with interactive confirmation of ambiguous items; enterprise resolution Top-20 hit rate improved to 97.53%; P95 latency 57.91ms.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Semantic Recall-Enhanced SQL Generation: Integrated MySQL metadata, Elasticsearch, Qdrant and BGE Embedding to narrow the LLM context and stabilize SQL generation quality for complex questions.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "SQL Security Validation & Correction: Implemented SQL security validation and an automatic correction mechanism, validating syntax and query scope and intercepting risky SQL to reduce the risk of erroneous queries.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-turn Context & Observability Loop: Based on session_id, saves the most recent 5 turns of successful context and supports elliptical follow-up questions; also records QUERY_TRACE, request_id, stage status and timing, supporting request-based replay for troubleshooting.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Evaluation Results: Built a 1000-item simulated set of real data queries and a 120-item end-to-end SQL preview test set. Evaluated intent accuracy at 96.9%; in high-frequency wide-table query scenarios, the SQL semantic pass rate is > 85%.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Project Introduction: For the everyday dining-decision dilemma of 'not knowing what to eat', built an intelligent diet recommendation Agent that combines multi-dimensional dynamic information such as the user's real-time mood, scenario and health needs. Through orchestrated multi-Agent collaboration, it realizes a complete conversational recommendation chain of intent recognition, slot clarification, tag retrieval and reranking, and LLM recommendation-reason generation, and a Trace full-link monitoring and offline evaluation system was designed.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Complete Product Design: The user side supports dual-data-source conversational recommendation and personal menu maintenance, and the R&D side supports Trace troubleshooting, annotation and batch evaluation; covering four capabilities (conversational recommendation, personal dining-library management, Trace annotation and batch evaluation), closing the engineering loop of use, feedback, annotation, evaluation and iteration.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Backend Multi-Agent Collaboration Architecture: Adopted a layered pattern of orchestration hub + dedicated Workers, decoupling intent understanding, slot clarification, recommendation generation and quality evaluation into independent reasoning Agent units; the LLM is only responsible for structured reasoning output, while session flow and state transitions are uniformly controlled by the orchestration layer.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Full-Link Observability Design: To address the uncertainty of the LLM black box, collect Trace events of core metrics such as input and output at key business nodes, persist them to the database for traceability, support online troubleshooting with step-by-step replay, and provide full-link observability for every user dialogue.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Evaluation System Design & Evaluation Loop: By batch-parsing Trace for offline evaluation, use a weighted combination of backend rules, LLM Judge and user feedback to output a 100-point scoring report, covering metrics such as intent recognition accuracy, Token consumption and end-to-end latency, with low-score samples flowing back to feed system design optimization, forming a complete loop of Trace annotation, batch evaluation and metric-driven iterative optimization.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Intent Recognition & Rule Fallback: The intent recognition Agent identifies 6 categories of intents and 7-dimensional slots, layering intent-state correction, low-confidence downgrade and keyword fallback as a three-layer safety net to avoid misrouting and low-quality recommendations; slot extraction is constrained by a dictionary to avoid hallucination.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Project Introduction: Huixiang Life provides users with features such as merchant information query, flash-sale coupons and intelligent customer service, while also helping merchants promote discount information.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Flash-sale Overselling Prevention & One Order per Person: Use Redis to store inventory and order information and Lua to determine users' ordering eligibility, ensuring no overselling and one order per person.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Flash-sale Flow Optimization: Modified the synchronous flow so that after a user places an order, a message queue asynchronously handles inventory deduction and order generation, improving concurrency in flash-sale scenarios.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Cache Optimization: Use a logical-expiration scheme to prevent cache breakdown of hot Redis Keys; use a null-value caching scheme to solve cache penetration of Redis Keys.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Intelligent Customer Service: Integrated Alibaba Cloud Bailian platform LLMs, use Redis to support conversational memory, and implement information queries and store-visit reservations based on Function Calling.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Technical Department. Tech stack: TypeScript, NestJS, Next.js, Vercel AI SDK, PostgreSQL, Prisma, Redis, SSE, sub2api (https://longdaosep.cn)",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Background and goals: for enterprise AI adoption, drove the company's shift from 'individual productivity' to 'organizational productivity'. Unified listing and authentication of Skills, Agents and RPA around the core abstraction of 'silicon-based employees', packaging the four capability types into role subscription bundles with organizational permission allocation and unified compute metering.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Metrics and results: built a token relay station on sub2api, connecting 63 mainstream domestic and international models for transparent internal token usage, unified billing and cross-project cost tracking; the platform has launched 100+ digital employees for the e-commerce industry and served 10+ enterprises in closing the commercial loop.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Responsibilities: as project owner, responsible for designing and delivering the platform's Agent capability orchestration, session service, enterprise knowledge base, skill governance and production delivery modules.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Runtime: brought Skills, RPA and external Agents into a unified capability orchestration system supporting streaming inference, context injection, tool calling and execution-state tracking; used Vercel AI SDK, OpenAI-compatible APIs and Redis session locks to orchestrate calls to different employees sharing context within the same session.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Enterprise knowledge base RAG: implemented PDF / Word parsing, BullMQ asynchronous processing, embedding, BM25 + vector retrieval and RRF fusion; filtered knowledge permissions by enterprise, subscription and department, injected Top-K results into the conversation context, and fell back to lexical retrieval when embeddings were unavailable.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Enterprise and employee system: implemented enterprise registration, invitations, department tree, member roles, employee templates, capability binding, review and listing, and subscription version locking; achieved enterprise isolation and department/member authorization via EnterpriseContextService, Subscription and EmployeeGrant.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Engineering delivery and recovery: combined Docker, Caddy, GitHub Actions and blue-green deployment for stable launches and fast deployment.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Product Security Research Department. Tech stack: Python, Node.js, Vue 3, TypeScript, Docker Compose, OpenCode, Chrome DevTools MCP, ddddocr",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Background and goals: for vulnerability regulatory reporting and vulnerability early-warning scenarios, automated manual SOPs with an Agent + Skills architecture, developing and deploying a complete full-stack project.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Metrics and results: independently developed 8 reusable complex Skills covering CNVD data updates, MSRC advisory generation, CNNVD / CNVD reporting, material collation, early-warning case updates and WeChat official account publishing; material collation dropped from 5 min to 30 s, advisory generation from 30 min to 5 min and official account publishing from 30 min to 1 min; total manual handling time across the 8 scenarios dropped from about 116 min to 21 min, an overall efficiency gain of about 82%.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Responsibilities: designed and implemented Skill workflows, browser automation, service deployment and stability mechanisms.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Skill workflows: designed complex SOP processes as stable, reusable skills and implemented complete e2e tests on different agent tools.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Browser automation: to handle WAF firewalls and anti-scraping mechanisms on vulnerability reporting sites, used Chrome DevTools MCP to implement complex web form filling, attachment upload, status verification and result-ID return, covering cross-platform vulnerability reporting; designed Chrome profile and debugging-port isolation to support concurrent multi-task execution.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Stability: integrated ddddocr, image preprocessing and multi-strategy retries to improve automation stability in CAPTCHA recognition, web interaction and automatic publishing.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Service deployment: built a task console deployed on the company's internal servers, using Docker Compose to orchestrate the front end, skills-api, OpenCode Server and Docker Chrome; packaged SOP processes into a service that can be orchestrated, executed asynchronously and tracked through an API and visual console, letting the team use the browser with zero configuration.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "General Department.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Background and goals: took part in full-process testing and capability optimization before launch of the AI mock-interview platform WiseMatch (https://wisematch.com.cn), covering core scenarios such as MBTI assessment, mock interviews, competency analysis and job matching, improving release stability and answer quality.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Metrics and results: found and tracked 100+ bugs to closure, ensuring a stable product release; raised key-field extraction accuracy from 82% to 94%; optimized prompts for 8 core modules and developed 10+ automated test scripts.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Responsibilities: product testing, prompt engineering and RAG retrieval optimization, moving the product from validation to launch-ready delivery.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Automated testing: found and tracked front-end bugs and built E2E automated test scripts with Playwright.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Prompt engineering: designed the Wiser prompt engineering using CoT + Few-Shot across 8 modules including MBTI assessment, mock interviews and competency analysis, with A/B testing and automated iteration using stronger models.",
+   "issues": [
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "RAG optimization: used PyMuPDF for semantic chunking in the RAG module to solve complex table parsing; introduced BGE-Reranker reranking to improve retrieval precision of professional terms in job-matching scenarios.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Responsible for speculative decoding deployment and performance optimization of DeepSeek-V4-Flash-DSpark on the Ascend 910/950 NPU platform: For the critical path of the Proposal stage, carried out multi-Stream parallel optimization and enabled the fused Attention operator. Designed and implemented splitting the Metadata preparation, Q and KV projections across different Streams, with Event synchronization guaranteeing data dependencies before the fused Attention; among them, the Metadata Stream overlaps with the Embedding and TargetHidden projections, and the MLA Stream executes the Target Context/Draft Block KV projection in parallel, reducing Proposal latency. Compared with MTP1, equivalent latency decreased by 54.3%, corresponding to about 2.19x equivalent generation efficiency.",
+   "issues": [
+    "weak_action_verb"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Migrated the overlap scheme of sglang's scheduler: During speculative decoding, assumes full acceptance in the verify stage, triggers the asynchronous device-to-host result copy-back in advance, and achieves parallelism between D2H and draft-model decoding computation, as well as between next-stage scheduling and forward computation. This eliminated the hardware idle bubbles caused in traditional speculative decoding by having to wait for verification to finish before starting data copy-back, and eliminated the serial dependency of CPU scheduling having to wait for GPU execution to complete. End-to-end TPOT performance improved by 5%.",
+   "issues": [],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Developed and optimized CUDA operators such as LayerNorm, RMSNorm, FC, Softmax and Reduce, supporting multiple Shapes and dtypes, and connected the PyTorch interface to achieve Native/PyTorch accuracy alignment; based on the Roofline model and Nsight Compute to analyze bottlenecks, combined with techniques such as Tiling, vectorized memory access, Shared Memory optimization and Warp-level Reduce, raising operator compute/bandwidth utilization to 70%+.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Based on torch.profiler, analyzed the model execution Trace to locate bottlenecks in Kernel Launch, Stream idle bubbles and communication-computation overlap; by eliminating synchronization points and introducing Pinned Memory and a Non-blocking asynchronous transfer mechanism, the Trace shows the synchronization points and the corresponding stream idle bubbles eliminated, achieving a 1.5% end-to-end inference speedup; integrated fused operators such as APEX LayerNorm, RMSNorm, RoPE and AdamW, improving end-to-end model performance by 13%.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "For Qwen models, conducted a KV Cache quantization feasibility analysis, systematically evaluating the per-token/per-channel/per-head distribution characteristics and determining a per-channel quantization granularity; implemented the pre-Attention KV Cache quantization/dequantization flow and Page Attention INT8 GEMM simulation validation, achieving near-lossless accuracy on tasks such as Human and GPQA, providing a validation basis for the performance optimization of static KV Cache quantization.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Against the background of high inference latency caused by the iterative denoising of Diffusion Transformers, existing Cache-then-Forecast methods rely on feature trajectory prediction and suffer from error accumulation and degraded generation quality at high acceleration ratios. Studied a training-free acceleration method based on Feature Cache, specifically proposing the DriftCache diffusion-model acceleration framework, which replaces layer-level feature caching with a Global Drift aligned by predicting the ODE, avoiding the accumulation of deep-layer Transformer errors; designed a parameter-free Barycentric Lagrange extrapolator and a Phase Mapping mechanism to improve the stability of cache skip-step prediction and achieve high-ratio inference acceleration. Validated on A100 GPUs with FLUX.1-dev and HunyuanVideo, achieving up to about 5x inference acceleration; at 4.97x acceleration, FLUX.1-dev improves ImageReward by 64%, reduces LPIPS by 52%, and reduces FID on the ImageNet generation task by 58%. The related algorithms have been integrated into the open-source inference repository cann-recipes-infer, achieving deployment optimization of FLUX.1-dev and HunyuanVideo on the Ascend NPU platform. The related results were published as first author at the top conference ECCV 2026.",
+   "issues": [
+    "passive_voice"
+   ],
+   "section": "research",
+   "split": "dev"
+  },
+  {
+   "text": "Multimodal diffusion models (DMLLMs) with fixed-length generation lead to substantial repeated computation on [EOS] Padding tokens, causing serious inference overhead; meanwhile, dynamic sequence trimming breaks the static execution efficiency of CUDA Graph, limiting actual deployment performance. Proposed a soft-hardware co-acceleration framework which, by analyzing the MLP activation sparsity of early layers at Step-0, automatically locates the effective generation length and prunes redundant Padding tokens; designed Padding Waste-aware Hybrid Execution, dynamically selecting among Static Graph, Varlen Graph and Eager execution paths according to sequence length, balancing computation reduction with high-throughput inference. Validated on A100 GPUs with mainstream Diffusion MLLMs such as LaViDa-LLaDA and MMaDA, with throughput improving by up to about 31x; model performance is maintained across 9 multimodal tasks such as MME, MMMU, DocVQA and ChartQA, and cross-modal noise interference is reduced by cutting redundant suffix tokens. The related results were published as first author at the top conference ACM MM 2026.",
+   "issues": [
+    "passive_voice"
+   ],
+   "section": "research",
+   "split": "dev"
+  },
+  {
+   "text": "An LLM-based campus knowledge base Q&A platform integrating fine-grained intent recognition, intent-triggered RAG knowledge augmentation, structured main/auxiliary Agent routing, dynamic Skills injection, three-tier Redis + ChromaDB memory and LLM-as-Judge end-to-end evaluation, providing intelligent Q&A for campus visitors.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Fine-grained intent recognition: fused three routes (LLM few-shot semantic understanding, embedding similarity and pattern keyword matching) and output the intent class via dynamically weighted voting, together with confidence and structured entities, supporting fine-grained classes such as query, complaint and transfer to a human. Overall intent recognition accuracy reached 93.1%, 5.7% higher than any single method, effectively reducing misjudgment risk.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "RAG retrieval optimization: for complex or ambiguous queries, split and rewrote the query into multi-angle sub-queries, recalled from the ChromaDB knowledge base in parallel, merged and deduplicated by content hash, and reranked recall results with an LLM. Recall@5 improved by 7.8%, MRR@5 by 12.4% and Hit@5 by 10.4%.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-Agent: implemented structured multi-Agent orchestration, routing requests by intent, keywords and entities to study, dining, travel and other sub-agents; composite questions such as dining + travel are handled in parallel by main/auxiliary agents with merged results, with emergency escalation and a general fallback.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Skills: implemented dynamic Skills loading from Markdown/JSON files containing business handling rules, injected into the system prompt by Agent type and user-message keywords, reducing the risk of unauthorized replies and script drift.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Memory: designed a three-tier memory architecture of working memory, episodic memory and user profile on Redis + ChromaDB, managing current-session working memory with async Redis, storing historical conversation summaries and user profiles in ChromaDB, and moving synchronous vector-store operations into a thread pool to reduce blocking on the main path.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Evaluation: implemented an LLM-as-Judge evaluation framework that calls the Orchestrator to generate replies and scores them on relevance, accuracy, completeness and usefulness, covering intent recognition accuracy, end-to-end reply quality, regression detection and optimization suggestions.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "A high-concurrency token-package purchase system for LLM platform promotions, supporting multi-level caching of token package details, ScopeCaching in-request backfill, Lua atomic purchasing, Stream asynchronous issuance, Redisson distributed-lock idempotency control and binlog-driven Memcache synchronization.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Five-level cache architecture: built a ScopeCaching - JVM LoadingCache - Memcache - Redis - MySQL five-level cache to absorb hot read traffic for activity pages and SKUs; hits in lower cache levels are backfilled into ScopeCaching to reduce repeated queries within the same request.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Cache synchronization: designed a binlog-driven cache synchronization scheme that proactively syncs detail data to Memcache, deletes aggregate data to invalidate it, and broadcasts JVM local cache invalidation, avoiding multi-level cache double writes in business code.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Cache problems and solutions: wrapped a Redis cache utility, using a Bloom filter and null-value caching against cache penetration for non-existent SKUs, mutex locks and logical expiration against cache breakdown of hot token package details, and random TTLs, multi-level caching and rate limiting/degradation to reduce cache avalanche risk.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Atomic operations: implemented stock checks, one order per person, stock deduction and Stream writes atomically with Redis Lua, preventing concurrent overselling and duplicate purchases.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Consumer groups: used Redis Stream consumer groups to process token issuance orders asynchronously, compensating unacknowledged messages via the pending list.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Built an automated data processing pipeline in Python, cutting manual configuration time on the Simulink/Amesim platforms by about 70% and greatly improving work efficiency.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Built regression neural network models for thermal management and brake disc temperature, optimizing the engineering simulation workflow and improving simulation analysis efficiency and prediction accuracy.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Developed data extraction and automatic report generation plugins based on the NX/UG API, standardizing engineering data management.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "dev"
+  },
+  {
+   "text": "Built an end-to-end RAG system covering HotpotQA and FinanceBench, implementing financial report PDF parsing, in-page chunking, embedding, FAISS indexing, evidence retrieval, structured generation and page-number citations, supporting BM25, Dense, Hybrid RRF and a Cross-Encoder reranker.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Compared retrieval schemes on a fixed HotpotQA Dev/Test split; the Cross-Encoder reached Recall@10 90.94%, Complete@10 80.00% and MRR 93.78%, quantified a CPU reranking cost of 427.8ms per question, and corrected inflated metrics by evaluating generation and citation separately.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Integrated the real FinanceBench financial report corpus, parsing and aligning evidence for 62 PDFs, 114 covered questions, 8,987 pages and 18,975 in-page chunks, and verified zero index data leakage; Dense reached GlobalDocumentHit@10 97.37% and EvidencePageHit@10 59.65%.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Designed a structured QA flow of 'LLM selects financial definitions and line items - generates a calculation plan - PythonCalculator verifies and executes', built item-by-item evaluation and error attribution covering answers, citations, refusals, structural anomalies, latency and token consumption, and delivered a FastAPI demo with 75 automated tests.",
+   "issues": [
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Built a medical QA SFT data pipeline on MedQuAD with exact/near-duplicate deduplication, data leakage control and Train/Validation/Test isolation; fine-tuned Llama-3-8B-Instruct with 4-bit QLoRA, training only 0.92% of parameters, with peak GPU memory of 6.37 GiB on a Tesla T4 and about 2.9h per epoch.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Designed a paired Base vs Fine-tuned evaluation framework, assessing fine-tuning gains on a fixed 300-item test set with ROUGE, BERTScore and Paired Bootstrap 95% CI; BERTScore F1 0.586 to 0.682, ROUGE-L 0.190 to 0.333, with 82.3% of samples improved.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Ran a safety audit, LoRA rank ablation and PubMedQA transfer experiments, identifying the safety trade-off introduced by domain SFT; rank 8 kept similar validation loss with 50% fewer parameters, and PubMedQA accuracy went from 0.73 to 0.79.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Engineered the training and evaluation workflow and experiment asset management, supporting checkpoint recovery, experiment config/result tracking and independent adapter persistence; hosted the QLoRA adapter on Hugging Face and verified recoverability of model artifacts via SHA256 and deterministic inference.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "GitHub: github.com/li02045617/Salvo",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Project Summary: For e-commerce after-sales scenarios, designed and implemented an intelligent customer service platform based on a LangGraph-controlled single-Agent architecture, connecting the complete loop of intent recognition, layered memory, RAG tool retrieval, human-handoff tickets, monitoring feedback and automatic evaluation, solving problems such as inaccurate recognition of complex intents, weak knowledge recall, easily lost multi-turn context, unobservable runtime state, and difficulty evaluating and optimizing after launch.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Runtime & Business Flow: Based on LangGraph, designed a controlled single-Agent workflow that organizes intent recognition, tool calling, result verification and failure downgrade / human handoff into a controllable execution chain; the tool layer encapsulates capabilities uniformly through the MCP specification, providing caching, circuit breaking, timeout and downgrade capabilities; through tool whitelists and conditional constraints on Agent behavior, supports multi-task execution and exception fallback; the front end implements an Agent-trace trajectory panel to track Agent decisions and tool execution in real time.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Multi-Route Fusion Intent Recognition: Combined LLM semantic classification, Embedding similarity and keyword rules for intent voting, covering 10 types of after-sales intents such as orders, refunds, logistics and returns/exchanges and 4 confidence tiers, and used an LRU cache to reduce high-frequency repeated inference calls; intent results determine the task type, and the task type dynamically controls the tool whitelist, narrowing the Agent's action space and avoiding irrelevant or unauthorized tool calls.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "RAG Hybrid Retrieval Pipeline: Designed and implemented Hybrid Retrieval, fusing BM25 keyword recall and ChromaDB vector recall through RRF, achieving Query Rewrite, parallel recall, deduplication, LLM reranking and metadata filtering, together with a TTL cache and circuit-breaking/downgrade mechanism; built a business knowledge base covering 9 after-sales knowledge domains (37 documents), registered as an MCP tool for the Agent to retrieve on demand.",
+   "issues": [
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Retrieval Evaluation & Optimization: Built a retrieval evaluation set of 35 manually annotated Queries, comparing three strategies (direct / hybrid / rewrite) on Recall, Precision, MRR and NDCG, and raising Recall@5 from 0.31 to 0.74 through experimental iteration; supplemented end-to-end trial validation of the Agent's knowledge-retrieval tool calls and recall results, and combined it with LLM-as-Judge for end-to-end evaluation of dialogue quality on 20 customer-service cases.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Layered Memory Management: Based on Redis and vector storage, designed a three-layer memory mechanism of short-term working memory, long-term episodic memory and user profile; through context compression and dynamic splicing, controls Token spend, and supports cross-turn retrieval of historical information and reuse of the user profile.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "GitHub: github.com/li02045617/mini-dsh",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Project Summary: Drawing on the 'everything is a plugin' design philosophy of DeepSeek Harness, implemented a lightweight Coding Agent Harness from scratch in TypeScript/Node.js, modularizing the Agent's core capabilities into replaceable plugins, and quantifying the impact of different Harness mechanisms on Agent execution results through Benchmarks and ablation experiments.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Plugin-based Agent Runtime: Implemented MiniContext, PluginRegistry and ServiceRegistry around the MiniPlugin/Service protocol, using Plugin/Service abstractions to decouple Model, Tool, Session, Permission, Event, Context Manager and Agent Loop; through dependency validation, Service injection and lifecycle management, plugins run and can be independently replaced without modifying the execution loop.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Agent Loop & Tool Execution: Implemented multi-state progression of Model, Tool and Result, configured with 64 model-request rounds, 128 tool calls, a 10-minute task timeout and AbortController cancellation; based on the native Tool-Calling capability, abstracted a unified ModelRequest/ModelResponse, mapped the structured interface of model returns to a unified tool execution interface, and provided file operations and run_command basic tools.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Session & Context Management: Persists complete messages, tool calls and results with append-only JSONL, supporting Session recovery and /continue after model budget is exhausted; the Context Manager triggers model summarization at an 80% threshold, retaining only the latest 12 messages and truncating large tool results to mitigate context bloat in long-range tasks; additionally designed a Prompt Optimizer plugin that converts vague requirements into executable Worker Prompts, reducing the impact of unclear task constraints on execution.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Benchmark Design & Ablation Experiments: Built a self-designed 20-task Benchmark + automatic Evaluator covering code comprehension, bug fixing, feature implementation, refactoring and test writing; with unified model, permissions and budget, ran comparative experiments across Baseline / Context Manager / Prompt Optimizer / Full Harness, computing 6 categories of metrics including success rate, Model Rounds, Tool Calls/Errors, Token and Latency: Full Harness reached a 90% (18/20) success rate vs. 75% (15/20) for the Baseline, while the average number of model responses, the number of tool failures and Token consumption all decreased, validating the effectiveness of the Harness.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Background: integrated a computer science postgraduate entrance exam knowledge base (official textbooks, past papers, etc.) with LLM and RAG technology to build a locally deployable intelligent Q&A system for students, improving the efficiency and accuracy of LLM retrieval of key knowledge while reducing hallucinations and helping exam candidates review efficiently.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Offline indexing: used the Qwen3-Embedding-8b model with multi-representation and other representation techniques to vectorize the cleaned data, built an efficient hierarchical vector index and stored it distributed in the ChromaDB vector database.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Question handling: based on conversation history, used Qwen3-8b deployed locally with Ollama for context compression and semantic understanding, turning ambiguous natural-language queries into structured instructions through question rewriting and logical analysis.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Retrieval: used Adaptive-RAG for subject-aware logical routing and dynamic scheduling of retrieval strategies, combining BM25 (keyword matching) and vector retrieval (semantic similarity) for hybrid retrieval to suit questions from different subjects.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Post-retrieval processing: built a multi-round retrieval strategy based on Self-RAG and optimized ranking with two rounds of post-processing: first fusing and deduplicating multi-source heterogeneous results with the RRF algorithm, then calling a Cohere model for semantics-aware fine-grained reranking to ensure the accuracy of the RAG context.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Generation: used prompt templates and the LLM's CoT reasoning to guide the model to produce clearly structured, logically rigorous professional answers, with a citation mechanism so key details of answers can be traced and verified against retrieval sources.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Results: in end-to-end evaluation on a self-built sample set, key-information answer accuracy rose from 74% to 92% compared with LLM answers without RAG.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Developed an intelligent Agent for students on campus that combines free-classroom lookup, class auditing assistant, canteen dish recommendations, flea market and other campus life services, addressing the inefficiency of repeated verification and manual lookup across separate services; in testing it has cut service time by 40% and supports personalized features.",
+   "issues": [],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Memory architecture: designed a 'short-term cache + long-term vector retrieval' memory architecture that uses student conversations and service data to automatically extract student profiles and key queries, with periodic refresh and personalized answer configuration (e.g. frequently used classrooms, library seat booking).",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Modular MCP servers: wrapped tools such as classroom lookup and dish recommendation and split them by service type into query, recommendation and review MCP servers, with Agent scheduling for automatic tool routing, supporting quick extension with new services (e.g. library borrowing, campus shuttle lookup).",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Multimodal interaction: integrated the Doubao multimodal model to support voice queries and spoken results (convenient on the move) and image feedback (e.g. a map of free classrooms to help students choose), strengthening interaction in voice and visual scenarios.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Planning and reasoning: implemented intent recognition based on GPT-4o and combined ReAct, CoT and self-consistency strategies for multi-turn reasoning and action planning, significantly improving task execution accuracy and logical consistency.",
+   "issues": [
+    "buzzword",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "dev"
+  },
+  {
+   "text": "Keywords: Agent Skill, LLM Infra, KTransformers.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Skill-driven Evaluation Automation Pipeline: Orchestrated 6 Skills with Agent Skill, chaining the whole flow in a loop where \"each call advances exactly one action\", connecting the complete loop from automatic discovery of new models and quantization-configuration search, to lm-eval evaluation, automatic error fixing and automatic result upload; supports concurrent scheduling, checkpoint resume and idempotent retry, and has stably completed 410 tasks.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "WorkflowMaker Session Workflow Replay System: Participated in implementing automatic distillation of Agent session tool-call chains: session histories are parsed into timelines, summarized by an LLM into Workflow JSON containing commands and evidence, stored in a SQLite FTS5 search index, and exposed through an MCP Server for any Agent to query and replay, turning team experience into reusable assets.",
+   "issues": [
+    "weak_action_verb",
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Inference Evaluation of an Ultra-Large MoE Model: On a single machine with 8×H20 96GB + 4TB system memory, completed inference evaluation of the Qwen3.8-Flash-2.4T ultra-large MoE model with a KTransformers + SGLang heterogeneous inference scheme: part of the expert weights are offloaded to CPU while attention computation stays on GPU, achieving observable throughput under limited GPU memory and connecting the full chain of weight loading, service deployment and evaluation execution.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Keywords: Generative model deployment, model quantization, U-Net, CNN",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Description: Mainly responsible for training and quantizing image enhancement and super-resolution models; the business serves picture-quality restoration in live video streaming.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Personal Work: Modified the single-step super-resolution diffusion model S3Diff (CVPR 2024) and tried applying it to 1:1 image restoration and quality enhancement, training and fine-tuning on the company's closed-source dataset; used NVIDIA open-source libraries to take part in optimizing the online image enhancement model, attempting FP8 quantization to meet the business's high real-time requirements.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Keywords: MLLM, Qwen3-VL, dynamic resolution, M-RoPE, DeepStack, SFT",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Model Architecture: Converted the MiniMind text decoder into a 0.7B-scale VLM (language side ~0.3B), integrated the Qwen3VL-SigLIP2 vision encoder and dynamic-resolution sampling, and implemented Interleaved M-RoPE and YaRN extrapolation, supporting spatial position modeling for interleaved image-text sequences.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Data Construction: Organized Chinese-English bilingual image-text data based on ALLaVA-4V, building about 1.27M pre-training samples and 2.9M SFT samples, covering image-text instructions, captions, text-only capability retention, and Gemini/Claude/GPT-4o synthetic augmentation data.",
+   "issues": [
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Training Optimization: Designed a three-stage training pipeline of text pre-training, vision-language Projection alignment and multimodal SFT; froze the vision encoder and trained dual Projection layers, and introduced DeepStack intermediate-layer visual feature injection and a square-root reweighted loss, mitigating generation degradation caused by token-length differences between long and short samples.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Results: The 0.7B version reached 71.8% accuracy on VQAv2; in caption and multi-turn image-text dialogue tasks it recognizes fine-grained scene features and generates coherent Chinese and English descriptions.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Keywords: Generative recommendation, RQ-VAE, semantic ID, GRPO",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Description: Reproduced the full generative recommendation (GenRec) pipeline based on the open-source MiniOneRec framework, aiming to replace the traditional \"retrieval-ranking\" architecture with an end-to-end sequence generation task.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Personal Work: Implemented item semantic IDs, performed supervised fine-tuning on recommendation and semantic-alignment tasks, and reproduced GRPO-based preference optimization, configuring rule rewards and DCG ranking-aware rewards.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Results: With SFT-GRPO on Qwen2.5-0.5B, reproduced about 14% HR@10, surpassing the larger 3B-SFT baseline (HR@10 about 12%) and verifying the further performance gain from RL.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "LLM systems, intelligent Q&A",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Summary: Built a 2B-parameter decoder-only MoE large language model following the complete Pretraining → SFT → DPO pipeline, adapting a general language model to the campus Q&A domain; completed distributed training and inference optimization on a 4×A800 cluster and finally deployed a campus intelligent Q&A system.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Model Architecture & Pre-training: Implemented a GPT-like architecture (RMSNorm, RoPE, SwiGLU, GQA) with 8-expert top-2 routing plus shared experts, mitigating expert collapse through load balancing; completed 100B-token pre-training, with validation PPL dropping from 38 to 17 and stable convergence.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Data Pipeline Construction: Built domain data construction pipelines for the SFT/DPO stages, designing an automated \"model generation + rule filtering\" Pipeline that filters low-quality samples with relevance and consistency rules, reaching an 88% valid-sample ratio; finally built 10k instruction samples and 10k preference samples.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Instruction Tuning & Alignment: Performed full-parameter SFT for domain adaptation, raising answer accuracy on the campus Q&A evaluation set from about 5% to 75%; further DPO preference optimization raised the pairwise win rate by about 15% and significantly reduced hallucinations.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Training & Inference Optimization: Targeting memory and compute bottlenecks, used FSDP (ZeRO-2) for gradient and optimizer-state sharding during training, combined with Gradient Checkpointing and FlashAttention-2 to optimize memory and compute efficiency, reducing overall memory usage by 32% and increasing training throughput about 6×; at inference, reduced KV Cache overhead through GQA, cutting inference latency by about 40% and increasing throughput by about 60%.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Industrial damage recognition",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Summary: Facing scarce aero-engine borescope image data and inefficient manual inspection, implemented damage recognition and terminal-device deployment based on YOLOv9.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Core Work: Responsible for borescope image annotation and data construction; expanded the sample size with a multi-region stitching Mixup method, then completed model fine-tuning and training-pipeline setup with transfer learning, finally achieving edge deployment (ONNX/TensorRT) to support inspection on embedded devices.",
+   "issues": [
+    "weak_action_verb",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "AAAI-2026; CCF-A, student first author",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "ACM MM-2025 Challenge; CCF-A, first author",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "NeurIPS-2026, under review; CCF-A, student first author",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Peking University Core Journal 2024 + software copyright + patent; student first author",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Video sentiment analysis, temporal modeling, explainability",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Summary: To address the core problems in multimodal sentiment analysis that \"text is dominant but under-utilized\" and \"audio-visual temporal information is hard to align\", proposed a unified framework of \"explanation-driven alignment + temporal modeling + text-routed mixture of experts\", enhancing model interpretability while improving performance.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Explanation-driven Alignment: Introduced an MLLM to generate emotional explanations of the audio and video modalities as an intermediate semantic bridge, mitigating cross-modal semantic inconsistency.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Temporal Alignment Modeling: Designed Temporal Alignment to effectively model long- and short-term dependencies and synchronization between audio and video while keeping linear complexity.",
+   "issues": [
+    "buzzword",
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Text-Routed MoE: Proposed using text semantics as the routing signal to select expert networks, reinforcing the \"text-dominant\" property and reducing interference from ineffective modalities.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Experimental Results: Outperformed existing methods on MOSI, MOSEI, CH-SIMS and other datasets; MAE on CH-SIMS dropped to 0.353 (↓13.5%).",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Multimodal video understanding, emotion reasoning",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Summary: To address scarce annotation data in multimodal emotion recognition and the loss of temporal emotional information during LLM tokenization, proposed a unified \"data augmentation + temporal pre-fusion\" framework, achieving cross-modal emotion reasoning and natural-language explanation generation and significantly improving emotional consistency and interpretability.",
+   "issues": [
+    "buzzword",
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Multimodal Emotion Reasoning Data: Used AffectGPT fine-tuned on OV-MERD to generate reasoning-style emotion descriptions for SIMSv2; after Qwen3 consistency filtering and manual correction, built 4,403 high-quality emotion reasoning samples, effectively mitigating annotation scarcity and improving human-like reasoning ability.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Mamba Temporal pre-Fusion: Before entering the LLM, performed cross-modal pre-fusion of audio and visual frame sequences, using SSM to model long-range temporal dependencies with linear complexity, then generated gating signals via Conv1d+SiLU to achieve bidirectional audio↔visual interaction through element-wise modulation; the fused features are projected into a unified multimodal representation that preserves temporal information, avoiding the loss of temporal dynamics and cross-modal synchronization caused by independent tokenization.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Multimodal Prompt Reasoning: Built a structured Prompt combining fusion tokens, unimodal global tokens and subtitles, guiding Qwen2.5-7B to generate natural-language explanations with emotional reasoning chains. In the competition's official human evaluation, ranked 3rd overall on the authenticity and fluency of the generated explanations.",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Overview: Led the development of a multimodal large language model designed for the scientific domain, open-sourcing Innovator-VL-8B-Instruct (general interaction) and Innovator-VL-8B-Thinking (deep reasoning), aiming to improve cross-disciplinary scientific understanding and reasoning.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Full-Pipeline Architecture: Built a fully transparent, end-to-end reproducible training pipeline from data cleaning, pre-training and supervised fine-tuning (SFT) to reinforcement learning (RL). Optimized distributed training based on Megatron-LM, achieving efficient training throughput.",
+   "issues": [
+    "buzzword",
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Extreme Data Efficiency: Broke the traditional paradigm of relying on massive domain pre-training data. Through principled data filtering strategies, reached SOTA on multiple scientific and general vision benchmarks with only fewer than 5 million high-quality scientific samples.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "RL Alignment (RLHF): For the Thinking model, introduced the GSPO algorithm and a hierarchical reward mechanism, significantly strengthening multi-step reasoning (CoT); reasoning token efficiency improved 1.4× to 4.3× over comparable models (e.g. Intern-S1-mini).",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Open-Source Impact: Gained 100+ GitHub Stars and 2000+ HuggingFace downloads shortly after release. Overall performance surpassed mainstream models such as Qwen3-VL-8B and InternVL3.5-8B across 37 benchmarks including Scientists' First Exam and MathVista.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Links: [GitHub] [Project Page]",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Architecture Innovation: Proposed the Alpha-Service framework and a \"Trigger-Analysis-Reasoning\" three-level multi-agent architecture; through modular perception–decision–memory design and large/small model cascade scheduling, achieved a balance between low latency and high performance on edge devices.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Deployment: Built applications such as a game advisor and navigation guide on Xiaomi AI glasses, solving the \"when to intervene\" and \"service strategy\" problems of proactive service; the system accurately understands user intent and proactively offers assistance.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Links: [arXiv]",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Background: Addressing the core decision challenge that existing offline video LLMs (VideoLLMs) lack real-time interaction capability (i.e. not knowing \"when\" to speak), proposed a new paradigm that activates streaming video understanding without modifying the model architecture.",
+   "issues": [
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Streaming Evaluation Framework (RealStreamEval): Built the first evaluation framework that models streaming video understanding as frame-level multi-turn dialogue; by introducing a strict redundancy penalty mechanism, it forces the model to decide response timing autonomously in real-time streams, solving traditional evaluation's dependence on external polling or offline segments.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Self-Evolving Data Synthesis (EvoStreaming): Designed a zero-human-annotation self-evolving data generation pipeline; through a five-stage pipeline of \"task classification – self-questioning – spatio-temporal anchoring – streaming trajectory synthesis – iterative refinement\", uses the model's own capability to generate high-quality interaction signals. With only 1,000 self-generated samples, successfully activated streaming interaction in mainstream offline models such as Qwen2-VL and InternVL.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Performance Breakthrough: Without sacrificing the offline model's general performance, achieved stronger streaming interaction using only 1/100 the data of prior methods, improving by up to 10.8% on OVO-Bench. This work reveals that existing video models already possess latent streaming understanding ability, and the core bottleneck is the lack of correct interaction-timing training signals.",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Role: First Author",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Status: Under Review [arXiv]",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Background: Targeting the compute bottleneck of rapidly growing ViT encoding time in streaming video understanding, proposed a plug-and-play, training-free hierarchical acceleration framework (STC), breaking the limitation that traditional compression methods depend on future information or user instructions and achieving full-pipeline acceleration.",
+   "issues": [
+    "missing_quantification"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Core Algorithms: Designed STC-Cacher, which uses a Scatter-Update strategy to compute only dynamic tokens and reuse the static background (avoiding 85% visual redundancy); proposed the instruction-free STC-Pruner, which precisely removes redundant features before the LLM based on dual-anchor spatio-temporal novelty.",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Performance Breakthrough: On four mainstream baselines including ReKV and Dispider, while maintaining 99% accuracy, STC reduced ViT encoding latency by 24.5% and LLM pre-fill latency by 45.3%, significantly outperforming existing SOTA compression methods such as ToMe and VidCom².",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Role: Core Contributor",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Main Work: Participated in upgrading the large-scale recall pipeline of the company's main-search \"Guess You Like\" feature, leading the deployment of multi-interest representation and Generative Retrieval (GR). Proposed a hierarchical contrastive learning and vector caching mechanism to replace the traditional inverted index, significantly improving recall diversity and relevance during the Double 11 stress test; online CTR increased by 3.2%.",
+   "issues": [
+    "weak_action_verb",
+    "buzzword"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Technical Contributions:",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(1) To mitigate noise interference and long-tail distribution in user behavior sequences, built a Transformer-based multi-interest extraction framework. Introduced an adaptive Noise Contrastive Estimation (NCE) loss to dynamically adjust negative-sample weights, decoupling users' implicit interests into 8 orthogonal vectors; built a billion-scale item index with Faiss, and offline Recall@100 improved by 5.8%.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(2) To address the poor generalization of traditional recall models on unexposed items, implemented a Diffusion-based Generative Retrieval model. Abandoned traditional Item IDs and instead encoded items as semantic IDs, training a DiT model to generate target semantic-ID sequences directly from the Query; designed a Curriculum Learning training strategy that learns the high-frequency item distribution first and hard samples later; new-item recall rate improved by 12.5%.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(3) To resolve the engineering bottleneck of high online inference latency and GPU memory usage, developed an adaptive KV Cache quantization and compression module. Applied INT8 quantization to the generative retrieval model with TensorRT-LLM and optimized memory fragmentation with PagedAttention; deployed on an A10 GPU cluster, single inference latency was kept within 15ms and QPS increased by 40%; launched after passing A/B testing.",
+   "issues": [
+    "passive_voice"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Main Work: Responsible for R&D of Diffusion Transformer (DiT)-based large video generation models, focusing on improving motion consistency and instruction following in short-video generation. Participated in building the underlying generation engine of CapCut's \"Image-to-Video\" feature, optimizing inference efficiency on consumer GPUs to support real-time 1080P/24fps video generation.",
+   "issues": [
+    "weak_action_verb"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(1) To address temporal flickering and object deformation in video generation, designed a Spatial-Temporal Joint Attention mechanism. Introduced 3D convolutions in the VAE encoding stage to extract spatio-temporal features, replacing the traditional separate spatial/temporal modules and significantly improving inter-frame continuity; on WebVid-10M, FVD dropped to 128.5, a 15.3% improvement over the baseline.",
+   "issues": [
+    "buzzword"
+   ],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(2) To address poor understanding of complex Chinese Prompts, built a million-scale video-text alignment dataset. Proposed a hierarchical Caption annotation Pipeline: first used GPT-4V to produce fine-grained descriptions (objects, actions, lighting) of key video frames, then trained Qwen1.5-14B as a Reward Model (RM) for quality scoring and filtering. Performed full-parameter fine-tuning of Stable Video Diffusion on this data; CLIP Score rose to 0.42 and instruction-following accuracy improved by 22%.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "(3) To break the GPU memory wall of high-resolution video inference, implemented a cascaded Latent Consistency Distillation (LCD) algorithm, compressing the original 50-step sampling to 4 steps, combined with TensorRT FP16 quantization and Kernel Fusion; on an A10 GPU, single-frame inference latency dropped from 3.2s to 0.4s and memory usage decreased by 60%, supporting the gray-release launch of the app's \"One-Click Video\" feature.",
+   "issues": [],
+   "section": "experience",
+   "split": "heldout"
+  },
+  {
+   "text": "Project Overview: In partnership with a leading local logistics company in Sichuan, built a smart logistics park scheduling system integrating lightweight visual detection models and operations-research optimization algorithms, achieving real-time tracking and dynamic path planning for all park elements (unmanned forklifts, sorters, pallets, shelves). By building a large-scale logistics-scene trajectory dataset, trained a dedicated scheduling model and built a Multi-Agent collaborative decision system; the core scheduling module has been integrated into the company's \"Shuyuntong\" WMS for trial operation.",
+   "issues": [
+    "passive_voice",
+    "missing_quantification",
+    "missing_outcome"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "Technical Contributions: (1) To address severe target occlusion and scarce annotation data under park surveillance views, adopted a semi-supervised learning framework combined with active learning to select highly uncertain samples for manual annotation; used CutMix and Mosaic augmentation to simulate cargo stacking occlusion; used ControlNet with edge-detection maps to generate synthetic data of specific shelf layouts, expanding the training set by 30%; used StyleGAN3 for cross-camera style transfer to improve cross-domain generalization.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "(2) To address difficult fine-grained recognition caused by many unmanned forklift models, adopted a Cascade Mask R-CNN multi-stage detection architecture that cascades three detection heads with progressively higher IoU thresholds, achieving precise recognition from generic industrial vehicles to specific forklift models; mAP50 improved by 4.1%. For missed detection of dense small targets from high overhead views, introduced Deformable Convolution (DCN) to enhance feature extraction and used sliding-window slicing inference; for limited edge compute, applied INT8 quantization to the detection model and optimized the inference engine with TensorRT-LLM, while cascading the tracker with Kalman filtering and the Hungarian algorithm, ultimately achieving stable 45FPS detection and tracking on Jetson Orin.",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "(3) For low path-planning efficiency under complex road conditions and decisions that do not require frame-by-frame inference, used an improved A* algorithm with time-window conflict detection for global path planning, and used Deep Reinforcement Learning (PPO) to train a local obstacle-avoidance policy network; the PPO model was trained on 5,000+ hours of collected real park trajectories, 20k+ manually simulated congestion scenarios and 8,000+ scheduling-rule records; task completion rate rose to 96.5%.",
+   "issues": [
+    "passive_voice"
+   ],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "(4) To build a vertical-domain intelligent decision assistant for logistics scheduling, built a large-scale logistics knowledge graph and natural-language interaction system. Extracted order, inventory and capacity data from ERP/WMS via ETL tools to build a knowledge graph with 100k+ entity nodes, stored in Neo4j; fine-tuned Qwen2.5-32B with LoRA on 5,000+ historical scheduling logs and emergency plans as the decision base model; finally built a Multi-Agent collaborative scheduling system using the ReAct agent pattern with Chain-of-Thought (CoT) prompting to optimize decision logic; compared with the traditional rule engine, response speed in abnormal-event handling improved by 12",
+   "issues": [],
+   "section": "project",
+   "split": "heldout"
+  },
+  {
+   "text": "First Author, CCF-A, ICCV-25",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Second Student Author, CCF-B, ACM MM-24",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "Corresponding Author, CAS Q1, ISPRS PRS (under review)",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  },
+  {
+   "text": "First Author, CCF-B, DASFAA-24",
+   "issues": [],
+   "section": "research",
+   "split": "heldout"
+  }
+ ]
+}

@@ -21,6 +21,12 @@ from app.schemas.resume import Experience, Project, ResumeDocument, SkillGroup
         # 「小标题: 内容」写法：去掉小标题后再看行首
         ("Intent Recognition: Participated in designing a routing chain for 3 teams, reducing toil", "weak_action_verb", True),
         ("Implemented dynamic batching for 3 services, reducing latency", "buzzword", False),
+        ("Responsibilities: as project owner, responsible for delivering 3 modules, reducing toil", "weak_action_verb", True),
+        ("Combined ReAct and CoT for 3 agents, significantly improving accuracy", "buzzword", True),
+        # 型号版本和结构描述里的数字不算量化
+        ("Used Qwen3-8b and a three-layer cache to cut latency", "missing_quantification", True),
+        ("Served 1000 users with a three-layer cache, cutting latency", "missing_quantification", False),
+        ("Used Redis Lua scripts for 3 services, ensuring no overselling", "missing_outcome", False),
     ],
 )
 def test_line_rules(line: str, issue: str, expected: bool) -> None:
@@ -34,6 +40,18 @@ def test_one_line_can_report_several_issues_and_short_lines_are_skipped() -> Non
     # 项目名/技术栈这类标题行不是成果要点，不报缺量化/缺结果
     assert line_issues("Tech stack: Python, FastAPI, Redis, MySQL and Docker") == []
     assert line_issues("Project: Smart Asset Disposal Agent Platform built for law firms") == []
+    assert line_issues("Technical Department. Tech stack: TypeScript, NestJS, PostgreSQL, Redis and SSE") == []
+    # 关键词/论文署名/主题标签行也不是成果要点
+    assert line_issues("Keywords: MLLM, Qwen3-VL, dynamic resolution, M-RoPE, DeepStack, SFT") == []
+    assert line_issues("First Author, CCF-A, ICCV-25") == []
+    assert line_issues("Video sentiment analysis, temporal modeling, explainability", "research") == []
+    # 主题标签行只在研究块里跳过：经历/项目里逗号分隔的短要点照常检测
+    for bullet in ("Built REST APIs, wrote unit tests, deployed services", "Led backend team, cut costs, shipped features"):
+        assert "missing_quantification" in line_issues(bullet, "experience")
+        assert line_issues(bullet, "research") == []
+    # 长的研究摘要顺带提到 first author 仍要检测
+    summary = "A cache method was proposed for diffusion transformers to reduce repeated computation; I am the first author of the paper"
+    assert "passive_voice" in line_issues(summary)
 
 
 def test_block_issues_from_scores() -> None:

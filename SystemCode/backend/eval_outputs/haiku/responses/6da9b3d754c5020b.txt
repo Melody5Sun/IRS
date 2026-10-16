@@ -1,0 +1,101 @@
+{
+  "name": "Yao Ruiquan",
+  "email": "424513394@qq.com",
+  "phone": "138-0000-0000",
+  "about": "Job intent: AI application development.\nCore strengths:\n1. Technology ecosystem building: Operates a personal technical blog on Juejin with 10+ published AI engineering practice articles. Operates and maintains an enterprise-grade Token relay station (https://longdaoai.cn) with 100+ cumulative users.\n2. Tool usage and resource access: Heavy user of Claude Code and Codex, with about 34.8 billion tokens consumed cumulatively (about 5.8 billion per month on average). Primary models: Claude Opus 5.0 and ChatGPT 5.6 sol. Closely follows X, Linux.do, Juejin and other communities for AI-related consultation and first-hand information.\n3. AI cross-industry deployment experience: Interned at companies in education, cybersecurity, e-commerce and other fields, using AI to generate profit or streamline business processes for cost reduction and efficiency gains. Has taken products from 0 to 1, with systems in long-term stable production serving paying customers, and experience with a commercial closed loop.",
+  "experiences": [
+    {
+      "company": "Jiangsu Longdao Data Group Co., Ltd.",
+      "title": "Agent Development Intern",
+      "employment_type": "internship",
+      "start_date": "2026-07",
+      "end_date": "2026-10",
+      "description": "Tech stack: TypeScript · NestJS · Next.js · Vercel AI SDK · PostgreSQL · Prisma · Redis · SSE · sub2api https://longdaosep.cn\nBackground and goal: Targeting enterprise AI adoption, drive the company's shift from 'individual productivity' to 'organizational productivity'. Unify listing and authentication of Skills, Agents and RPA; encapsulate four types of capabilities as job-role subscription packages with the 'silicon-based employee' as the core abstraction, enabling organizational permission allocation and unified compute metering.\nMetrics and results: Built a Token relay station on sub2api, unifying access to 63 mainstream domestic and international models, enabling transparent internal Token usage, unified billing and cross-project cost tracking. The platform has launched 100+ e-commerce digital employees, serving 10+ enterprise customers to complete a commercial closed loop.\nMy responsibilities: As project owner, responsible for the design and implementation of platform Agent capability orchestration, session services, enterprise knowledge base, skill governance and production delivery modules.\nAgent Runtime: Unified Skills, RPA and external Agents into a capability orchestration system, supporting streaming inference, context injection, tool calls and execution state tracking. Based on Vercel AI SDK, OpenAI-Compatible API and Redis session locks, enabling orchestrated calls by different employees sharing context within the same session.\nEnterprise knowledge base RAG: Implemented PDF/Word parsing, BullMQ asynchronous processing, embedding, BM25 + vector retrieval and RRF fusion. Filters knowledge permissions by enterprise, subscription and department, injects Top-K results into the conversation context, and supports fallback to lexical retrieval when embedding is unavailable.\nEnterprise and employee system: Implemented enterprise registration, invitations, department tree, member roles, employee templates, capability binding, review and listing, and subscription version locking. Achieved enterprise isolation and department/member authorization via EnterpriseContextService, Subscription and EmployeeGrant.\nEngineering delivery and recovery: Combined Docker, Caddy, GitHub Actions and blue-green deployment to achieve stable production launches and rapid deployment.",
+      "country": null
+    },
+    {
+      "company": "Hangzhou DBAPPSecurity Technology Co., Ltd.",
+      "title": "AI Application Development Intern",
+      "employment_type": "internship",
+      "start_date": "2026-03",
+      "end_date": "2026-06",
+      "description": "Tech stack: Python · Node.js · Vue 3 · TypeScript · Docker Compose · OpenCode · Chrome DevTools MCP · ddddocr\nBackground and goal: Targeting vulnerability regulatory reporting and vulnerability early-warning scenarios, use an Agent + Skills architecture to automate manual SOPs, developing and deploying a complete full-stack project.\nMetrics and results: Independently developed 8 reusable complex Skills covering CNVD data updates, MSRC advisory generation, CNNVD/CNVD reporting, material organization, early-warning case updates and WeChat public account publishing. Material organization reduced from 5 min to 30 s, advisory generation from 30 min to 5 min, and public account publishing from 30 min to 1 min. Total manual processing time for the 8 scenarios reduced from about 116 min to 21 min, an overall efficiency improvement of about 82%.\nMy responsibilities: Responsible for the design and implementation of Skill workflows, browser automation, service deployment and stability mechanisms.\nSkill workflows: Designed complex, repeatable SOP processes as stable reusable skills and implemented complete e2e testing across different agent tools.\nBrowser automation: Targeting WAF firewalls and anti-crawling mechanisms on vulnerability reporting websites, implemented complex web form filling, attachment upload, status verification and result number return using Chrome DevTools MCP, covering cross-platform vulnerability reporting workflows. Designed a Chrome browser profile and debugging port isolation mechanism, supporting concurrent multi-task execution.\nStability building: Integrated ddddocr, image preprocessing and multi-strategy retry mechanisms to improve automation stability for captcha recognition, web interaction and automated publishing.\nService deployment: Built a task console deployed to the company's internal server, orchestrating frontend, skills-api, OpenCode Server and Docker Chrome with Docker Compose. Encapsulated SOP workflows as services that can be orchestrated uniformly via API and visual console, executed asynchronously and tracked for results, supporting zero-configuration browser use by team members.",
+      "country": null
+    },
+    {
+      "company": "Hangzhou Puteng Education Consulting Co., Ltd.",
+      "title": "AI Full-Stack Development Intern",
+      "employment_type": "internship",
+      "start_date": "2025-06",
+      "end_date": "2025-09",
+      "description": "Background and goal: Participated in full-process testing and capability optimization before the launch of the AI mock interview platform WiseMatch (https://wisematch.com.cn), covering core scenarios such as MBTI assessment, mock interviews, competency analysis and job matching, improving release stability and answer quality.\nMetrics and results: Discovered and closed the loop on 100+ bugs to ensure stable product release. Improved key-field extraction accuracy from 82% to 94%. Completed prompt optimization for 8 core modules and developed 10+ automated test scripts.\nMy responsibilities: Responsible for product testing, prompt engineering and RAG retrieval optimization, driving the product from validation to launch-ready delivery.\nAutomated testing: Discovered and tracked frontend bugs, built E2E automated test scripts based on Playwright.\nPrompt engineering: Designed the Wiser prompt engineering using CoT + Few-Shot across 8 modules including MBTI assessment, mock interviews and competency analysis, and conducted A/B testing and automated iteration with a stronger model.\nRAG optimization: Used PyMuPDF for semantic chunking in the RAG module to address complex table parsing. Introduced BGE-Reranker for re-ranking to improve the precision of professional vocabulary retrieval in job matching scenarios.",
+      "country": null
+    }
+  ],
+  "projects": [],
+  "research": [],
+  "skills": [
+    "Git", "GitHub", "Docker", "Kubernetes", "Linux Shell", "Python", "Asyncio", "Decorators", "Multithreading", "Multiprocessing",
+    "FastAPI", "Flask", "Django", "HTTP", "SSE", "WebSocket", "PostgreSQL", "MySQL", "SQLite", "Qdrant", "ChromaDB", "FAISS",
+    "LangChain", "LangGraph", "Deep Agents", "LlamaIndex", "Pi", "Deepseek Harness",
+    "TypeScript", "NestJS", "Next.js", "Vercel AI SDK", "Prisma", "Redis", "sub2api", "Node.js", "Vue 3", "Docker Compose",
+    "OpenCode", "Chrome DevTools MCP", "ddddocr", "Caddy", "GitHub Actions", "BullMQ", "BM25", "Embedding", "RRF",
+    "OpenAI-Compatible API", "Playwright", "PyMuPDF", "BGE-Reranker"
+  ],
+  "skill_groups": [
+    {
+      "category": "Engineering Capabilities",
+      "description": "Requirements breakdown/PRD, architecture design, testing, Code Review, deployment and acceptance"
+    },
+    {
+      "category": "Engineering Practice",
+      "description": "Git, GitHub, Docker, Kubernetes, Linux Shell"
+    },
+    {
+      "category": "Programming Languages and Backend Fundamentals",
+      "description": "Python: Asyncio, decorators, multithreading/multiprocessing; Web: FastAPI, Flask, Django (familiar); HTTP/SSE/WebSocket; Databases: PostgreSQL, MySQL, SQLite; Qdrant, ChromaDB, FAISS"
+    },
+    {
+      "category": "LLM Application Development Frameworks",
+      "description": "LangChain (LangGraph, Deep Agents), LlamaIndex, Pi, Deepseek Harness"
+    }
+  ],
+  "educations": [
+    {
+      "institution": "Jiangzuo University of Technology",
+      "entry_type": "degree",
+      "degree": "master",
+      "major": "Electronic Information",
+      "start_date": "2024-08",
+      "end_date": "2027-06",
+      "country": null,
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    },
+    {
+      "institution": "Jiangzuo University of Technology",
+      "entry_type": "degree",
+      "degree": "bachelor",
+      "major": "Automation",
+      "start_date": "2020-08",
+      "end_date": "2024-06",
+      "country": null,
+      "school_tier": null,
+      "research_direction": null,
+      "gpa": null,
+      "ranking": null,
+      "courses": []
+    }
+  ],
+  "certificates": [],
+  "languages": [],
+  "awards": [],
+  "additional_info": [
+    "Department (Jiangsu Longdao Data Group Co., Ltd.): Technology Department",
+    "Department (Hangzhou DBAPPSecurity Technology Co., Ltd.): Product Security Research Department",
+    "Department (Hangzhou Puteng Education Consulting Co., Ltd.): General Affairs Department"
+  ]
+}
