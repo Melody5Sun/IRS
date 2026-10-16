@@ -40,7 +40,7 @@ export function RecordingView({ session, question }: { session: InterviewSession
         </div>
         <div className="recording-controls">
           <button className="primary" disabled={transcribing} onClick={recording ? recorder.stop : session.startRecording}>{recording ? t("interview.stop") : transcribing ? t("interview.transcribing") : t("interview.start")}</button>
-          <button className="secondary" disabled={recording} onClick={session.resetAnswer}>{t("interview.recordAgain")}</button>
+          <button className="secondary" disabled={recording || (!answer && !transcript)} onClick={session.resetAnswer}>{t("interview.recordAgain")}</button>
           <label><input type="checkbox" checked={cameraOn} disabled={recording} onChange={(event) => session.setCameraOn(event.target.checked)} />{t("interview.enableCamera")}</label>
         </div>
         {answer && (answer.video ? <video className="answer-video" controls src={answer.url} /> : <audio className="answer-audio" controls src={answer.url} />)}

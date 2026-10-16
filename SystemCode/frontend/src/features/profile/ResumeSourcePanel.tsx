@@ -10,7 +10,8 @@ export function ResumeSourcePanel({ editor }: { editor: ProfileEditor }) {
     <input ref={editor.fileRef} className="visually-hidden" type="file" accept="application/pdf,.pdf" onChange={(event) => editor.handleFile(event.target.files?.[0])} />
     <section className="upload">
       <h3>{activeUpload?.filename ?? (updatedAt ? t("profile.source.manual") : t("profile.source.none"))}</h3>
-      <p>{activeUpload ? t("profile.source.current", { date: formatDateTime(activeUpload.uploaded_at, lang) }) : updatedAt ? t("profile.source.manualHint") : t("profile.source.noneHint")}</p>
+      {/* 手动填写保存后也会生成一条 filename 为空的上传记录，只有带文件名的才是真的上传 */}
+      <p>{activeUpload?.filename ? t("profile.source.current", { date: formatDateTime(activeUpload.uploaded_at, lang) }) : updatedAt ? t("profile.source.manualHint") : t("profile.source.noneHint")}</p>
       <button className="secondary" disabled={uploading} onClick={editor.requestUpload}>{uploading ? t("profile.source.processing") : activeUpload ? t("profile.source.uploadAgain") : t("profile.source.upload")}</button>
       {history.length > 0 && <button className="ghost" onClick={() => editor.setHistoryOpen(!historyOpen)}>{historyOpen ? t("profile.history.hide") : t("profile.history.show")}</button>}
     </section>

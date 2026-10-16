@@ -48,7 +48,7 @@ export function ProfilePage() {
 
         {draft && <ValidationProvider issues={issues} color={color}>
           {count > 0 && <div className="profile-todo-summary" style={{ color }}>
-            <span>{t("profile.todoBefore")}<b>{count}</b>{t("profile.todoAfter")}</span>
+            <span>{t(editor.activeUpload?.filename ? "profile.todoBefore" : "profile.todoBeforeManual")}<b>{count}</b>{t("profile.todoAfter")}</span>
             <button onClick={() => scrollToField(issues[0].id)}>{t("profile.jumpToFirst")}</button>
           </div>}
           <div className="forms">

@@ -7,6 +7,7 @@
 ---
 
 <!-- 新条目追加在此行下方，最新的在最上面 -->
+[2026-10-17] | 新用户手动填写画像后，页面显示"Manual profile · uploaded 17 Oct"，没上传过简历也提示"简历已预填" | 手动保存画像也会写一条 filename 为空的 resume_uploads 记录，"有上传记录" ≠ "真的上传过 PDF"，判断要看 `activeUpload?.filename`；浏览器授权失败抛的 DOMException.message 是英文原文，提示要用 i18n 文案 | SystemCode/frontend/src/features/profile/ResumeSourcePanel.tsx, features/interview/messages.ts
 [2026-10-16] | 岗位详情显示"岗位要求 react ← 简历证据 ReAct，置信度 100%"；只修 `find_skill_matches` 后页面仍然一样 | 技能归一化有两条独立路径：正文抽取（`text_parser.find_skill_matches` 转小写）和技能评分（`skill_scorer._normalize_unique` 的 casefold + MIND 图谱 `get_skill` 不分大小写），撞名写法要两处一起拦（`FALSE_ALIAS_PATTERN`）；改完在浏览器里看真实页面，别只信单元测试 | SystemCode/backend/app/parsers/text_parser.py, app/matching/skill_scorer.py
 [2026-10-16] | 检测器"主题标签行"规则（逗号分段每段 ≤3 词、不以句号结尾就跳过）把 "Built REST APIs, wrote unit tests, deployed services" 这类经历要点也跳过了，缺量化/缺结果全部漏报；测试只写了"该跳过的被跳过"，没写"不该跳过的没被跳过" | 按行型跳过的规则要同时写反例测试；行型只在某类块里出现时按块限定（`line_issues(text, section)`），评测用例也要带 `section` | SystemCode/backend/app/resume/issue_detector.py, scripts/issue_detector_cases.json
 [2026-10-14] | 做修改前后混合盲评时，把仓库里的旧 W4 评分表当成"上一版代码"的输出，写文档才发现它是更早一轮（第三轮修复前）的导出，比较跨了两轮改动 | `--export` 每次覆盖同一个评分表，来源只能靠提交记录和均分反查：拿旧表做基线前先算各组均分，和 primer 里记的那次盲评数字对上再用，并在文档里写明是哪次运行 | SystemCode/backend/eval_outputs/haiku/w4_rating_sheet.csv

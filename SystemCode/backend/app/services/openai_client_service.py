@@ -40,15 +40,26 @@ class OpenAICompatibleClient:
             )
 
         # 延迟导入：LLM 供应商未配置时不强制要求已安装/初始化 openai 客户端
-        from openai import OpenAI
+        from openai import APIStatusError, OpenAI
 
         client = OpenAI(api_key=api_key, base_url=base_url)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
-        )
+
+        def create(model_name: str):
+            return client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_format={"type": "json_object"},
+            )
+
+        try:
+            response = create(model)
+        except APIStatusError as error:
+            # SDK 自带的 2 次重试只隔几秒，Gemini 过载常持续几分钟：主模型 503/429 时换 gemini_model 再试一次
+            fallback = settings.gemini_model
+            if error.status_code not in (429, 503) or base_url != GEMINI_OPENAI_BASE_URL or not fallback or fallback == model:
+                raise
+            response = create(fallback)
         return response.choices[0].message.content or ""
