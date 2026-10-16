@@ -15,7 +15,7 @@ Rules:
 2. Be complete: read every section; keep every entry and every bullet point (tools, numbers, outcomes) without merging or shortening. Each item goes in exactly one section.
 3. English only: every human-readable string value must be in English and contain no Chinese characters. Translate non-English text faithfully; use an organization's official English name, otherwise romanize it. Do not preserve the original Chinese text in parentheses. Keep emails, phones and URLs unchanged.
 4. Dates: "YYYY-MM", or "YYYY" if only the year is given. Ongoing -> end_date "present"; expected graduation -> that date.
-5. Keep everything: use only schema keys, but never drop resume content. Content with no dedicated field goes into additional_info as "Label: value" (e.g. "Age: 22", "Hobbies: hiking").
+5. Keep everything, each fact in exactly one place: use only schema keys, but never drop resume content. If a fact has a dedicated field, put it there and nowhere else: job intent, objective, self-evaluation and core strengths -> about; GPA, ranking, courses, research direction -> that education; exam scores -> certificates; language names -> languages. Only content with no dedicated field goes into additional_info, one fact per item as "Label: value" or "Label (<which entry>): value", e.g. "Age: 22", "Hobbies: hiking", "Department (Acme): Data Platform Team", "College (Peking University): School of EECS", "Admission type: recommended for postgraduate study without exam", "Link (Salvo): github.com/x/salvo", "Project type (Salvo): personal project", "English proficiency: reads English technical papers".
 
 Schema (// explains the field):
 {
