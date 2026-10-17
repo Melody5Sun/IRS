@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from app.matching.overall_scorer import OverallScorer
+from app.matching.recommendation_levels import recommendation_level
 from app.repositories.job_repository import JobRepository
 from app.repositories.job_semantic_repository import JobSemanticRepository
 from app.schemas.job_match_detail import (
@@ -503,23 +504,18 @@ class JobMatchDetailService:
 
     @staticmethod
     def _match_assessment(score: float) -> tuple[str, str, str]:
-        if score >= 13:
+        level = recommendation_level(score)
+        if level == "highly_recommended":
             return (
                 "highly_recommended",
                 "Highly Recommended",
                 "This role is highly recommended for your current profile.",
             )
-        if score >= 7:
+        if level == "recommended":
             return (
                 "recommended",
                 "Recommended",
                 "This role is recommended for your current profile.",
-            )
-        if score >= 1:
-            return (
-                "potential_match",
-                "Potential Match",
-                "Your profile has a useful foundation for this role.",
             )
         return (
             "limited_match",

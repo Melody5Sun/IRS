@@ -1,0 +1,350 @@
+{
+  "pair_count": 200,
+  "resume_count": 10,
+  "fold_count": 5,
+  "seed": 42,
+  "ndcg_k": 10,
+  "evaluation": "Each resume is evaluated once in its held-out fold.",
+  "controlled_factors": [
+    "Preferred-skill bonus remains enabled for every configuration.",
+    "Missing-component renormalization is identical to production scoring.",
+    "Career intent is excluded from professional-fit relevance and evaluation."
+  ],
+  "folds": [
+    {
+      "fold": 1,
+      "test_resume_ids": [
+        "R08",
+        "R07"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R08": 0.7815503689018568,
+          "R07": 0.8094052785068615
+        },
+        "without_direct_skill": {
+          "R08": 0.6140024873079559,
+          "R07": 0.8049962960138753
+        },
+        "without_responsibility": {
+          "R08": 0.8524286021997749,
+          "R07": 0.7285200427574008
+        },
+        "without_knowledge_graph": {
+          "R08": 0.7758353763304986,
+          "R07": 0.727571536295864
+        },
+        "direct_skill_only": {
+          "R08": 0.7947626585727554,
+          "R07": 0.7179741199233499
+        },
+        "responsibility_only": {
+          "R08": 0.5770521823864153,
+          "R07": 0.6931285768828093
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "test_resume_ids": [
+        "R04",
+        "R10"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R04": 0.9701123856641104,
+          "R10": 0.7449718903689377
+        },
+        "without_direct_skill": {
+          "R04": 0.9669081124356761,
+          "R10": 0.7159799310624655
+        },
+        "without_responsibility": {
+          "R04": 0.9078374240865886,
+          "R10": 0.6988842439614738
+        },
+        "without_knowledge_graph": {
+          "R04": 0.9196421125432714,
+          "R10": 0.6933266953503879
+        },
+        "direct_skill_only": {
+          "R04": 0.8561333051294798,
+          "R10": 0.603686278410075
+        },
+        "responsibility_only": {
+          "R04": 0.9196421125432714,
+          "R10": 0.7084590805736979
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "test_resume_ids": [
+        "R03",
+        "R05"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R03": 0.9169369695891076,
+          "R05": 0.9340088163412658
+        },
+        "without_direct_skill": {
+          "R03": 0.8096997470114286,
+          "R05": 0.9033246633391209
+        },
+        "without_responsibility": {
+          "R03": 0.9740816258588203,
+          "R05": 0.9454195185125429
+        },
+        "without_knowledge_graph": {
+          "R03": 0.8921890765959526,
+          "R05": 0.9388904043055615
+        },
+        "direct_skill_only": {
+          "R03": 0.9308676938198459,
+          "R05": 0.8806523108627603
+        },
+        "responsibility_only": {
+          "R03": 0.7640512365838836,
+          "R05": 0.8607869851321104
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "test_resume_ids": [
+        "R09",
+        "R01"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R09": 1.0,
+          "R01": 0.7707766970851386
+        },
+        "without_direct_skill": {
+          "R09": 0.9941294600933936,
+          "R01": 0.809343493003835
+        },
+        "without_responsibility": {
+          "R09": 0.9941294600933936,
+          "R01": 0.6134734953667371
+        },
+        "without_knowledge_graph": {
+          "R09": 1.0,
+          "R01": 0.8498679807177765
+        },
+        "direct_skill_only": {
+          "R09": 0.9664425248724793,
+          "R01": 0.5296675957090448
+        },
+        "responsibility_only": {
+          "R09": 0.9664425248724793,
+          "R01": 0.9294177103900848
+        }
+      }
+    },
+    {
+      "fold": 5,
+      "test_resume_ids": [
+        "R06",
+        "R02"
+      ],
+      "ndcg_by_method": {
+        "full_model": {
+          "R06": 0.49639466563645795,
+          "R02": 0.9879596500906199
+        },
+        "without_direct_skill": {
+          "R06": 0.5200073128104976,
+          "R02": 0.9846097654393443
+        },
+        "without_responsibility": {
+          "R06": 0.5756939097208017,
+          "R02": 0.8803169133311917
+        },
+        "without_knowledge_graph": {
+          "R06": 0.5948788484102632,
+          "R02": 0.9901053122918979
+        },
+        "direct_skill_only": {
+          "R06": 0.5756939097208017,
+          "R02": 0.8819190499454089
+        },
+        "responsibility_only": {
+          "R06": 0.43802115426237526,
+          "R02": 0.9871983103990516
+        }
+      }
+    }
+  ],
+  "summary": {
+    "full_model": {
+      "weights": {
+        "required_direct": 0.2,
+        "responsibility": 0.6,
+        "required_graph": 0.2
+      },
+      "mean_ndcg": 0.8412116722184356,
+      "std_ndcg": 0.14676607024454455,
+      "min_ndcg": 0.49639466563645795,
+      "max_ndcg": 1.0,
+      "mean_delta_vs_full": 0.0,
+      "mean_drop_from_full": -0.0,
+      "better_resume_count": 0,
+      "equal_resume_count": 10,
+      "worse_resume_count": 0,
+      "ndcg_by_resume": {
+        "R01": 0.7707766970851386,
+        "R02": 0.9879596500906199,
+        "R03": 0.9169369695891076,
+        "R04": 0.9701123856641104,
+        "R05": 0.9340088163412658,
+        "R06": 0.49639466563645795,
+        "R07": 0.8094052785068615,
+        "R08": 0.7815503689018568,
+        "R09": 1.0,
+        "R10": 0.7449718903689377
+      }
+    },
+    "without_direct_skill": {
+      "weights": {
+        "required_direct": 0.0,
+        "responsibility": 0.75,
+        "required_graph": 0.25
+      },
+      "mean_ndcg": 0.8123001268517593,
+      "std_ndcg": 0.15134235564968648,
+      "min_ndcg": 0.5200073128104976,
+      "max_ndcg": 0.9941294600933936,
+      "mean_delta_vs_full": -0.02891154536667635,
+      "mean_drop_from_full": 0.02891154536667635,
+      "better_resume_count": 2,
+      "equal_resume_count": 0,
+      "worse_resume_count": 8,
+      "ndcg_by_resume": {
+        "R01": 0.809343493003835,
+        "R02": 0.9846097654393443,
+        "R03": 0.8096997470114286,
+        "R04": 0.9669081124356761,
+        "R05": 0.9033246633391209,
+        "R06": 0.5200073128104976,
+        "R07": 0.8049962960138753,
+        "R08": 0.6140024873079559,
+        "R09": 0.9941294600933936,
+        "R10": 0.7159799310624655
+      }
+    },
+    "without_responsibility": {
+      "weights": {
+        "required_direct": 0.5,
+        "responsibility": 0.0,
+        "required_graph": 0.5
+      },
+      "mean_ndcg": 0.8170785235888726,
+      "std_ndcg": 0.144044559364614,
+      "min_ndcg": 0.5756939097208017,
+      "max_ndcg": 0.9941294600933936,
+      "mean_delta_vs_full": -0.024133148629563096,
+      "mean_drop_from_full": 0.024133148629563096,
+      "better_resume_count": 4,
+      "equal_resume_count": 0,
+      "worse_resume_count": 6,
+      "ndcg_by_resume": {
+        "R01": 0.6134734953667371,
+        "R02": 0.8803169133311917,
+        "R03": 0.9740816258588203,
+        "R04": 0.9078374240865886,
+        "R05": 0.9454195185125429,
+        "R06": 0.5756939097208017,
+        "R07": 0.7285200427574008,
+        "R08": 0.8524286021997749,
+        "R09": 0.9941294600933936,
+        "R10": 0.6988842439614738
+      }
+    },
+    "without_knowledge_graph": {
+      "weights": {
+        "required_direct": 0.25,
+        "responsibility": 0.75,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.8382307342841474,
+      "std_ndcg": 0.12860725186201982,
+      "min_ndcg": 0.5948788484102632,
+      "max_ndcg": 1.0,
+      "mean_delta_vs_full": -0.0029809379342882747,
+      "mean_drop_from_full": 0.0029809379342882747,
+      "better_resume_count": 4,
+      "equal_resume_count": 1,
+      "worse_resume_count": 5,
+      "ndcg_by_resume": {
+        "R01": 0.8498679807177765,
+        "R02": 0.9901053122918979,
+        "R03": 0.8921890765959526,
+        "R04": 0.9196421125432714,
+        "R05": 0.9388904043055615,
+        "R06": 0.5948788484102632,
+        "R07": 0.727571536295864,
+        "R08": 0.7758353763304986,
+        "R09": 1.0,
+        "R10": 0.6933266953503879
+      }
+    },
+    "direct_skill_only": {
+      "weights": {
+        "required_direct": 1.0,
+        "responsibility": 0.0,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.7737799446966,
+      "std_ndcg": 0.14933472847427948,
+      "min_ndcg": 0.5296675957090448,
+      "max_ndcg": 0.9664425248724793,
+      "mean_delta_vs_full": -0.06743172752183553,
+      "mean_drop_from_full": 0.06743172752183553,
+      "better_resume_count": 3,
+      "equal_resume_count": 0,
+      "worse_resume_count": 7,
+      "ndcg_by_resume": {
+        "R01": 0.5296675957090448,
+        "R02": 0.8819190499454089,
+        "R03": 0.9308676938198459,
+        "R04": 0.8561333051294798,
+        "R05": 0.8806523108627603,
+        "R06": 0.5756939097208017,
+        "R07": 0.7179741199233499,
+        "R08": 0.7947626585727554,
+        "R09": 0.9664425248724793,
+        "R10": 0.603686278410075
+      }
+    },
+    "responsibility_only": {
+      "weights": {
+        "required_direct": 0.0,
+        "responsibility": 1.0,
+        "required_graph": 0.0
+      },
+      "mean_ndcg": 0.7844199874026179,
+      "std_ndcg": 0.17230936095713936,
+      "min_ndcg": 0.43802115426237526,
+      "max_ndcg": 0.9871983103990516,
+      "mean_delta_vs_full": -0.05679168481581775,
+      "mean_drop_from_full": 0.05679168481581775,
+      "better_resume_count": 1,
+      "equal_resume_count": 0,
+      "worse_resume_count": 9,
+      "ndcg_by_resume": {
+        "R01": 0.9294177103900848,
+        "R02": 0.9871983103990516,
+        "R03": 0.7640512365838836,
+        "R04": 0.9196421125432714,
+        "R05": 0.8607869851321104,
+        "R06": 0.43802115426237526,
+        "R07": 0.6931285768828093,
+        "R08": 0.5770521823864153,
+        "R09": 0.9664425248724793,
+        "R10": 0.7084590805736979
+      }
+    }
+  }
+}

@@ -28,10 +28,10 @@ class RankedJob(BaseModel):
 
 
 class RankingResponse(BaseModel):
-    # 统计沿用规则筛选的口径，见 RulesScreeningResponse
+    # passed_count 还会排除职责缺失、无法可靠评分的岗位。
     total_jobs: int
     passed_count: int
     returned_count: int
     rejected_by_rule: dict[str, int] = Field(default_factory=dict)
-    # 只返回通过硬约束后的前 30 个岗位，按意向轻量重排后的 final_score 降序。
+    # 只返回通过硬约束且具备职责数据的前 30 个岗位。
     results: list[RankedJob] = Field(default_factory=list)

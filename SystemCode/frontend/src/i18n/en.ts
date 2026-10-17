@@ -281,7 +281,6 @@ export const en = {
   "jobs.allLevels": "All levels",
   "jobs.eligibleCount": "{count} eligible roles · by recommendation level, then career-intent fit",
   "jobs.level.limited": "Limited Match",
-  "jobs.level.potential": "Potential Match",
   "jobs.level.recommended": "Recommended",
   "jobs.level.highly": "Highly Recommended",
   "jobs.recommendation": "RECOMMENDATION",

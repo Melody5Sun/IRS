@@ -39,12 +39,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--annotations",
         type=Path,
-        default=DEFAULT_DIR / "annotation_pairs_ai_labeled_professional_v2.csv",
+        default=DEFAULT_DIR / "annotation_pairs_three_level_professional_v2.csv",
     )
     parser.add_argument(
         "--features",
         type=Path,
-        default=DEFAULT_DIR / "pair_features_resume_segments_v4.jsonl",
+        default=DEFAULT_DIR / "pair_features_resume_segments_v5.jsonl",
     )
     parser.add_argument(
         "--profiles",
@@ -54,7 +54,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=DEFAULT_DIR / "ranking_weight_cv_v4.json",
+        default=DEFAULT_DIR / "ranking_weight_cv_v5_constrained.json",
     )
     parser.add_argument("--folds", type=int, default=5)
     parser.add_argument("--seed", type=int, default=42)

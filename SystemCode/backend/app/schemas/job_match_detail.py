@@ -25,7 +25,6 @@ GapImportance = Literal["required", "preferred", "responsibility", "career_inten
 MatchLevel = Literal[
     "highly_recommended",
     "recommended",
-    "potential_match",
     "limited_match",
 ]
 ImprovementPriorityLevel = Literal["high", "medium", "low"]

@@ -283,7 +283,6 @@ export const zh: Record<MessageKey, string> = {
   "jobs.allLevels": "全部等级",
   "jobs.eligibleCount": "{count} 个符合条件的岗位 · 先按推荐等级，同级再按求职意向排序",
   "jobs.level.limited": "匹配有限",
-  "jobs.level.potential": "潜在匹配",
   "jobs.level.recommended": "推荐",
   "jobs.level.highly": "强烈推荐",
   "jobs.recommendation": "推荐等级",

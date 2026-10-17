@@ -1,4 +1,7 @@
 from app.matching.overall_scorer import OverallScorer
+from app.matching.recommendation_levels import (
+    recommendation_level_rank as _recommendation_level_rank,
+)
 from app.schemas.match import (
     CareerIntentScoreRequest,
     ResponsibilityScoreRequest,
@@ -16,14 +19,8 @@ RANKING_RESULT_LIMIT = 30
 
 
 def recommendation_level_rank(professional_score: float) -> int:
-    """Mirror the four recommendation levels displayed by the frontend."""
-    if professional_score >= 13:
-        return 3
-    if professional_score >= 7:
-        return 2
-    if professional_score >= 1:
-        return 1
-    return 0
+    """Mirror the three recommendation levels displayed by the frontend."""
+    return _recommendation_level_rank(professional_score)
 
 
 def ranking_sort_key(
@@ -62,11 +59,24 @@ class RankingService:
 
     def run(self, profile: UserProfile) -> RankingResponse:
         screened = self.rules_screening_service.run(profile)
+        eligible_jobs = [
+            job
+            for job in screened.jobs
+            if any(item.strip() for item in job.responsibilities)
+        ]
+        incomplete_job_count = len(screened.jobs) - len(eligible_jobs)
+        rejected_by_rule = dict(screened.rejected_by_rule)
+        if incomplete_job_count:
+            rejected_by_rule["insufficient_job_data"] = (
+                rejected_by_rule.get("insufficient_job_data", 0)
+                + incomplete_job_count
+            )
+
         scored_jobs: list[tuple[float, float, float | None, JobRequirementDocument]] = []
         prepared_evidence = self.responsibility_match_service.prepare_candidate(
             profile.resume
         )
-        for job in screened.jobs:
+        for job in eligible_jobs:
             skill_score = self.skill_match_service.score(
                 SkillScoreRequest(candidate=profile.resume, job=job)
             )
@@ -122,8 +132,8 @@ class RankingService:
         ]
         return RankingResponse(
             total_jobs=screened.total_jobs,
-            passed_count=screened.passed_count,
+            passed_count=len(eligible_jobs),
             returned_count=len(results),
-            rejected_by_rule=screened.rejected_by_rule,
+            rejected_by_rule=rejected_by_rule,
             results=results,
         )

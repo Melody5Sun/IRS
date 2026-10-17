@@ -11,20 +11,18 @@ RANKING_URL = "/api/ranking"
 
 
 def test_recommendation_levels_match_frontend_thresholds() -> None:
-    assert recommendation_level_rank(13) == 3
-    assert recommendation_level_rank(12.99) == 2
-    assert recommendation_level_rank(7) == 2
-    assert recommendation_level_rank(6.99) == 1
-    assert recommendation_level_rank(1) == 1
-    assert recommendation_level_rank(0.99) == 0
+    assert recommendation_level_rank(16) == 2
+    assert recommendation_level_rank(15.99) == 1
+    assert recommendation_level_rank(4) == 1
+    assert recommendation_level_rank(3.99) == 0
 
 
 def test_intent_reranks_only_within_the_same_recommendation_level() -> None:
     jobs = [
-        (13.0, 0.0, 1),
-        (12.0, 100.0, 2),
+        (16.0, 0.0, 1),
+        (15.0, 100.0, 2),
         (8.0, 40.0, 3),
-        (7.0, 80.0, 4),
+        (4.0, 80.0, 4),
     ]
 
     ranked = sorted(jobs, key=lambda item: ranking_sort_key(*item))
@@ -81,6 +79,42 @@ def test_ranking_all_rejected_returns_empty_results(
     ) == (4, 0, 0, [])
 
 
+def test_ranking_excludes_jobs_without_responsibilities(
+    monkeypatch: pytest.MonkeyPatch,
+    screening_client: TestClient,
+    profile_service: ProfileService,
+) -> None:
+    jobs = (
+        {
+            "id": 1,
+            "title": "Backend Engineer",
+            "company": "Complete",
+            "industry": "Gaming",
+            "employment_type": "internship",
+            "responsibilities": ["Build backend services"],
+            "required_skills": ["python"],
+        },
+        {
+            "id": 2,
+            "title": "Title Only Engineer",
+            "company": "Incomplete",
+            "industry": "Gaming",
+            "employment_type": "internship",
+            "responsibilities": [],
+            "required_skills": ["python"],
+        },
+    )
+    monkeypatch.setattr(rule_engine, "load_job_rows", lambda: make_rows(*jobs))
+
+    response = _rank(screening_client, profile_service, make_api_profile())
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["total_jobs"], body["passed_count"], body["returned_count"]) == (2, 1, 1)
+    assert body["rejected_by_rule"] == {"insufficient_job_data": 1}
+    assert [item["job_id"] for item in body["results"]] == [1]
+
+
 def test_ranking_without_saved_profile_returns_409(screening_client: TestClient) -> None:
     # 还没有保存画像就不能进行下一步
     assert screening_client.post(RANKING_URL).status_code == 409
@@ -109,6 +143,7 @@ def test_ranking_returns_only_top_30_with_stable_tie_order(
             "company": f"Company {job_id}",
             "industry": "Gaming",
             "employment_type": "internship",
+            "responsibilities": ["Build backend services"],
             "required_skills": ["python"],
         }
         for job_id in range(1, 36)

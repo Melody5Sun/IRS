@@ -38,6 +38,7 @@ def make_rows(*jobs: dict) -> list[dict]:
                         "job_id": job_id,
                         "company": company,
                         "title": title,
+                        "responsibilities": job.get("responsibilities", []),
                         "required_skills": job.get("required_skills", []),
                         "preferred_skills": job.get("preferred_skills", []),
                     },
@@ -51,13 +52,17 @@ def make_rows(*jobs: dict) -> list[dict]:
 # 接口测试用的四个岗位：1、2 通过；3 行业不符；4 已下线
 API_JOBS = (
     {"title": "Backend Engineer", "company": "Alpha", "industry": "Gaming",
-     "employment_type": "internship", "required_skills": ["python", "sql"]},
+     "employment_type": "internship", "responsibilities": ["Build backend services"],
+     "required_skills": ["python", "sql"]},
     {"title": "Infra Engineer", "company": "Beta", "industry": "Gaming",
-     "employment_type": "internship", "required_skills": ["kubernetes", "aws"]},
+     "employment_type": "internship", "responsibilities": ["Maintain cloud infrastructure"],
+     "required_skills": ["kubernetes", "aws"]},
     {"title": "Web Engineer", "company": "Gamma", "industry": "Internet",
-     "employment_type": "internship", "required_skills": ["python"]},
+     "employment_type": "internship", "responsibilities": ["Develop web applications"],
+     "required_skills": ["python"]},
     {"title": "Old Job", "company": "Delta", "industry": "Gaming", "status": "inactive",
-     "employment_type": "internship", "required_skills": ["python"]},
+     "employment_type": "internship", "responsibilities": ["Maintain legacy systems"],
+     "required_skills": ["python"]},
 )
 
 

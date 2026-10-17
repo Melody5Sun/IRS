@@ -34,13 +34,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--annotations",
         type=Path,
-        default=DEFAULT_DIR / "annotation_pairs_ai_labeled_professional_v2.csv",
+        default=DEFAULT_DIR / "annotation_pairs_three_level_professional_v2.csv",
     )
     parser.add_argument("--profiles", type=Path, default=DEFAULT_DIR / "profiles.json")
     parser.add_argument(
         "--output",
         type=Path,
-        default=DEFAULT_DIR / "pair_features_resume_segments_v4.jsonl",
+        default=DEFAULT_DIR / "pair_features_resume_segments_v5.jsonl",
     )
     return parser.parse_args()
 
@@ -86,6 +86,10 @@ def main() -> None:
             job = jobs.get(job_id)
             if job is None:
                 raise ValueError(f"{annotation['pair_id']}: job no longer passes hard constraints")
+            if not any(item.strip() for item in job.responsibilities):
+                raise ValueError(
+                    f"{annotation['pair_id']}: job has no responsibility data"
+                )
             skill = skill_service.score(
                 SkillScoreRequest(candidate=profile.resume, job=job)
             )

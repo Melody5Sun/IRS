@@ -511,14 +511,6 @@
   background: #e5eff1;
 }
 
-.recommendation-level.potential {
-  color: var(--dark);
-}
-
-.recommendation-level.potential strong {
-  background: var(--soft);
-}
-
 .recommendation-level.limited {
   color: #8a4d47;
 }

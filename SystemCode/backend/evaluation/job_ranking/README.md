@@ -9,8 +9,8 @@ It does not modify production weights automatically.
 - Each resume contributes 20 jobs that already passed production hard constraints.
 - Sampling is stratified across four baseline-score quartiles so the annotation set contains strong, borderline, and weak matches.
 - The first seven resumes form the validation split. The final three resumes form the held-out test split. Splitting by resume prevents the same candidate from appearing in both sets.
-- `annotation_pairs_ai_labeled_professional_v2.csv` is the single final annotation file. It contains all 200 reviewed labels and is grouped by resume.
-- `pair_features.jsonl` contains the production component coverages used by the optimizer. Annotators should not inspect this file before labeling.
+- `annotation_pairs_three_level_professional_v2.csv` is the final three-level annotation file. It contains 200 reviewed labels and is grouped by resume.
+- `pair_features_resume_segments_v5.jsonl` contains the matching component coverages used by the optimizer. Every included JD has at least one responsibility; jobs with insufficient JD data are excluded before sampling.
 
 Target roles are excluded from professional-fit labels. They are evaluated separately and rerank jobs only within the same professional recommendation level.
 
@@ -47,7 +47,7 @@ Do not change `pair_id`, `resume_id`, `job_id`, or `split`. Do not tune the syst
 ## Search the weights
 
 The committed final labels are stored in
-`annotation_pairs_ai_labeled_professional_v2.csv`. To run grouped five-fold
+`annotation_pairs_three_level_professional_v2.csv`. To run grouped five-fold
 weight selection and compare the historical and final production weights:
 
 ```powershell
@@ -61,7 +61,7 @@ mutually exclusive for each JD skill, and career intent is not part of this
 search. Each selected configuration is evaluated only on the two held-out
 resumes for that fold.
 
-The committed result is `ranking_weight_cv_v4_constrained.json` and includes:
+The committed result is `ranking_weight_cv_v5_constrained.json` and includes:
 
 - historical, final, and fold-selected held-out NDCG@10;
 - per-resume held-out scores;
@@ -69,10 +69,11 @@ The committed result is `ranking_weight_cv_v4_constrained.json` and includes:
 
 Only adopt new production weights when test NDCG improves, hard-constraint violations remain zero, and the change is stable under a second split or cross-validation run.
 
-The final v4 evaluation uses sentence-level resume evidence and grouped five-fold
-cross-validation by resume. It selected `0.20 / 0.60 / 0.20` as the stable
-production weights. Mean held-out NDCG@10 improved from `0.8214` for the
-historical `0.30 / 0.45 / 0.25` model to `0.8453`.
+The final v5 evaluation uses sentence-level resume evidence, excludes JDs without
+responsibility data, and applies grouped five-fold cross-validation by resume.
+The production `0.20 / 0.60 / 0.20` weights remain the stable choice. Mean
+held-out NDCG@10 improves from `0.8296` for the historical
+`0.30 / 0.45 / 0.25` model to `0.8412`.
 
 ## Run the ablation study
 
@@ -86,12 +87,20 @@ at a time and proportionally renormalizes the remaining weights.
 
 | Configuration | Weights (direct / responsibility / graph) | Mean NDCG@10 | Drop from full |
 |---|---:|---:|---:|
-| Full model | 0.20 / 0.60 / 0.20 | 0.8453 | - |
-| Without direct skill | 0.00 / 0.75 / 0.25 | 0.8117 | 0.0337 |
-| Without responsibility | 0.50 / 0.00 / 0.50 | 0.8044 | 0.0409 |
-| Without knowledge graph | 0.25 / 0.75 / 0.00 | 0.8268 | 0.0185 |
-| Direct skill only | 1.00 / 0.00 / 0.00 | 0.7554 | 0.0899 |
-| Responsibility only | 0.00 / 1.00 / 0.00 | 0.8001 | 0.0453 |
+| Full model | 0.20 / 0.60 / 0.20 | 0.8412 | - |
+| Without direct skill | 0.00 / 0.75 / 0.25 | 0.8123 | 0.0289 |
+| Without responsibility | 0.50 / 0.00 / 0.50 | 0.8171 | 0.0241 |
+| Without knowledge graph | 0.25 / 0.75 / 0.00 | 0.8382 | 0.0030 |
+| Direct skill only | 1.00 / 0.00 / 0.00 | 0.7738 | 0.0674 |
+| Responsibility only | 0.00 / 1.00 / 0.00 | 0.7844 | 0.0568 |
 
-The result is stored in `ranking_ablation_v4.json`. These are descriptive
+The result is stored in `ranking_ablation_v5.json`. These are descriptive
 results over ten resumes rather than a statistical significance claim.
+
+## Three-level recommendation thresholds
+
+The current `4 / 16` thresholds achieve held-out test accuracy `0.5667` and
+Macro-F1 `0.5198`. Searching the validation split selects `8 / 15`, but that
+choice falls to accuracy `0.4500` and Macro-F1 `0.4692` on the test split.
+Therefore production retains `4 / 16` rather than adopting the validation-only
+optimum.

@@ -3,23 +3,21 @@ import type { MessageKey } from "../../i18n/en";
 import type { RankingJob } from "../../types/api";
 
 export type JobFilter = "all" | "internship" | "full_time";
-export type LevelKey = "limited" | "potential" | "recommended" | "highly";
+export type LevelKey = "limited" | "recommended" | "highly";
 export type MinimumLevel = "all" | LevelKey;
 
 export const PER_PAGE = 10;
 
 export const LEVELS: Record<LevelKey, { labelKey: MessageKey; rank: number }> = {
   limited: { labelKey: "jobs.level.limited", rank: 0 },
-  potential: { labelKey: "jobs.level.potential", rank: 1 },
-  recommended: { labelKey: "jobs.level.recommended", rank: 2 },
-  highly: { labelKey: "jobs.level.highly", rank: 3 },
+  recommended: { labelKey: "jobs.level.recommended", rank: 1 },
+  highly: { labelKey: "jobs.level.highly", rank: 2 },
 };
 
 // 推荐等级阈值（final_score 为 0–100）
 export function recommendationLevel(score: number): LevelKey {
-  if (score >= 13) return "highly";
-  if (score >= 7) return "recommended";
-  if (score >= 1) return "potential";
+  if (score >= 16) return "highly";
+  if (score >= 4) return "recommended";
   return "limited";
 }
 

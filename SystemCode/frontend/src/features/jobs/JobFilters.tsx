@@ -13,7 +13,7 @@ type Props = {
 
 const FILTER_KEYS = { all: "jobs.filter.all", internship: "jobs.filter.internship", full_time: "jobs.filter.fullTime" } as const;
 // "limited" 是最低档，选它等于不过滤，所以下拉里不单独列出
-const LEVEL_OPTIONS = ["potential", "recommended", "highly"] as const;
+const LEVEL_OPTIONS = ["recommended", "highly"] as const;
 
 export function JobFilters({ filter, onFilter, minimumLevel, onMinimumLevel, counts, filteredCount }: Props) {
   const { t } = useI18n();

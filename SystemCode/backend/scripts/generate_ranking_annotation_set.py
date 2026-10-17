@@ -127,7 +127,9 @@ def main() -> None:
         prepared = responsibility_service.prepare_candidate(profile.resume)
         scored: list[dict[str, object]] = []
         for job in screened.jobs:
-            if job.job_id is None:
+            if job.job_id is None or not any(
+                item.strip() for item in job.responsibilities
+            ):
                 continue
             skill = skill_service.score(SkillScoreRequest(candidate=profile.resume, job=job))
             responsibility = responsibility_service.score(
@@ -220,6 +222,7 @@ def main() -> None:
             )
         print(
             f"{resume_id}: {len(screened.jobs)} jobs passed hard constraints; "
+            f"{len(scored)} had responsibility data; "
             f"sampled {len(sampled)} pairs ({split})."
         )
 
