@@ -12,7 +12,7 @@ import type { TargetJob } from "../../types/api";
 import { LEVELS, recommendationLevel } from "../jobs/recommendation";
 import { APPLIED_STAGES, completedSteps, progressLabel, stageLabel } from "./progress";
 
-export function TargetCard({ target, onChange }: { target: TargetJob; onChange: (target: TargetJob) => void }) {
+export function TargetCard({ target, score, onChange }: { target: TargetJob; score: number | null; onChange: (target: TargetJob) => void }) {
   const { lang, t } = useI18n();
   const go = useGo();
   const navigate = useNavigate();
@@ -22,7 +22,7 @@ export function TargetCard({ target, onChange }: { target: TargetJob; onChange: 
   const completed = completedSteps(target);
   const progress = completed * 25;
   const applied = target.stage !== "not_applied";
-  const level = recommendationLevel(target.match_score ?? 0);
+  const level = recommendationLevel(score ?? 0);
   const rewriteDetail = target.rewrite_status === "stale" ? t("targets.rewriteStale") : target.rewrite_status === "saved" ? t("targets.rewriteSaved") : t("targets.rewriteNone");
 
   // 后端撤销投递时会清空备注，以服务端返回的为准
@@ -42,7 +42,7 @@ export function TargetCard({ target, onChange }: { target: TargetJob; onChange: 
     <article className="target">
       <header>
         {/* 与岗位推荐页一致：只显示推荐等级，不显示分数 */}
-        {target.match_score != null && (
+        {score != null && (
           <div className={`recommendation-level ${level}`}><strong>{t(LEVELS[level].labelKey)}</strong><span>{t("jobs.recommendation")}</span></div>
         )}
         <div><h2>{target.title}</h2><small>{target.company} · {locationLabel(target.location) ?? t("common.locationNotStated")}</small></div>

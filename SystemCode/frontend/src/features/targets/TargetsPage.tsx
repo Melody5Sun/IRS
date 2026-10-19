@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ApiError } from "../../api";
+import { ApiError, jobsApi } from "../../api";
 import { targetsApi } from "../../api/targets";
 import { useGo } from "../../app/routes";
 import { PageFrame } from "../../components/layout/PageFrame";
@@ -20,6 +20,8 @@ export function TargetsPage() {
   const [loading, setLoading] = useState(true);
   // 保存原始错误而不是文案，切换语言时错误提示也会跟着切换
   const [failure, setFailure] = useState<{ reason: unknown } | null>(null);
+  // 最新排序分数：target_jobs.match_score 只是加入时的快照，推荐等级要和推荐页一致就得用实时分数
+  const [latestScores, setLatestScores] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
     let active = true;
@@ -27,6 +29,10 @@ export function TargetsPage() {
       .then((items) => { if (active) setTargets(items); })
       .catch((reason) => { if (active) setFailure({ reason }); })
       .finally(() => { if (active) setLoading(false); });
+    // 排序失败（如画像缺失）不影响本页，卡片退回使用快照分数
+    jobsApi.rank()
+      .then((ranking) => { if (active) setLatestScores(new Map(ranking.results.map((job) => [job.job_id, job.final_score]))); })
+      .catch(() => {});
     return () => { active = false; };
   }, []);
 
@@ -47,7 +53,7 @@ export function TargetsPage() {
             <p>{t("targets.emptyText")}</p>
             <button className="primary" onClick={() => go("jobs")}>{t("targets.emptyAction")}</button>
           </div>
-        ) : <div className="target-list">{targets.map((target) => <TargetCard key={target.job_id} target={target} onChange={(updated) => setTargets((current) => current.map((item) => item.job_id === updated.job_id ? updated : item))} />)}</div>}
+        ) : <div className="target-list">{targets.map((target) => <TargetCard key={target.job_id} target={target} score={latestScores.get(target.job_id) ?? target.match_score} onChange={(updated) => setTargets((current) => current.map((item) => item.job_id === updated.job_id ? updated : item))} />)}</div>}
       </>}
     </PageFrame>
   );
