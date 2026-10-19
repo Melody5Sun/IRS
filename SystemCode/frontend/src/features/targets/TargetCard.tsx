@@ -9,6 +9,7 @@ import { useI18n } from "../../i18n/LanguageProvider";
 import { detailOr } from "../../lib/apiError";
 import { formatDay, locationLabel } from "../../lib/format";
 import type { TargetJob } from "../../types/api";
+import { LEVELS, recommendationLevel } from "../jobs/recommendation";
 import { APPLIED_STAGES, completedSteps, progressLabel, stageLabel } from "./progress";
 
 export function TargetCard({ target, onChange }: { target: TargetJob; onChange: (target: TargetJob) => void }) {
@@ -21,6 +22,7 @@ export function TargetCard({ target, onChange }: { target: TargetJob; onChange: 
   const completed = completedSteps(target);
   const progress = completed * 25;
   const applied = target.stage !== "not_applied";
+  const level = recommendationLevel(target.match_score ?? 0);
   const rewriteDetail = target.rewrite_status === "stale" ? t("targets.rewriteStale") : target.rewrite_status === "saved" ? t("targets.rewriteSaved") : t("targets.rewriteNone");
 
   // 后端撤销投递时会清空备注，以服务端返回的为准
@@ -39,7 +41,10 @@ export function TargetCard({ target, onChange }: { target: TargetJob; onChange: 
   return (
     <article className="target">
       <header>
-        <div className="score"><strong>{target.match_score == null ? "—" : Math.round(target.match_score)}</strong><span>{t("targets.match")}</span></div>
+        {/* 与岗位推荐页一致：只显示推荐等级，不显示分数 */}
+        {target.match_score != null && (
+          <div className={`recommendation-level ${level}`}><strong>{t(LEVELS[level].labelKey)}</strong><span>{t("jobs.recommendation")}</span></div>
+        )}
         <div><h2>{target.title}</h2><small>{target.company} · {locationLabel(target.location) ?? t("common.locationNotStated")}</small></div>
         <span className="target-created">{t("targets.added", { date: formatDay(target.created_at, lang) })}</span>
       </header>

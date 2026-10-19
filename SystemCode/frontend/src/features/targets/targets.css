@@ -8,22 +8,6 @@
   outline: none;
 }
 
-.score {
-  text-align: center;
-}
-
-.score strong {
-  display: block;
-  font: 300 46px/.9 var(--serif);
-  color: var(--dark);
-}
-
-.score span {
-  font: 9px var(--serif);
-  letter-spacing: .12em;
-  color: var(--muted);
-}
-
 .target-summary {
   display: flex;
   border: 1px solid var(--line);

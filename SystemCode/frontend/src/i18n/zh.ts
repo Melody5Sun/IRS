@@ -461,7 +461,6 @@ export const zh: Record<MessageKey, string> = {
   "targets.emptyTitle": "还没有目标岗位",
   "targets.emptyText": "在岗位推荐中添加岗位后，即可在这里跟踪准备进度。",
   "targets.emptyAction": "浏览推荐岗位 →",
-  "targets.match": "匹配度",
   "targets.added": "添加于 {date}",
   "targets.preparationSteps": "准备进度 · {completed} / 4 步",
   "targets.applicationStage": "投递阶段",

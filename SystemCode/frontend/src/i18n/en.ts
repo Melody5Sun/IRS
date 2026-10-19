@@ -459,7 +459,6 @@ export const en = {
   "targets.emptyTitle": "No target jobs yet",
   "targets.emptyText": "Add a role from Job recommendations to track preparation here.",
   "targets.emptyAction": "Explore recommended jobs →",
-  "targets.match": "MATCH",
   "targets.added": "Added {date}",
   "targets.preparationSteps": "Preparation · {completed} / 4 steps",
   "targets.applicationStage": "Application stage",
