@@ -19,7 +19,7 @@
 好处是 `responses/` 随仓库保存，任何人重跑都得到同一组数字，不调用任何 LLM。代价和局限：
 
 - **评测模型不是线上模型**：数字反映的是 haiku 在本系统提示下的表现，换成 Gemini 需要重跑。
-- **每个提示只采样 1 次**：零点几到两三个点的整体变化分不出是不是噪声（见 `.claude/lessons.md`）。
+- **每个提示只采样 1 次**：零点几到两三个点的整体变化分不出是不是噪声。
 - **提示一变旧回答就失效**：改了 prompt、检测器、检索或 JD 数据后，旧回答再也不会命中，需要重新作答。
 
 ### 1.2 评测项
@@ -45,7 +45,7 @@ python -m scripts.evaluate_guideline_retrieval            # W2
 python -m scripts.prune_eval_cache [--apply]              # 删掉当前评测用不到的旧回答
 ```
 
-复现前提：W3 的评测对按 id 引用数据库里的简历上传记录，其中 17–20（4 份算法岗简历）不在团队快照里。新环境要先用 `LLMResumeParser(client=ReplayClient())` 回放这 4 份的解析结果，再用 `ResumeHistoryRepository.add` 写回库；写之前确认 `resume_uploads_id_seq` 的 last_value 是 16（见 `.claude/lessons.md` 2026-10-14）。
+复现前提：W3 的评测对按 id 引用数据库里的简历上传记录，其中 17–20（4 份算法岗简历）不在团队快照里。新环境要先用 `LLMResumeParser(client=ReplayClient())` 回放这 4 份的解析结果，再用 `ResumeHistoryRepository.add` 写回库；写之前确认 `resume_uploads_id_seq` 的 last_value 是 16。
 
 ## 2. 运行记录（每个数字来自哪次运行）
 

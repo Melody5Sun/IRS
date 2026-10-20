@@ -29,7 +29,9 @@ In evaluation, the hybrid ranker reached a mean NDCG@10 of 0.841 on held-out res
 
 **Promotion video**
 
-[![IT CareerPilot Promotion](http://img.youtube.com/vi/MtBKkAwVGTU/0.jpg)](https://youtu.be/MtBKkAwVGTU "IT CareerPilot Promotion")
+![IT CareerPilot Promotion](<Miscellaneous/video1 封面.jpg>)
+
+[▶ Watch the promotion video on YouTube](https://youtu.be/MtBKkAwVGTU)
 
 **System design & use case demo video**
 
