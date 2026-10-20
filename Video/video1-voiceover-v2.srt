@@ -1,0 +1,283 @@
+1
+00:00:00,600 --> 00:00:05,460
+Hundreds of open roles, and each one wants something different.
+
+2
+00:00:05,500 --> 00:00:09,960
+One resume you keep rewriting, and still, zero replies.
+
+3
+00:00:10,000 --> 00:00:16,460
+So you start asking: where do I fit, and how do I get there?
+
+4
+00:00:16,500 --> 00:00:21,760
+We talked to students and new grads about their job search.
+
+5
+00:00:21,800 --> 00:00:24,056
+We kept hearing four problems.
+
+6
+00:00:24,096 --> 00:00:29,460
+First, direction: so many job titles — which ones actually fit you?
+
+7
+00:00:29,500 --> 00:00:31,327
+Second, reading job ads.
+
+8
+00:00:31,367 --> 00:00:37,660
+They're long and messy — what really matters, and what are you missing?
+
+9
+00:00:37,700 --> 00:00:38,668
+Third, time.
+
+10
+00:00:38,708 --> 00:00:46,096
+Every application needs its own resume, and each one can take twenty to thirty minutes.
+
+11
+00:00:47,200 --> 00:00:48,598
+And fourth, trust.
+
+12
+00:00:48,638 --> 00:00:56,660
+Many AI tools just make things up — numbers you'd then have to explain in an interview.
+
+13
+00:00:56,700 --> 00:00:58,956
+So what happens? Hours wasted.
+
+14
+00:00:58,996 --> 00:01:01,681
+Applications sent to the wrong jobs.
+
+15
+00:01:01,721 --> 00:01:05,160
+And claims you can't back up.
+
+16
+00:01:05,200 --> 00:01:09,154
+There has to be a better way.
+
+17
+00:01:10,400 --> 00:01:16,500
+Meet IT CareerPilot — a smart career assistant made for IT students.
+
+18
+00:01:17,400 --> 00:01:30,160
+It understands you, matches you with the right roles, tailors your resume without making anything up, and helps you prepare and track — right up to the offer.
+
+19
+00:01:30,200 --> 00:01:36,960
+Let's see how it works, following one student from first upload to first interview.
+
+20
+00:01:37,000 --> 00:01:42,260
+Everything happens in one simple flow, and it's always one click away.
+
+21
+00:01:42,300 --> 00:01:52,960
+Build your profile, get matched, tailor your resume, practise for the interview, and keep track of every application.
+
+22
+00:01:53,000 --> 00:01:55,660
+It all starts with your resume.
+
+23
+00:01:55,700 --> 00:02:02,360
+A few moments later, it's turned into a neat profile: education, experience, projects and skills.
+
+24
+00:02:02,400 --> 00:02:07,760
+Nothing gets lost, and you can edit anything you like.
+
+25
+00:02:07,800 --> 00:02:14,060
+Old uploads are saved in your upload history — preview or reuse them anytime.
+
+26
+00:02:14,100 --> 00:02:27,417
+Then you tell CareerPilot what you're looking for: the roles you want, like AI Engineer or Agent Engineer, the industries you like, and how you want to work.
+
+27
+00:02:28,700 --> 00:02:33,433
+Hit save, and you're ready to get matched.
+
+28
+00:02:35,000 --> 00:02:38,460
+Now for the best part: job matches.
+
+29
+00:02:38,500 --> 00:02:46,560
+Your preferences filter the list first — so you can look at internships, full-time jobs, or both.
+
+30
+00:02:46,600 --> 00:02:50,573
+You can filter down to just the strongest matches.
+
+31
+00:02:50,613 --> 00:02:55,015
+Every job gets a clear rating — no mystery scores.
+
+32
+00:02:55,055 --> 00:03:00,296
+And the jobs that fit you best always come first.
+
+33
+00:03:01,100 --> 00:03:06,260
+Let's open the top match and ask: why?
+
+34
+00:03:06,300 --> 00:03:10,702
+Each skill the job wants is checked against your resume.
+
+35
+00:03:10,742 --> 00:03:12,998
+This job asks for React.
+
+36
+00:03:13,038 --> 00:03:18,660
+You know Vue, which is very close — and CareerPilot knows that.
+
+37
+00:03:18,700 --> 00:03:20,956
+And it's not just keywords.
+
+38
+00:03:20,996 --> 00:03:28,813
+The job's tasks are matched with things you've actually done — and with what you want.
+
+39
+00:03:30,300 --> 00:03:39,060
+It's honest about the gaps, too: what you can build on, and what to learn before the interview.
+
+40
+00:03:39,100 --> 00:03:44,860
+And every result links back to the job ad and your resume.
+
+41
+00:03:44,900 --> 00:03:53,560
+Open a lower match, and you'll see different evidence and gaps — so it's clear why it ranks lower.
+
+42
+00:03:53,600 --> 00:03:58,560
+Everything's explained, so you can choose with confidence.
+
+43
+00:03:58,600 --> 00:04:02,983
+Let's save the top match as a target.
+
+44
+00:04:04,000 --> 00:04:10,460
+Next, your resume. CareerPilot rewrites it for this job, section by section.
+
+45
+00:04:10,500 --> 00:04:19,660
+You see the original on the left, the new version on the right, and why each change was made.
+
+46
+00:04:19,700 --> 00:04:26,248
+And if a sentence needs a fact you never gave, it won't make one up.
+
+47
+00:04:26,288 --> 00:04:29,460
+It leaves a blank, and asks you.
+
+48
+00:04:29,500 --> 00:04:32,614
+You're in control: accept, reject or edit.
+
+49
+00:04:32,654 --> 00:04:36,179
+Nothing goes in without your OK.
+
+50
+00:04:37,200 --> 00:04:43,260
+Save it, and your new resume is ready to send.
+
+51
+00:04:43,300 --> 00:04:44,698
+Now, interview practice.
+
+52
+00:04:44,738 --> 00:04:51,760
+You get questions picked for this exact role — from agent design to coding basics.
+
+53
+00:04:51,800 --> 00:05:00,060
+Pick a question, turn on your camera, and answer out loud, just like a real interview.
+
+54
+00:05:00,100 --> 00:05:07,160
+Your answer is turned into text, with your pace and filler words counted.
+
+55
+00:05:07,200 --> 00:05:15,760
+Then check it against a model answer, see what you missed, and mark the set as done.
+
+56
+00:05:15,800 --> 00:05:23,188
+Every target job gets its own practice set, so no interview takes you by surprise.
+
+57
+00:05:25,200 --> 00:05:32,160
+All your target jobs live in one place: matched, tailored, practised, and applied.
+
+58
+00:05:32,200 --> 00:05:41,305
+Once you've applied on the company's site, mark it as submitted, and update the stage after each interview round.
+
+59
+00:05:42,600 --> 00:05:46,983
+One dashboard. Your whole job search, under control.
+
+60
+00:05:51,300 --> 00:05:54,060
+And you can trust it.
+
+61
+00:05:54,100 --> 00:05:56,356
+Every match comes with reasons.
+
+62
+00:05:56,396 --> 00:06:01,656
+Every suggestion is backed by three hundred and eighty-five expert resume tips.
+
+63
+00:06:01,696 --> 00:06:05,221
+And nothing changes without your OK.
+
+64
+00:06:07,000 --> 00:06:11,260
+It's AI you can actually rely on.
+
+65
+00:06:11,300 --> 00:06:15,360
+CareerPilot works for one student, or a whole campus.
+
+66
+00:06:15,400 --> 00:06:20,160
+Starter is free: build your profile and see your matches.
+
+67
+00:06:20,200 --> 00:06:29,660
+Student Pro gives you unlimited tailoring and full interview practice — nine-ninety a month, or one price for the whole job season.
+
+68
+00:06:29,700 --> 00:06:36,860
+And Campus Partner brings CareerPilot to every student, linked to the university's own job board.
+
+69
+00:06:36,900 --> 00:06:40,425
+Pick the plan that suits you.
+
+70
+00:06:41,300 --> 00:06:45,160
+From resume to offer — every step explained.
+
+71
+00:06:45,200 --> 00:06:51,221
+IT CareerPilot. Book a campus demo, or start for free today.
