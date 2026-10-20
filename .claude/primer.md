@@ -41,7 +41,7 @@
 - 简历解析 → 推荐已打通：`/recommendations` 的 `candidate` 直接接收 `ResumeDocument`。技能用 JD 同一套词表归一化；经验年限按 experiences 日期的月份并集计算，重叠不重复算
 - 代码结构整理（PR #8，已合并到 main）：OpenAI 兼容客户端（`ChatClient`/`OpenAICompatibleClient`）从 `llm_resume_parser.py` 拆到 `app/services/openai_client_service.py`；简历解析文件（`llm_resume_parser.py`、`resume_parser.py`）从 `app/parsers/` 提到顶层 `app/resume/`，和 `api`/`core`/`knowledge`/`parsers`/`services` 平级；合并后 `python -m pytest tests/ -q` 全量 27 个测试通过
 - GitHub Actions CI 运行 backend pytest（PR #2，只对目标为 main 的 PR 和 push 触发）；当前共 94 个测试
-- `launch.json` 配置好后端启动（PR #5，已合并）；`config.py` 固定读取**仓库根目录**的 `.env`（PostgreSQL 迁移后从 `SystemCode/backend/.env` 改过来），从任何目录启动都能读到
+- `launch.json` 配置好后端启动（PR #5，已合并）；`config.py` 固定读取 `SystemCode/backend/.env`（2026-10-21 从仓库根目录移回，模板 `.env.example` 在同一目录），从任何目录启动都能读到
 - `settings.json` 的 deny 规则禁止 Claude 读取 `.env`、打印环境变量
 - `PATCH /api/profile`：局部更新画像，只传要改的字段（类似 JSON Merge Patch，`profile_service.merge_patch`），不跑 `PUT` 的“非空”校验，但仍跑 pydantic 字段校验（枚举范围等），非法值 422；无画像时和 `GET` 一样 404
 - 新增 `SystemCode/frontend/` 最小 Vite + React + TypeScript 工程（原来只有一个打包过的静态 demo.html，两者共存不冲突）：
@@ -72,7 +72,7 @@
 - 目标岗位（迁移 `20261004_0014`）：`target_jobs` 表（岗位 id 为主键，存申请阶段 10 档 + 自填备注 + 模拟面试完成时间 + 匹配度快照）；`GET/POST /targets`、`PATCH/DELETE /targets/{job_id}`。简历改写一步从 `resume_rewrites` 推出（none/saved/stale），提交申请一步 = `stage != not_applied`；移出目标在同一事务里删掉该岗位所有改写稿；`POST /resumes/rewrite`、`PUT /resumes/rewrites/{id}` 对非目标岗位返回 409；迁移时已有改写稿的岗位（108）自动设为目标
 
 ## 📖 需要先读
-- [CLAUDE.md](../CLAUDE.md) — 项目完整指南
+- [CLAUDE.md](../SystemCode/CLAUDE.md) — 项目完整指南
 - [lessons.md](lessons.md) — 踩坑记录（**本机 Python 环境搭建方法在这里**）
 
 ## ⚠️ 已知限制
@@ -82,7 +82,7 @@
 - `/ranking` 的 `partial_score` 最高 65（职责相似度、职业意向契合度未实现），不是最终匹配分
 - 前端（2026-10-09 重构）按 feature 分层：`src/app/`（react-router-dom v6 路由，路径 `/`、`/profile`、`/jobs`、`/rewrite`、`/interview`、`/targets`，旧 `#page` 书签自动跳转）、`src/features/<页面>/`（页面 + `useXxx` 状态/接口 hook + 纯函数及单测 + 该页 CSS）、`src/i18n/`（自写中英文切换，右上角用户下方 EN/中文 按钮，存 localStorage `careerpilot:lang`；面试题在中文下显示 `question_text`/`standard_answer`，其余后端数据只有英文保持原样）；`src/api/` 与 `src/types/api.ts` 未动。仪表盘（`/profile` + `/ranking` + `/targets`）和简历改写页（读已保存终稿 → 手动点「生成」才调大模型 → 逐块采纳/拒绝、`/rewrite/fill` 补问询、确认删除建议 → `buildFinalResume` 组装后 PUT）已接真实接口，`src/mocks/` 已删除，页面不再有示例数据；改写页导出 PDF 未做；右下角 `FlowMenu` 是原型的五步流程菜单，可拖动，位置存 localStorage `careerpilot.flowMenuPosition`；`/jobs` 页高度公式 `calc(100vh - 157px)` 依赖顶栏高度
 - 后端使用 Conda 环境 `careerpilot-backend`；依赖安装命令为 `conda activate careerpilot-backend` 后执行 `python -m pip install -r SystemCode/backend/requirements.txt`
-- 各自机器要在仓库根目录 `.env` 里填入 `DATABASE_URL`（本地 Docker 为 `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`）和真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）
+- 各自机器要在 `SystemCode/backend/.env` 里填入 `DATABASE_URL`（本地 Docker 为 `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`）和真实的 Gemini `LLM_API_KEY` 才能调用 LLM（模板见 `.env.example`）
 - 禁止 Co-Authored-By 行，PR 描述里也不加 "Generated with Claude Code"。由 `.claude/hooks/commit-msg` 钩子强制检查，新克隆的仓库需要运行一次 `git config core.hooksPath .claude/hooks`
 - 允许直接 push 到 main，不强制走 PR（Claude 已获得 `git push` 免确认权限，见 `.claude/settings.json`）
 
@@ -93,7 +93,7 @@ cd SystemCode/backend
 python -m pytest tests/ -q          # 跑测试
 python -m uvicorn app.main:app --reload   # 启动后端，文档在 /docs
 ```
-- 一键启动：仓库根目录运行 `.\start-backend.ps1`——自动拉起 Docker Desktop 和数据库容器；仓库里的团队快照 `.dump` 比库里记录的新时询问是否重新导入（保留 `user_profile`/`resume_uploads`，导入的快照记在数据库注释里）；数据库版本落后时 `alembic upgrade head`；最后启动后端并打开 `/docs`
+- 一键启动：仓库根目录运行 `.\SystemCode\start-backend.ps1`——自动拉起 Docker Desktop 和数据库容器；仓库里的团队快照 `.dump` 比库里记录的新时询问是否重新导入（保留 `user_profile`/`resume_uploads`，导入的快照记在数据库注释里）；数据库版本落后时 `alembic upgrade head`；最后启动后端并打开 `/docs`
 - 也可以用 `.claude/launch.json` 里的 `backend` 配置启动（端口 8000，要先关掉占用该端口的进程）。
 
 ## 🗓️ 关键日期

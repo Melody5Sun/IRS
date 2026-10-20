@@ -57,7 +57,7 @@
 在 `SystemCode/backend` 目录下：
 ```bash
 python -m pytest tests/test_rule_engine.py -q
-python -m app.rule_engine path/to/profile.json              # 打印 {"job_ids": [...]}（读根目录 .env 的 DATABASE_URL）
+python -m app.rule_engine path/to/profile.json              # 打印 {"job_ids": [...]}（读 backend/.env 的 DATABASE_URL）
 python -m app.rule_engine path/to/profile.json --stats      # 打印每条规则单独剔除的岗位数
 python -m app.rule_engine path/to/profile.json --documents  # 打印 {"jobs": [JobRequirementDocument, ...]}
 ```

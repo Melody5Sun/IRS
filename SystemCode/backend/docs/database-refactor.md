@@ -25,12 +25,12 @@ python -m scripts.verify_sqlite_backup \
 
 ## Local PostgreSQL
 
-The repository includes `docker-compose.yml` using PostgreSQL 16 with pgvector.
+The repository includes `SystemCode/docker-compose.yml` using PostgreSQL 16 with pgvector.
 PostgreSQL 16 with the compiled `pgvector` extension can also be installed
 natively; use port `5432` for the default native installation.
 
 ```bash
-docker compose up -d postgres
+docker compose -f SystemCode/docker-compose.yml up -d postgres
 ```
 
 The development connection URL is:

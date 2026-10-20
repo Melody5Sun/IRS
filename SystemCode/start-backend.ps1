@@ -1,6 +1,6 @@
 ﻿# 一条命令启动后端：
 #   检查 Docker 和数据库容器 → 团队数据快照有更新时重新导入 → 数据库迁移到最新 → 启动后端并打开接口文档
-# 用法（在仓库根目录）：.\start-backend.ps1
+# 用法（在仓库根目录）：.\SystemCode\start-backend.ps1
 
 $container = "careerpilot-postgres"
 $compose = "$PSScriptRoot/docker-compose.yml"
@@ -28,7 +28,7 @@ function Invoke-Sql($sql) {
 
 # 数据库迁移到最新版本（已是最新时什么都不做）；需要先激活 conda 环境
 function Update-Database {
-    Push-Location "$PSScriptRoot/SystemCode/backend"
+    Push-Location "$PSScriptRoot/backend"
     try { python -m alembic upgrade head }
     finally { Pop-Location }
     if ($LASTEXITCODE -ne 0) { Fail "数据库迁移失败，见上方输出" }
@@ -122,7 +122,7 @@ if ($env:CONDA_DEFAULT_ENV -ne "careerpilot-backend") { Fail "无法激活 conda
 
 # 4. 团队数据快照：取仓库里文件名最新的 .dump（文件名带日期），和数据库注释里记录的快照比较
 Step "检查团队数据快照"
-$snapshot = Get-ChildItem "$PSScriptRoot/SystemCode/backend/data/database/*.dump" | Sort-Object Name | Select-Object -Last 1
+$snapshot = Get-ChildItem "$PSScriptRoot/backend/data/database/*.dump" | Sort-Object Name | Select-Object -Last 1
 if (-not $snapshot) {
     Write-Host "仓库里没有数据快照，跳过"
 }
@@ -161,12 +161,12 @@ else {
     }
 }
 
-Push-Location "$PSScriptRoot/SystemCode/backend"
+Push-Location "$PSScriptRoot/backend"
 try {
     # 5. 数据库迁移：快照可能比代码旧，导入后也要检查；当前版本带 (head) 标记说明已是最新
     Step "检查数据库迁移"
     $current = python -m alembic current 2>$null
-    if ($LASTEXITCODE -ne 0) { Fail "无法读取数据库版本，请检查根目录 .env 里的 DATABASE_URL" }
+    if ($LASTEXITCODE -ne 0) { Fail "无法读取数据库版本，请检查 SystemCode/backend/.env 里的 DATABASE_URL" }
     if ("$current" -match "\(head\)") {
         Write-Host "数据库已是最新版本：$current"
     }

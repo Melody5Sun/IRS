@@ -1,3 +1,6 @@
+# 固定 compose 项目名：默认取文件所在目录名，文件移到 SystemCode/ 后会变，找不到原有容器和数据卷
+name: irs-v1
+
 services:
   postgres:
     image: pgvector/pgvector:pg16

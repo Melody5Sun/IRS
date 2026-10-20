@@ -1,7 +1,7 @@
 ## SECTION 1 : PROJECT TITLE
 ## IT CareerPilot — An Explainable Hybrid Reasoning System for IT Student Internships and Graduate Employment
 
-<img src="Miscellaneous/proposal-assets/IT-CareerPilot-Architecture-EN-preview.png"
+<img src="Miscellaneous/Beginning page.png"
      style="float: left; margin-right: 0px;" />
 
 ---
@@ -20,8 +20,8 @@ In evaluation, the hybrid ranker reached a mean NDCG@10 of 0.841 on held-out res
 
 | Official Full Name  | Student ID (MTech Applicable)  | Work Items (Who Did What) | Email (Optional) |
 | :------------ |:---------------:| :-----| :-----|
-| Zhao Jiayi | A0329873M | Job data ingestion and MIND skill knowledge-graph integration; PostgreSQL + pgvector migration and team data snapshots; skill-graph, responsibility-semantic and career-intent matching and overall ranking; ranking weight validation and ablation study; interview question and Whisper answer-transcription APIs; frontend layered architecture and mock-interview page integration; project report | |
-| Sun Wenjing | A0326610N | Experta rule-based eligibility screening; layout-aware resume PDF parsing; resume-rewrite RAG pipeline, expert knowledge base and fact checking; target-job and application-progress tracking; frontend dashboard, resume-rewrite page and Chinese/English switch; resume parsing and rewrite evaluation; project report; promotion video | |
+| **Zhao Jiayi** | **A0329873M** | Built the job data pipeline: job ingestion, JD requirement parsing and MIND skill knowledge-graph integration<br/>Migrated storage to PostgreSQL + pgvector and maintained the shared team database snapshots<br/>Developed the hybrid job ranking engine: skill-graph coverage, responsibility semantic matching and career-intent matching<br/>Validated ranking weights with cross-validation and an ablation study (mean NDCG@10 0.841)<br/>Built the interview question and Whisper answer-transcription APIs, connected the recommendation and mock-interview pages, and co-wrote the project report | |
+| **Sun Wenjing** | **A0326610N** | Developed the Experta forward-chaining rule engine for eligibility screening<br/>Built layout-aware resume PDF parsing and the user profile flow<br/>Developed the resume tailoring module: RAG over an expert knowledge base (385 guidelines, 1,155 examples), block-wise rewrites with cited reasons, and fact checking<br/>Built target-job and application-progress tracking, the frontend dashboard, resume-rewrite page and Chinese/English switch<br/>Evaluated and optimised resume parsing and rewriting, co-wrote the project report and produced the promotion video |e1538441@u.nus.edu|
 
 ---
 
@@ -29,7 +29,7 @@ In evaluation, the hybrid ranker reached a mean NDCG@10 of 0.841 on held-out res
 
 **Promotion video**
 
-[![IT CareerPilot Promotion](http://img.youtube.com/vi/<YOUTUBE_ID>/0.jpg)](https://youtu.be/<YOUTUBE_ID> "IT CareerPilot Promotion")
+[![IT CareerPilot Promotion](http://img.youtube.com/vi/MtBKkAwVGTU/0.jpg)](https://youtu.be/MtBKkAwVGTU "IT CareerPilot Promotion")
 
 **System design & use case demo video**
 
@@ -61,9 +61,9 @@ Video files are not stored in this repository (they exceed GitHub's 100 MB file 
 
 > (careerpilot-backend) $ python -m pip install -r SystemCode/backend/requirements.txt
 
-> Copy `.env.example` to `.env` in the repository root and fill in `DATABASE_URL` (local Docker: `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`), `GEMINI_API_KEY` (or all three of `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`), and optionally `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`
+> Copy `SystemCode/backend/.env.example` to `SystemCode/backend/.env` and fill in `DATABASE_URL` (local Docker: `postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot`), `GEMINI_API_KEY` (or all three of `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`), and optionally `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`
 
-> (careerpilot-backend) PS> .\start-backend.ps1
+> (careerpilot-backend) PS> .\SystemCode\start-backend.ps1
 
 > The script starts Docker Desktop and the PostgreSQL container (pgvector/pgvector:pg16, port 5433), offers to import the team data snapshot on first run, runs `alembic upgrade head` if needed, then starts the backend on port 8000 and opens http://localhost:8000/docs
 
@@ -135,6 +135,4 @@ The interface can be switched between Chinese and English at the top right. If t
 * [`SystemCode/evaluation/README.md`](SystemCode/evaluation/README.md) — resume parsing and rewrite evaluation
 * [`SystemCode/backend/evaluation/job_ranking/`](SystemCode/backend/evaluation/job_ranking/) — job ranking evaluation
 
----
 
-**This project is part of the Graduate Certificate in [Intelligent Reasoning Systems (IRS)](https://www.iss.nus.edu.sg/stackable-certificate-programmes/intelligent-systems "Intelligent Reasoning Systems") offered by [NUS-ISS](https://www.iss.nus.edu.sg "Institute of Systems Science, National University of Singapore").**

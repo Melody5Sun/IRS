@@ -35,7 +35,7 @@ class OpenAICompatibleClient:
         api_key, base_url, model = llm_connection_settings()
         if not (api_key and base_url and model):
             raise LLMNotConfiguredError(
-                "LLM 未配置：请在仓库根目录 .env 中设置 GEMINI_API_KEY，或完整设置 "
+                "LLM 未配置：请在 SystemCode/backend/.env 中设置 GEMINI_API_KEY，或完整设置 "
                 "LLM_API_KEY / LLM_BASE_URL / LLM_MODEL。"
             )
 

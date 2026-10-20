@@ -1,4 +1,4 @@
-"""命令行入口：python -m app.rule_engine <profile.json> [--stats | --documents]（读根目录 .env 的 DATABASE_URL）"""
+"""命令行入口：python -m app.rule_engine <profile.json> [--stats | --documents]（读 backend/.env 的 DATABASE_URL）"""
 
 import argparse
 import json

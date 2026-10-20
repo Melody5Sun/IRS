@@ -72,8 +72,8 @@ hide interactions.
 Use `POST /api/jobs/{job_id}/interview-questions/{question_id}/transcription`
 with an `audio` multipart upload to transcribe one recorded English interview
 answer. The backend sends the audio to Cloudflare Workers AI and does not store
-the recording or transcript. Configure these values in the repository-root
-`.env` file:
+the recording or transcript. Configure these values in the
+`SystemCode/backend/.env` file:
 
 ```text
 CLOUDFLARE_ACCOUNT_ID=...
@@ -100,7 +100,7 @@ Profile flow: `POST /api/resumes/parse-pdf` only stores the parsed resume in
 `GET /api/resumes/history/{id}` returns any earlier upload the same way.
 
 Resume parsing, resume rewriting, and optional LLM-based JD analysis use the
-Gemini key in the repository-root `.env` file by default:
+Gemini key in the `SystemCode/backend/.env` file by default:
 
 ```text
 GEMINI_API_KEY=...
@@ -144,8 +144,8 @@ expected SHA-256 is:
 Run these commands from the repository root:
 
 ```powershell
-docker compose up -d postgres
-docker compose ps
+docker compose -f SystemCode/docker-compose.yml up -d postgres
+docker compose -f SystemCode/docker-compose.yml ps
 Get-FileHash `
   "SystemCode/backend/data/database/careerpilot-postgresql-20261002.dump" `
   -Algorithm SHA256
@@ -162,7 +162,7 @@ The restore command is intended for the fresh, empty database created by
 `docker compose up`. Do not restore the snapshot over a database that already
 contains project data.
 
-Configure the repository-root `.env` file without committing it:
+Configure the `SystemCode/backend/.env` file without committing it:
 
 ```text
 DATABASE_URL=postgresql+psycopg://careerpilot:careerpilot@127.0.0.1:5433/careerpilot
