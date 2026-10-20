@@ -29,3 +29,6 @@ Thumbs.db
 
 # Claude Code 本地个人设置（不共享）
 .claude/settings.local.json
+
+# 视频成片体积超过 GitHub 100MB 上限，只放 YouTube 链接（见 Video/README.md）
+Video/*.mp4

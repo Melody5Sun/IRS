@@ -4,7 +4,7 @@
 - **名称**: IT CareerPilot — Intelligent Internship and Graduate Job Assistant for IT Students
 - **课程**: NUS-ISS Intelligent Reasoning Systems (IRS) Practice Module
 - **学生**: Sun Wenjing (A0326610N)
-- **最终提案**: [IRS-Project-Proposal-V1-CN.docx](IRS-Project-Proposal-V1-CN.docx) — 其他草稿文件（.md/.pptx）仅供参考，可忽略
+- **最终提案**: [Miscellaneous/IRS-Project-Proposal-V1-CN.docx](Miscellaneous/IRS-Project-Proposal-V1-CN.docx)；最终报告见 [ProjectReport/](ProjectReport/)
 
 ## 项目目标
 面向 IT 学生的智能求职助手：简历解析 → JD 分析 → 智能匹配 → 可解释推荐 → 简历优化 → 面试准备 → 投递规划。
@@ -17,29 +17,27 @@
 
 ## 目录结构
 ```
-IRS-v1/
-├── IRS-Project-Proposal-V1-CN.docx   # 最终版提案
+IRS-v1/                                # 按 IRS-PM 提交模板组织
+├── README.md                          # 提交用 README（模板 7 节）
+├── ProjectReport/                     # 最终报告（docx，PDF 导出后也放这里）
+├── SystemCode/                        # backend/ frontend/ evaluation/
+├── Video/                             # 只跟踪 README.md（YouTube 链接）；mp4 超过 100MB，已 gitignore
+├── Miscellaneous/                     # 提案、proposal-assets/、video-production/、旧版报告
+├── start-backend.ps1                  # 一键启动后端（依赖根目录的 docker-compose.yml 和 .env）
+├── docker-compose.yml / .env.example  # 留在根目录：config.py 从仓库根目录读 .env
 ├── CLAUDE.md                          # 本文件
-├── .claude/                           # Claude Code 配置系统
-│   ├── CLAUDE.md                      # AI 工作流规则
-│   ├── primer.md                      # 进度快照
-│   ├── settings.json                  # 权限与钩子配置
-│   ├── launch.json                    # 启动配置（占位，待代码实现）
-│   ├── hooks/commit-msg               # 真正的 git commit-msg 钩子（需一次性激活，见下）
-│   ├── templates/                     # 提交信息/PR/lesson 模板
-│   └── lessons.md                     # 团队学习知识库
-└── proposal-assets/                   # 架构图、用户流程图、人设研究
+└── .claude/                           # Claude Code 配置（工作流规则、primer、lessons、hooks、模板）
 ```
 
 ## 交付要求（截止 2026-10-25）
-- [ ] GitHub 仓库（含 SystemCode/ 和 Report/ 目录，遵循 IRS-PM 模板）
+- [ ] GitHub 仓库（SystemCode/、ProjectReport/、Video/、Miscellaneous/，遵循 IRS-PM 模板）
 - [ ] 项目报告 PDF
 - [ ] 2 个演示视频（推广 + 系统演示，禁用 AI 配音）
 - [ ] 成员属性文件
 
 ## 开发环境
 > 后端已用 FastAPI 搭建，启动命令见 [.claude/primer.md](.claude/primer.md#-快速启动)。
-> 前端技术栈已定为 **React + TypeScript**，项目尚未搭建，目前 `SystemCode/frontend/` 下只有一个未接后端的静态 demo HTML。
+> 前端为 **React + TypeScript**（Vite），在 `SystemCode/frontend/` 下运行 `npm install` 后 `npm run dev`。
 
 ## Claude Code 使用说明
 - AI 工作流规则详见 [.claude/CLAUDE.md](.claude/CLAUDE.md)
