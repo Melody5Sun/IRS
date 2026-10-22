@@ -1,6 +1,6 @@
 """生成评测文档里的图。数字抄自 README.md 对应表格（来源见各表的「运行」列），改数字时两处一起改。
 
-用法：python SystemCode/evaluation/figures/make_figures.py（需要 matplotlib 和中文字体）
+用法：python SystemCode/evaluation/figures/make_figures.py（需要 matplotlib；图中文字为英文，供最终报告使用）
 """
 
 from pathlib import Path
@@ -27,7 +27,7 @@ plt.rcParams.update({"axes.edgecolor": GRID, "axes.labelcolor": INK, "xtick.colo
 def grouped(ax, labels, before, after, title, ylim):
     x = range(len(labels))
     width = 0.36
-    for offset, values, color, name in ((-width / 2, before, BEFORE, "修改前"), (width / 2, after, AFTER, "修改后")):
+    for offset, values, color, name in ((-width / 2, before, BEFORE, "Before"), (width / 2, after, AFTER, "After")):
         bars = ax.bar([i + offset for i in x], values, width - 0.04, color=color, label=name)
         ax.bar_label(bars, fmt="%g", fontsize=8, color=INK, padding=2)
     ax.set_xticks(list(x), labels)
@@ -38,10 +38,10 @@ def grouped(ax, labels, before, after, title, ylim):
 
 
 # 图 1：W4 混合盲评，哑铃图：修改前 → 修改后的箭头，和"同一批修改前的行被评两次"的差距（评分者噪声）放在一起看
-dims = ["事实一致", "比原文好", "贴合JD", "理由正确"]
+dims = ["Factual\nconsistency", "Better than\noriginal", "JD fit", "Correct\nreason"]
 W4 = {  # 组: (修改前首次评分, 修改前混合盲评, 修改后混合盲评)
-    "有 RAG（线上路径，各 20 行）": ([4.60, 3.35, 3.00, 4.25], [4.20, 3.15, 2.95, 3.55], [4.45, 3.30, 3.30, 3.70]),
-    "无 RAG 对照（各 10 行）": ([4.60, 3.40, 3.20, 4.00], [4.20, 3.30, 3.20, 3.70], [4.00, 2.80, 3.20, 3.70]),
+    "With RAG (production path, 20 rows each)": ([4.60, 3.35, 3.00, 4.25], [4.20, 3.15, 2.95, 3.55], [4.45, 3.30, 3.30, 3.70]),
+    "No-RAG control (10 rows each)": ([4.60, 3.40, 3.20, 4.00], [4.20, 3.30, 3.20, 3.70], [4.00, 2.80, 3.20, 3.70]),
 }
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.4), sharey=True)
 axes[0].invert_yaxis()  # 共享 y 轴，只翻转一次
@@ -62,12 +62,12 @@ for ax, (title, (first, before, after)) in zip(axes, W4.items()):
     ax.tick_params(axis="y", length=0, labelsize=10, labelcolor=INK)
     ax.set_title(title, color=INK, fontsize=11, loc="left")
     ax.text(5.35, -0.75, "Δ", ha="right", fontsize=9, color=MUTED)
-axes[0].set_xlabel("盲评均分（1–5）", color=MUTED)
-axes[1].set_xlabel("盲评均分（1–5）", color=MUTED)
+axes[0].set_xlabel("Mean blind rating (1–5)", color=MUTED)
+axes[1].set_xlabel("Mean blind rating (1–5)", color=MUTED)
 handles = [
-    plt.Line2D([], [], marker="o", ls="", color=BEFORE, markersize=8, label="修改前（R3-前）"),
-    plt.Line2D([], [], marker="o", ls="", color=AFTER, markersize=8, label="修改后（R4）"),
-    plt.Line2D([], [], color=GRID, lw=7, label="同一批修改前的行两次打分的差距（评分者噪声）"),
+    plt.Line2D([], [], marker="o", ls="", color=BEFORE, markersize=8, label="Before (pre-R3)"),
+    plt.Line2D([], [], marker="o", ls="", color=AFTER, markersize=8, label="After (R4)"),
+    plt.Line2D([], [], color=GRID, lw=7, label="Gap between two ratings of the same before-rows (rater noise)"),
 ]
 fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, fontsize=9, bbox_to_anchor=(0.5, -0.02))
 fig.tight_layout(rect=(0, 0.08, 1, 1))
@@ -75,16 +75,16 @@ fig.savefig(OUT / "w4_blind_rating.png", dpi=160)
 
 # 图 4：解析各项指标，同一套新金标下旧 prompt（R4-前）vs 新 prompt（R4）；全部为 1.000 不变的指标不画
 parse = [  # (指标, 旧 prompt, 新 prompt)
-    ("条目 F1（全部段落）", 0.879, 0.883), ("projects F1", 0.941, 0.906), ("research F1", 0.914, 0.914),
+    ("Entry F1 (all sections)", 0.879, 0.883), ("projects F1", 0.941, 0.906), ("research F1", 0.914, 0.914),
     ("educations F1", 0.980, 1.000), ("certificates F1", 0.917, 0.917), ("skill_groups F1", 0.989, 0.955),
-    ("additional_info F1", 0.462, 0.538), ("字段准确率（17 个字段）", 0.997, 0.994),
-    ("长文本事实保留率", 0.939, 0.925), ("长文本语义相似度", 0.963, 0.945), ("skills F1", 0.787, 0.783),
+    ("additional_info F1", 0.462, 0.538), ("Field accuracy (17 fields)", 0.997, 0.994),
+    ("Long-text fact retention", 0.939, 0.925), ("Long-text semantic similarity", 0.963, 0.945), ("skills F1", 0.787, 0.783),
 ]
 fig, ax = plt.subplots(figsize=(8, 5.6))
 height = 0.38
 for i, (name, old, new) in enumerate(parse):
-    ax.barh(i - height / 2, old, height - 0.04, color=BEFORE, label="旧 prompt" if i == 0 else None)
-    ax.barh(i + height / 2, new, height - 0.04, color=AFTER, label="新 prompt" if i == 0 else None)
+    ax.barh(i - height / 2, old, height - 0.04, color=BEFORE, label="Old prompt" if i == 0 else None)
+    ax.barh(i + height / 2, new, height - 0.04, color=AFTER, label="New prompt" if i == 0 else None)
     ax.text(1.24, i, f"{new - old:+.3f}", va="center", ha="right", fontsize=9.5, color=INK,
             fontweight="bold" if abs(new - old) >= 0.01 else "normal")
     ax.text(old + 0.008, i - height / 2, f"{old:.3f}", va="center", fontsize=7.5, color=MUTED)
@@ -97,26 +97,26 @@ ax.xaxis.grid(True, color=GRID)
 ax.set_axisbelow(True)
 ax.tick_params(axis="y", length=0, labelcolor=INK)
 ax.text(1.24, -0.9, "Δ", ha="right", fontsize=9, color=MUTED)
-ax.set_title("解析各项指标：旧 prompt vs 新 prompt（同一套新金标，14 份）", color=INK, fontsize=11, loc="left")
+ax.set_title("Parsing metrics: old vs new prompt (same new gold labels, 14 resumes)", color=INK, fontsize=11, loc="left")
 ax.legend(frameon=False, fontsize=9, loc="lower left", bbox_to_anchor=(0, -0.13), ncol=2)
 fig.tight_layout()
 fig.savefig(OUT / "parsing_before_after.png", dpi=160)
 
 # 图 2：改写占位数（R4 前后）
 fig, ax = plt.subplots(figsize=(6, 3.2))
-grouped(ax, ["每条改动平均新增占位", "单条最多新增占位"], [1.84, 7], [0.44, 2], "改写新增占位（14 组简历 × 岗位）", (0, 8))
+grouped(ax, ["Avg. new placeholders\nper change", "Max new placeholders\nin one change"], [1.84, 7], [0.44, 2], "New placeholders in rewrites (14 resume × job pairs)", (0, 8))
 ax.legend(frameon=False, fontsize=9)
 fig.tight_layout()
 fig.savefig(OUT / "rewrite_placeholders.png", dpi=160)
 
 # 图 3：additional_info F1 拆解：金标重标的贡献 vs prompt 修改的贡献
 fig, ax = plt.subplots(figsize=(6, 3.2))
-steps = ["旧 prompt\n旧金标", "旧 prompt\n新金标", "新 prompt\n新金标"]
+steps = ["Old prompt\nold gold", "Old prompt\nnew gold", "New prompt\nnew gold"]
 values = [0.368, 0.462, 0.538]
 bars = ax.bar(steps, values, 0.5, color=[BEFORE, BEFORE, AFTER])
 ax.bar_label(bars, fmt="%.3f", fontsize=9, color=INK, padding=2)
 ax.set_ylim(0, 0.7)
-ax.set_title("解析 additional_info F1（14 份金标）", color=INK, fontsize=11, loc="left")
+ax.set_title("Parsing additional_info F1 (14 gold-labelled resumes)", color=INK, fontsize=11, loc="left")
 ax.yaxis.grid(True, color=GRID)
 ax.set_axisbelow(True)
 fig.tight_layout()
