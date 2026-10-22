@@ -35,7 +35,7 @@ In evaluation, the hybrid ranker reached a mean NDCG@10 of 0.841 on held-out res
 
 **System design & use case demo video**
 
-[![IT CareerPilot System Demo](https://img.youtube.com/vi/24hcgOa-CGk/0.jpg)](https://youtu.be/24hcgOa-CGk "IT CareerPilot System Demo")
+[▶ Watch the system design & use case demo video on YouTube](https://youtu.be/24hcgOa-CGk)
 
 Video files are not stored in this repository (they exceed GitHub's 100 MB file limit). See [Video/README.md](Video/README.md).
 
