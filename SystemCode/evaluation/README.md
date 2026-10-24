@@ -1,232 +1,231 @@
-# 评测：简历解析与简历改写
+# Evaluation: Resume Parsing and Resume Rewriting
 
-本文档记录 IT CareerPilot 两个 LLM 模块（简历解析、简历改写）的评测方案、四轮优化过程和修改前后的数字。
-岗位排序 / 推荐的评测由同事负责，见 `SystemCode/backend/evaluation/job_ranking/`。
-资格筛选规则引擎的评测（`evaluate_rule_engine.py`）在第一轮曾加入本分支，第三轮前移交给同事和 ranking 一起做，本分支已删除，不在本文档范围内。
+This document covers how we evaluated the two LLM modules in IT CareerPilot (resume parsing and resume rewriting), the four rounds of changes we made, and the numbers before and after each change.
+Job ranking and recommendation were evaluated by a teammate; see `SystemCode/backend/evaluation/job_ranking/`.
+The eligibility rule engine evaluation (`evaluate_rule_engine.py`) was briefly part of this work in round 1, then handed over to be evaluated together with ranking before round 3. It is out of scope here.
 
-## 1. 评测方案
+## 1. Evaluation Design
 
-### 1.1 为什么用回放缓存，而不是直接调 LLM
+### 1.1 Why we replay cached answers instead of calling the LLM
 
-线上用 Gemini（OpenAI 兼容接口），免费额度约 20 次/天，评测一轮就要上百次调用，额度不够；云端会话里也没有 Gemini key。
-因此评测里的 LLM 回答由 Claude Code 会话中的 **haiku 子代理** 产生，脚本通过 `ReplayClient` 回放
-（`SystemCode/backend/scripts/eval_llm_cache.py`）：
+The deployed system calls Gemini through an OpenAI-compatible API. The free tier allows about 20 calls a day, and a single evaluation round needs well over a hundred. The cloud development sessions also had no Gemini key.
+So the LLM answers used in evaluation were produced by **haiku sub-agents** inside Claude Code sessions, and the scripts read them back through `ReplayClient` (`SystemCode/backend/scripts/eval_llm_cache.py`):
 
-1. 跑评测脚本：每次 LLM 调用按（系统提示, 用户提示）的哈希查 `eval_outputs/haiku/responses/<hash>.txt`；没有回答的提示写进 `pending/`。
-2. 每个待答提示派一个 haiku 子代理作答，子代理只读这一个提示文件（仓库里有金标，读到就等于看了答案）。
-3. 重跑脚本，命中的回答继续走真实代码（校验 → 重试 → 后续调用），直到没有待答。
+1. Run an evaluation script. Each LLM call is looked up by the hash of (system prompt, user prompt) in `eval_outputs/haiku/responses/<hash>.txt`. Prompts with no stored answer are written to `pending/`.
+2. Each pending prompt is answered by its own haiku sub-agent, which reads only that one prompt file. (The gold labels live in the same repository, so reading anything else would leak the answers.)
+3. Re-run the script. Cached answers flow through the real code path (validation, retry, follow-up calls) until nothing is pending.
 
-好处是 `responses/` 随仓库保存，任何人重跑都得到同一组数字，不调用任何 LLM。代价和局限：
+Because `responses/` is committed, anyone who re-runs the scripts gets the same numbers without calling any LLM. The costs and limits:
 
-- **评测模型不是线上模型**：数字反映的是 haiku 在本系统提示下的表现，换成 Gemini 需要重跑。
-- **每个提示只采样 1 次**：零点几到两三个点的整体变化分不出是不是噪声。
-- **提示一变旧回答就失效**：改了 prompt、检测器、检索或 JD 数据后，旧回答再也不会命中，需要重新作答。
+- **The evaluated model is not the production model.** The numbers describe haiku under our system prompts. Switching to Gemini means re-running everything.
+- **One sample per prompt.** Overall changes of a few tenths of a point up to two or three points cannot be separated from noise.
+- **Any prompt change invalidates old answers.** After editing a prompt, a detector rule, retrieval, or JD data, the old answers no longer match and need to be regenerated.
 
-### 1.2 评测项
+### 1.2 What we measured
 
-| 编号 | 模块 | 测什么 | 数据 | 标注来源 |
+| ID | Module | What it measures | Data | Labels |
 |---|---|---|---|---|
-| P1 | 解析 | 和金标比：条目 F1、字段准确率、长文本事实保留率与语义相似度 | 14 份测试简历（5 中 9 英，含 4 份算法岗） | Claude 按解析规则手工整理（**银标**） |
-| P2 | 解析 | 无金标自检：原文数字保留率、疑似编造数字、邮箱/链接保留 | 同上 | 无需标注 |
-| P3 | 解析 | 过程：首次通过 / 重试 / 失败 | 同上 | 无需标注 |
-| W1 | 改写 | 行级问题检测器（规则）的 P/R/F1 | dev 134 行（调规则时看过）+ heldout 77 行 | 人工规则标注（银标，抽查 27 行 κ = 0.956） |
-| W2 | 改写 | 知识库检索 hit@3 / MRR、对题覆盖率 | 82 条手写用例 + 14 组评测对 | 手写 |
-| W3 | 改写 | 端到端：改动通过/被拒、理由引用、占位、行级问题变化、JD 对齐 | 14 组（简历 × 岗位），岗位 JD 正文 ≥ 200 字符且有职责 | 无需标注 |
-| W4 | 改写 | 人工维度盲评 1–5 分：事实一致、比原文好、贴合 JD、理由正确 | W3 改动随机抽 30 行 | sonnet 子代理盲评（看不到分组） |
-| W5 | 改写 | 消融：去掉知识库检索（无 RAG），其余不变 | 同 W3 | 同 W3 |
+| P1 | Parsing | Against gold: item F1, field accuracy, fact retention and semantic similarity for long text | 14 test resumes (5 Chinese, 9 English, 4 of them for ML/algorithm roles) | Hand-built by Claude following the parsing rules (**silver labels**) |
+| P2 | Parsing | Gold-free self-check: retention of numbers from the source, suspected invented numbers, email/link retention | Same | None needed |
+| P3 | Parsing | Process: pass on first try / retry / failure | Same | None needed |
+| W1 | Rewriting | Precision/recall/F1 of the rule-based line issue detector | dev 134 lines (seen while tuning rules) + heldout 77 lines | Rule-based manual labels (silver; spot check of 27 lines, κ = 0.956) |
+| W2 | Rewriting | Knowledge-base retrieval hit@3 / MRR, issue coverage | 82 hand-written cases + 14 evaluation pairs | Hand-written |
+| W3 | Rewriting | End to end: changes accepted/rejected, rationale citations, placeholders, line issue counts, JD alignment | 14 (resume × job) pairs; JD body ≥ 200 characters and lists responsibilities | None needed |
+| W4 | Rewriting | Blind 1–5 rating on four dimensions: factual consistency, better than original, fits the JD, rationale correct | 30 lines sampled at random from W3 changes | sonnet sub-agents rating blind (group hidden) |
+| W5 | Rewriting | Ablation: knowledge-base retrieval removed (no RAG), everything else unchanged | Same as W3 | Same as W3 |
 
-运行方式（在 `SystemCode/backend/` 下，需要本地 PostgreSQL 和向量模型 all-MiniLM-L6-v2）：
+How to run (from `SystemCode/backend/`; needs local PostgreSQL and the all-MiniLM-L6-v2 embedding model):
 
 ```bash
 python -m scripts.evaluate_resume_parsing [-v]            # P1–P3
-python -m scripts.evaluate_rewrite [-v] [--export]        # W1、W3、W5，--export 导出 W4 评分表
-python -m scripts.evaluate_rewrite --score                # 读填好分的 W4 评分表出均分
+python -m scripts.evaluate_rewrite [-v] [--export]        # W1, W3, W5; --export writes the W4 rating sheet
+python -m scripts.evaluate_rewrite --score                # averages a filled-in W4 rating sheet
 python -m scripts.evaluate_guideline_retrieval            # W2
-python -m scripts.prune_eval_cache [--apply]              # 删掉当前评测用不到的旧回答
+python -m scripts.prune_eval_cache [--apply]              # removes cached answers the current evaluation no longer uses
 ```
 
-复现前提：W3 的评测对按 id 引用数据库里的简历上传记录，其中 17–20（4 份算法岗简历）不在团队快照里。新环境要先用 `LLMResumeParser(client=ReplayClient())` 回放这 4 份的解析结果，再用 `ResumeHistoryRepository.add` 写回库；写之前确认 `resume_uploads_id_seq` 的 last_value 是 16。
+Reproduction note: W3 pairs refer to resume upload records in the database by id. Records 17–20 (the 4 ML/algorithm resumes) are not in the team database snapshot. On a fresh setup, first replay those 4 parses with `LLMResumeParser(client=ReplayClient())`, then write them back with `ResumeHistoryRepository.add`. Before writing, check that `resume_uploads_id_seq` has last_value 16.
 
-## 2. 运行记录（每个数字来自哪次运行）
+## 2. Run Log (where each number comes from)
 
-| 运行 | 日期 | 代码 / 缓存 | 说明 |
+| Run | Date | Code / cache | Notes |
 |---|---|---|---|
-| R1 | 10-14 | 中间状态，未保留 | 第一轮：10 份金标、检测器 dev 集 |
-| R2 | 10-14 | 中间状态，未保留 | 第二轮：金标扩到 14 份、加 heldout、银标抽查、修评测脚本对齐 |
-| R3-前 | 10-14 | 中间状态，未保留 | 第三轮修复前的基线（重选评测对后、两处线上修复前），W4 sonnet 盲评过一次 |
-| R3 | 10-14 | 中间状态，未保留 | 第三轮修复后：修占位误判和检测器误报 |
-| R4-前 | 10-14 | 中间状态，未保留 | 第四轮修改前的基线（即 R3 修复后的代码） |
-| R4-前-解析 | 10-16 | 补跑，未保留 | 旧解析 prompt（`550a0ce`）+ 旧回答，在新金标上重跑，只用于 4.3 节区分 prompt 和金标的作用 |
-| R4 | 10-14 | 代码 `7d0f1cd`，回答 `54d6f7e` | 第四轮最终：改写 prompt 约束 + 新解析 prompt + additional_info 重标 |
-| W4-混合 | 10-14 | `w4_mixed_sheet.csv` / `w4_mixed_key.json`（`54d6f7e`） | R3-前 和 R4 的 W4 评分表各 30 行混在一起，由同一批评分者重新盲评 |
+| R1 | Oct 14 | Intermediate, not kept | Round 1: 10 gold resumes, detector dev set |
+| R2 | Oct 14 | Intermediate, not kept | Round 2: gold set grown to 14, heldout added, silver labels spot-checked, evaluation script fixed |
+| R3-pre | Oct 14 | Intermediate, not kept | Baseline before round 3 fixes (after re-selecting pairs, before two production fixes); W4 rated once by sonnet |
+| R3 | Oct 14 | Intermediate, not kept | After round 3: placeholder false rejection and detector false positives fixed |
+| R4-pre | Oct 14 | Intermediate, not kept | Baseline before round 4 (the code after R3) |
+| R4-pre-parse | Oct 16 | Extra run, not kept | Old parsing prompt (`550a0ce`) + old answers, re-scored on the new gold set; used only in 4.3 to separate the effect of the prompt from the effect of relabeling |
+| R4 | Oct 14 | Code `7d0f1cd`, answers `54d6f7e` | Round 4 final: rewrite prompt constraints + new parsing prompt + additional_info relabeled |
+| W4-mixed | Oct 14 | `w4_mixed_sheet.csv` / `w4_mixed_key.json` (`54d6f7e`) | The 30 W4 rows from R3-pre and the 30 from R4, mixed and re-rated blind by the same set of raters |
 
-R1–R4-前-解析 是本地会话里的中间状态，代码和回答都没有保留，这几次的数字只能按本文档引用，不能重跑。
-仓库里只有 R4 实际命中的 68 个回答，在 `SystemCode/backend/` 下重跑评测脚本即可得到第 4 节的 R4 数字。
-**要在评测分支的末端 `065fac6` 上重跑**（`git switch --detach 065fac6`）：合并进 main 后，同事改了职责 / 技能评分（`responsibility_scorer`、`skill_scorer`、`jd_alignments`），发给 LLM 的改写提示随之变化，在 main 上跑改写评测会有 22 个待答（10-16 实测）。解析评测不受影响。
+R1 through R4-pre-parse were intermediate states in local sessions. Their code and answers were not kept, so those numbers can only be cited from this document and cannot be reproduced.
+The repository holds only the 68 answers that R4 actually uses. Re-running the scripts in `SystemCode/backend/` gives the R4 numbers in Section 4.
+**Re-run on `065fac6`, the last commit of the evaluation branch** (`git switch --detach 065fac6`). After the merge into main, a teammate changed responsibility and skill scoring (`responsibility_scorer`, `skill_scorer`, `jd_alignments`). That changes the rewrite prompts sent to the LLM, so running the rewrite evaluation on main leaves 22 prompts pending (checked Oct 16). The parsing evaluation is not affected.
 
-## 3. 优化过程
+## 3. Optimisation Process
 
-每轮都按"先跑基线、记数字 → 改一处 → 重跑对比"进行；没证明有效的改动撤回。
+Every round followed the same loop: run a baseline and record the numbers, change one thing, re-run and compare. Changes that did not show an improvement were reverted.
 
-### 第一轮（R1）：PDF 提取与检测器正则
+### Round 1 (R1): PDF extraction and detector regexes
 
-| 问题 | 改动 | 修改前 → 修改后 |
+| Problem | Change | Before → after |
 |---|---|---|
-| 两栏排版的简历，日期被 pdfminer 读到别的条目下 | 新增 `pdf_text` 按版面提取 | 日期错位 4 → 0 |
-| 检测器漏掉空话、缺结果 | 补正则 | W1 dev F1：buzzword 0 → 1.0，missing_outcome 0.74 → 0.83 |
+| In two-column resumes, pdfminer attached dates to the wrong entry | Added `pdf_text` for layout-aware extraction | Misplaced dates 4 → 0 |
+| Detector missed buzzwords and missing outcomes | Added regexes | W1 dev F1: buzzword 0 → 1.0, missing_outcome 0.74 → 0.83 |
 
-### 第二轮（R2）：扩大数据、修评测本身
+### Round 2 (R2): more data, and fixing the evaluation itself
 
-- 金标 10 → 14 份（加 4 份带论文/专利/研究的英文算法简历）；W1 分出 heldout 77 行。
-- **评测脚本自身的 bug**：空标题条目随机配对，research.type 显示 2/4 正确，修复后实为 16/16——之前看到的"解析错误"是评测假象。
-- 试过两版"研究 / 项目怎么分"的解析 prompt 规则：目标错误数 3 → 3 没降，第一版还把实习内容整段挪进 projects（事实保留率 0.939 → 0.901），**撤回**。
+- Gold set grown from 10 to 14 resumes (4 English ML resumes with papers, patents and research). W1 split off a heldout set of 77 lines.
+- **A bug in the evaluation script**: entries with empty titles were paired at random, so research.type showed 2/4 correct. After the fix it was actually 16/16. The "parsing errors" we had been looking at were an artefact of the evaluation.
+- We tried two versions of a parsing prompt rule for separating research from projects. The target error count stayed at 3. The first version also moved whole internships into projects (fact retention 0.939 → 0.901). **Reverted.**
 
-### 第三轮（R3）：本地跑通 + 两处线上修复
+### Round 3 (R3): running locally end to end, plus two production fixes
 
-- 评测对重选：旧 10 组里 9 组的 JD 只有标题、没有职责，"贴合 JD"无从判断；按"排名最高、JD 正文 ≥ 200 字符、有职责"重选 14 组。
-- 修复 `rewrite_applier.check_facts`：查新技能前先去掉 `[...]` 占位文字（`[database load change]` 曾被当成新技能 databases 拒掉）。
-- 修复检测器误报：跳过 `Keywords:` 行、≤ 15 词的论文署名 / 会议等级行、研究块里的主题标签行（10-16 收窄到研究块：经历 / 项目里 "Built REST APIs, wrote unit tests, deployed services" 这类逗号分隔的短要点原先也被当成标签行跳过）。
+- Evaluation pairs re-selected: in 9 of the old 10 pairs, the JD had only a title and no responsibilities, so "fits the JD" could not be judged. We re-selected 14 pairs using "highest ranked, JD body ≥ 200 characters, has responsibilities".
+- Fixed `rewrite_applier.check_facts`: placeholder text in `[...]` is now stripped before checking for new skills. Before, `[database load change]` was rejected as introducing the new skill "databases".
+- Fixed detector false positives: skip `Keywords:` lines, author lines and venue-ranking lines of ≤ 15 words, and topic-tag lines in research blocks. (On Oct 16 the topic-tag rule was narrowed to research blocks only. Short comma-separated bullets in experience/project blocks, such as "Built REST APIs, wrote unit tests, deployed services", had also been skipped as tag lines.)
 
-| 指标 | 修改前 | 修改后 |
+| Metric | Before | After |
 |---|---|---|
 | W1 heldout missing_outcome P | 0.258 | 0.500 |
 | W1 heldout missing_quantification P | 0.724 | 1.000 |
-| W3 有 RAG 改动 通过 / 被拒 | 53 / 1 | 55 / 1 |
-| W3 无 RAG 改动 通过 / 被拒 | 34 / 0 | 38 / 0 |
+| W3 with RAG, changes accepted / rejected | 53 / 1 | 55 / 1 |
+| W3 without RAG, changes accepted / rejected | 34 / 0 | 38 / 0 |
 
-注意：heldout 被用来调了这一轮的规则，**此后它不再是留出集**，第四轮的 heldout 数字只能当作第二个开发集看。
+Note: the heldout set was used to tune rules in this round, so **from here on it is no longer held out**. Round 4 heldout numbers should be read as a second dev set.
 
-### 第四轮（R4）：改写 prompt 约束 + 解析 additional_info
+### Round 4 (R4): rewrite prompt constraints + parsing additional_info
 
-第三轮的 W4 盲评暴露了三个改写问题：占位太多（单条最多 7 个，用户要补一长串数据）、理由描述了没做的改动、技能栏丢掉 familiar/proficient 这类程度词。解析侧 additional_info F1 只有 0.368。
+The round 3 W4 blind rating surfaced three rewriting problems: too many placeholders (up to 7 in one change, leaving the user a long list of data to fill in), rationales describing edits that were never made, and the skills section losing proficiency words like "familiar" or "proficient". On the parsing side, additional_info F1 was only 0.368.
 
-改写侧（`app/resume/resume_rewriter.py`）：
+Rewriting (`app/resume/resume_rewriter.py`):
 
-- 每条改动最多新增 2 个占位（`MAX_NEW_PLACEHOLDERS`）；理由只能写原文和改写之间实际做了的改动；经历/项目/研究块按对齐的 JD 职责改写；技能栏保留熟练度措辞。
-- 新增软约束检查 `change_problems`：违反（占位超限、理由点名的技能在原文/改写/JD 里都没有）时带着问题重试一次，仍不满足也照常输出，不让整次改写失败。
+- At most 2 new placeholders per change (`MAX_NEW_PLACEHOLDERS`). A rationale may only describe edits actually made between the original and the rewrite. Experience/project/research blocks are rewritten toward the aligned JD responsibilities. The skills section keeps proficiency wording.
+- New soft check `change_problems`: on a violation (too many placeholders, or a rationale naming a skill found in neither the original, the rewrite nor the JD), the call is retried once with the problems listed. If it still fails, the output is used anyway, so one bad change never fails the whole rewrite.
 
-解析侧（`app/resume/llm_resume_parser.py`）：
+Parsing (`app/resume/llm_resume_parser.py`):
 
-- 规则 5 改为"每个事实只放一处：有专门字段的放专门字段（求职意向 → about，GPA → 教育，考试成绩 → 证书…），没有的才进 additional_info"。
-- additional_info 金标按同一标准盲标重标；评测匹配额外比较冒号后的值（标签是自由文本，同一事实写法可能不同）。
+- Rule 5 now reads "each fact goes in one place: facts with a dedicated field go there (career intent → about, GPA → education, test scores → certificates, ...), and only the rest goes into additional_info".
+- additional_info gold labels were redone blind under the same rule. Matching now also compares the value after the colon, since labels are free text and the same fact can be worded differently.
 
-## 4. 修改前后结果
+## 4. Results Before and After
 
-### 4.1 简历改写（W3 / W5，14 组）
+### 4.1 Resume rewriting (W3 / W5, 14 pairs)
 
-![改写新增占位](figures/rewrite_placeholders.png)
+![Placeholders added by rewriting](figures/rewrite_placeholders.png)
 
-| 指标 | R4-前 有 RAG | R4 有 RAG | R4 无 RAG |
+| Metric | R4-pre with RAG | R4 with RAG | R4 without RAG |
 |---|---|---|---|
-| 每条改动平均新增占位（最多） | 1.84（7） | **0.44（2）** | 0.43（2） |
-| 占位超上限的改动 | 16 | **0** | 0 |
-| 改动 通过 / 被拒 | 55 / 1 | 41 / 1 | 28 / 0 |
-| 理由数 / 无引用的理由 | — | 114 / 3（0.026） | 79 / 79（1.000） |
-| 理由提到原文/改写/JD 都没有的技能 | — | 0 | 1 |
-| 理由标了对齐的 JD 职责 | — | 58 / 114 | 23 / 79 |
-| 改写块与对齐职责相似度 Δ 均值 | — | +0.024（13 块） | +0.029（8 块） |
-| 行级问题 改前 → 改后 | — | 34 → 25 | 32 → 30 |
-| 职责契合分 Δ 均值（满分 30） | — | +0.13 | +0.22 |
-| 技能分 Δ 均值（满分 65） | — | +0.00 | +0.00 |
+| Mean new placeholders per change (max) | 1.84 (7) | **0.44 (2)** | 0.43 (2) |
+| Changes over the placeholder limit | 16 | **0** | 0 |
+| Changes accepted / rejected | 55 / 1 | 41 / 1 | 28 / 0 |
+| Rationales / rationales with no citation | — | 114 / 3 (0.026) | 79 / 79 (1.000) |
+| Rationales naming a skill absent from original, rewrite and JD | — | 0 | 1 |
+| Rationales tagged with an aligned JD responsibility | — | 58 / 114 | 23 / 79 |
+| Mean Δ similarity between rewritten block and aligned responsibility | — | +0.024 (13 blocks) | +0.029 (8 blocks) |
+| Line issues before → after | — | 34 → 25 | 32 → 30 |
+| Mean Δ responsibility fit score (out of 30) | — | +0.13 | +0.22 |
+| Mean Δ skill score (out of 65) | — | +0.00 | +0.00 |
 
-"—"表示该指标第四轮才加，修改前没有测；R4-前 的占位数字来自本地会话加完占位指标后对旧回答的统计。读法：
+"—" marks metrics added in round 4 that were not measured before. The R4-pre placeholder numbers were computed on the old answers after the placeholder metric was added. How to read the table:
 
-- **占位问题解决了**：超限从 16 条降到 0，平均占位降到原来的四分之一。注意上限就是本轮加的约束，"超限 = 0"只说明约束生效，不说明改写质量；质量看 4.2 节盲评。
-- **改写几乎不改变匹配分**：职责契合分平均只升 0.13 / 30，技能分不变。这是预期的（不允许新增技能和数字，可改的只有措辞和顺序），所以改写的价值要看盲评和行级问题，不能说成"提高了匹配度"。
-- **通过的改动变少**（55 → 41）：一部分原来靠堆占位"改写"的块，现在不改了。W4 盲评（4.2 节）显示这没有换来质量下降。
-- **被拒的改动**：R3-前 唯一被拒的一条（CI/CD）被 W4 盲评判为误拒；R4 唯一被拒的一条（new_skill：machine learning）列在 `eval_outputs/haiku/rejected_changes_review.csv`，还没有判定是真编造还是误拒。
-- **RAG 的作用主要在可解释性**：有 RAG 时 97% 的理由引用了知识库条目；无 RAG 时 0% 是必然的（没有条目可引用），不算 RAG 的效果。两组改写质量的差异在噪声内（第三轮、第四轮盲评都是这个结论），目前没有证据说明 RAG 提高了改写质量。
-- **缺数据、缺结果类问题几乎不减**（missing_quantification 10 → 9、missing_outcome 13 → 14）：这是有意的——原文没有的数字不允许编，只能留占位让用户补，补完才会减少。
+- **The placeholder problem is fixed.** Changes over the limit went from 16 to 0, and the mean dropped to a quarter. The limit itself was added this round, so "0 over the limit" only shows the constraint works. It says nothing about rewrite quality; see the blind rating in 4.2 for that.
+- **Rewriting barely moves the match score.** The responsibility fit score rises by 0.13 / 30 on average and the skill score does not change. This is expected: new skills and new numbers are not allowed, so only wording and order can change. The value of rewriting has to be judged by the blind rating and the line issue counts, not described as "improving the match".
+- **Fewer changes are accepted** (55 → 41). Some blocks that were previously "rewritten" by piling on placeholders are now left alone. The W4 blind rating (4.2) shows this did not cost quality.
+- **Rejected changes.** The single rejected change in R3-pre (CI/CD) was judged a false rejection in the W4 rating. The single rejected change in R4 (new_skill: machine learning) is listed in `eval_outputs/haiku/rejected_changes_review.csv`; we have not decided whether it was a real invention or a false rejection.
+- **RAG mainly helps explainability.** With RAG, 97% of rationales cite a knowledge-base entry. Without RAG the figure is 0% by construction (there is nothing to cite), so that is not an effect of RAG. The quality difference between the two groups is within noise (both the round 3 and round 4 ratings agree), and we have no evidence that RAG improves rewrite quality.
+- **Missing-number and missing-outcome issues barely drop** (missing_quantification 10 → 9, missing_outcome 13 → 14). This is by design: numbers not in the original may not be invented, so the rewriter leaves placeholders for the user. The counts only fall once the user fills them in.
 
-### 4.2 W4 混合盲评
+### 4.2 W4 mixed blind rating
 
-R3-前（第三轮修复前）和 R4 的评分表各 30 行合成 60 行、打乱重编号（M01–M60），分组存在单独的 key 文件里；
-4 个 sonnet 子代理各评 15 行，看不到哪行是修改前、哪行是修改后。
-所以这里的"修改前 → 修改后"包含第三轮（占位误判、检测器误报）和第四轮（prompt 约束）两轮改动的合计效果。
-下文"修改前"均指 R3-前。
+The R3-pre (before round 3 fixes) and R4 rating sheets, 30 rows each, were combined into 60 rows, shuffled and renumbered M01–M60, with the group mapping stored in a separate key file.
+4 sonnet sub-agents rated 15 rows each without knowing which rows came from before or after.
+The "before → after" here therefore combines round 3 (placeholder false rejection, detector false positives) and round 4 (prompt constraints).
+"Before" in this section always means R3-pre.
 
-![W4 混合盲评](figures/w4_blind_rating.png)
+![W4 mixed blind rating](figures/w4_blind_rating.png)
 
-图的读法：蓝点 → 橙点是修改前 → 修改后，右侧是差值；灰条是同一批修改前的行在第三轮和这次两次打分的差距，也就是评分者噪声的大小。各维度的灰条从 0.05 到 0.70 不等；箭头超出本维度灰条的只有有 RAG 的"贴合 JD"（+0.35）和无 RAG 的"比原文好"（−0.50），但都小于其他维度 0.4–0.7 的噪声，仍不能算显著。
+Reading the figure: blue dot → orange dot is before → after, with the difference on the right. The grey bar is the gap between two ratings of the same "before" rows (round 3 vs. this round), i.e. the size of rater noise. Grey bars range from 0.05 to 0.70 across dimensions. Only two arrows exceed their own dimension's grey bar: "fits the JD" with RAG (+0.35) and "better than original" without RAG (−0.50). Both are still smaller than the 0.4–0.7 noise on the other dimensions, so neither counts as significant.
 
-| 组 | 行数 | 事实一致 | 比原文好 | 贴合 JD | 理由正确 |
+| Group | Rows | Factual consistency | Better than original | Fits the JD | Rationale correct |
 |---|---|---|---|---|---|
-| R3-前 · 有 RAG | 20 | 4.20 | 3.15 | 2.95 | 3.55 |
-| **R4 · 有 RAG** | 20 | **4.45** | **3.30** | **3.30** | **3.70** |
-| R3-前 · 无 RAG | 10 | 4.20 | 3.30 | 3.20 | 3.70 |
-| R4 · 无 RAG | 10 | 4.00 | 2.80 | 3.20 | 3.70 |
+| R3-pre · with RAG | 20 | 4.20 | 3.15 | 2.95 | 3.55 |
+| **R4 · with RAG** | 20 | **4.45** | **3.30** | **3.30** | **3.70** |
+| R3-pre · without RAG | 10 | 4.20 | 3.30 | 3.20 | 3.70 |
+| R4 · without RAG | 10 | 4.00 | 2.80 | 3.20 | 3.70 |
 
-- 有 RAG（线上路径）四个维度都略升，贴合 JD 升得最多（+0.35），和第四轮"按对齐职责改写"的 prompt 改动一致。
-- **设计上的限制**：每行只有 1 个评分者，4 个评分者各评不同的 15 行，评分者差异和行差异混在一起；修改前后的行是两次各自抽样的改动，不是同一批块的配对比较。
-- **幅度在评分者噪声内**：R3-前 的 30 行第三轮已让 sonnet 评过一次（有 RAG 事实 4.60 / 理由 4.25），这次是 4.20 / 3.55，同一批行两次打分差 0.4–0.7，大于修改前后的差。结论只能是"没退步、方向向好"。
-- 被扣"占位太多、没法用"的行（M05、M19、M28，其中 M28 有 6 个占位）全部是修改前的。
-- 无 RAG 的"比原文好" 3.30 → 2.80：只有 10 行，且是对照组，线上不走这条路径。
-- 剩余低分主要两类，都不在改写器本身：① 技能栏被判"凭空加技能"（M01、M12、M59）——评分者只看到这一块，从同一简历别处挪来的技能也被当成编造，`check_facts` 对照整份简历时这些都通过；② "贴合 JD"低（M02、M26、M40）——量化交易岗位配遥感 / 扩散模型研究经历，岗位本身和简历不对口。
+- With RAG (the production path), all four dimensions rise slightly, and "fits the JD" rises most (+0.35). This matches the round 4 prompt change to rewrite toward the aligned responsibilities.
+- **Design limits.** Each row has one rater, and the 4 raters each saw different rows, so rater differences and row differences are mixed together. The before and after rows are separate samples of changes, not paired comparisons of the same blocks.
+- **The effect is within rater noise.** The same 30 R3-pre rows were rated by sonnet once in round 3 (with RAG: factual 4.60 / rationale 4.25) and scored 4.20 / 3.55 this time. Two ratings of the same rows differ by 0.4–0.7, more than the before/after gap. The only safe conclusion is "no regression, trending better".
+- Every row marked down for "too many placeholders to be usable" (M05, M19, M28; M28 had 6 placeholders) is from before.
+- "Better than original" without RAG fell from 3.30 to 2.80. That group has only 10 rows and is the control; production does not use this path.
+- The remaining low scores fall into two groups, neither caused by the rewriter itself. (1) Skills sections judged as "adding skills out of nowhere" (M01, M12, M59): the rater only sees that one block, so skills moved from elsewhere in the same resume look invented. `check_facts` compares against the whole resume and accepts them. (2) Low "fits the JD" (M02, M26, M40): quantitative trading roles paired with remote sensing or diffusion-model research, where the job and the resume simply do not match.
 
-### 4.3 简历解析（P1–P3，14 份）
+### 4.3 Resume parsing (P1–P3, 14 resumes)
 
-第四轮同时改了 prompt 和金标，要分开看两者的作用，所以用 R4-前-解析（旧 prompt + 旧回答，在**新金标**上重跑）和 R4 对比：两者金标相同，差别只来自 prompt。
+Round 4 changed both the prompt and the gold labels. To separate the two, we compare R4-pre-parse (old prompt + old answers, re-scored on the **new gold set**) with R4. Both use the same gold set, so any difference comes from the prompt alone.
 
-![解析各项指标修改前后](figures/parsing_before_after.png)
+![Parsing metrics before and after](figures/parsing_before_after.png)
 
-| 指标 | R3（旧 prompt，旧金标） | R4-前-解析（旧 prompt，新金标） | R4（新 prompt，新金标） | Δ（只看 prompt） |
+| Metric | R3 (old prompt, old gold) | R4-pre-parse (old prompt, new gold) | R4 (new prompt, new gold) | Δ (prompt only) |
 |---|---|---|---|---|
-| 条目 F1（全部段落） | 0.864 | 0.879 | 0.883 | +0.004 |
+| Item F1 (all sections) | 0.864 | 0.879 | 0.883 | +0.004 |
 | projects F1 | — | 0.941 | 0.906 | −0.035 |
 | educations F1 | — | 0.980 | 1.000 | +0.020 |
 | skill_groups F1 | — | 0.989 | 0.955 | −0.034 |
 | additional_info F1 | 0.368 | 0.462 | **0.538** | **+0.076** |
-| 字段准确率（17 个字段） | 0.991 | 0.997 | 0.994 | −0.003 |
-| 长文本事实保留率 | — | 0.939 | 0.925 | −0.014 |
-| 长文本语义相似度 | 0.963 | 0.963 | 0.945 | −0.018 |
+| Field accuracy (17 fields) | 0.991 | 0.997 | 0.994 | −0.003 |
+| Long-text fact retention | — | 0.939 | 0.925 | −0.014 |
+| Long-text semantic similarity | 0.963 | 0.963 | 0.945 | −0.018 |
 | skills F1 | — | 0.787 | 0.783 | −0.004 |
-| 原文数字保留率 | — | 429 / 438 | 429 / 438 = 0.979 | 0 |
-| 疑似编造数字占比 | — | 2 / 325 | 2 / 325 = 0.006 | 0 |
-| P3 首次通过 / 重试 / 失败 | — | 14 / 0 / 0 | 14 / 0 / 0 | — |
+| Source number retention | — | 429 / 438 | 429 / 438 = 0.979 | 0 |
+| Suspected invented numbers | — | 2 / 325 | 2 / 325 = 0.006 | 0 |
+| P3 first pass / retry / failure | — | 14 / 0 / 0 | 14 / 0 / 0 | — |
 
-experiences、research、certificates、awards 的 F1，以及 name / email / phone 准确率，两版相同（research 0.914、certificates 0.917，其余 1.000），图里只画了 research 和 certificates。
+F1 for experiences, research, certificates and awards, and accuracy for name / email / phone, are identical in both versions (research 0.914, certificates 0.917, all others 1.000). The figure only shows research and certificates.
 
 ![additional_info F1](figures/additional_info_f1.png)
 
-- **新 prompt 只在目标字段上有效**：additional_info +0.076（不再把求职意向、部门名、GitHub 链接等重复写进 additional_info）；0.368 → 0.538 里另外 0.094 来自金标重标。
-- **其他指标小幅下降**：projects −0.035、skill_groups −0.034、事实保留率 −0.014、语义相似度 −0.018；字段准确率里 certificates.score 11/11 → 9/11。条目 F1 的总提升（0.864 → 0.883）里 0.015 来自金标重标，prompt 只贡献 +0.004。
-  可能的原因是"每个事实只放一处"让模型把一部分内容从项目/技能栏挪走了，本轮没有逐条排查；每份简历只采样 1 次，这些幅度也可能是噪声。**结论：这次 prompt 改动对解析整体是持平，不能说成提升。**
-- additional_info 是兜底字段，不参与匹配和改写，0.538 的影响有限。
-- R4-前-解析是 10-16 补跑的（解析 prompt 取 `550a0ce`，回答来自清理前的缓存），用过的回答没有保留。
+- **The new prompt only helps the field it targeted.** additional_info gains +0.076, since career intent, department names, GitHub links and similar items are no longer duplicated into it. Of the full 0.368 → 0.538 gain, the other 0.094 comes from relabeling.
+- **Other metrics drop slightly**: projects −0.035, skill_groups −0.034, fact retention −0.014, semantic similarity −0.018; within field accuracy, certificates.score went from 11/11 to 9/11. Of the overall item F1 gain (0.864 → 0.883), 0.015 comes from relabeling and only +0.004 from the prompt.
+  A likely cause is that "each fact in one place" led the model to move some content out of projects and skills; we did not check this item by item. With one sample per resume, these differences may also be noise. **Conclusion: for parsing overall, this prompt change is neutral. It should not be reported as an improvement.**
+- additional_info is a catch-all field that is not used for matching or rewriting, so its 0.538 has limited impact.
+- R4-pre-parse was an extra run on Oct 16 (parsing prompt from `550a0ce`, answers from the cache before pruning). The answers it used were not kept.
 
-### 4.4 问题检测器（W1）与检索（W2）
+### 4.4 Issue detector (W1) and retrieval (W2)
 
-| 问题类型 | dev F1 | heldout F1（已用于调参） |
+| Issue type | dev F1 | heldout F1 (already used for tuning) |
 |---|---|---|
 | weak_action_verb | 1.000 | 0.889 |
 | passive_voice | 0.929 | 1.000 |
 | buzzword | 1.000 | 0.900 |
 | missing_quantification | 0.886 | 0.894 |
-| missing_outcome | 0.827 | 0.571（P 0.471） |
+| missing_outcome | 0.827 | 0.571 (P 0.471) |
 
-10-16 把"主题标签行"规则收窄到研究块后（W1 用例按来源补了 `section` 字段），heldout missing_quantification 0.913 → 0.894、missing_outcome 0.593 → 0.571，原因都是同一行项目块里的 "LLM systems, intelligent Q&A" 现在被检测。这是有意的取舍：少一条误报，换来经历 / 项目里的短要点不再被漏检。dev 和 W3 数字不变。
+On Oct 16 the topic-tag rule was narrowed to research blocks (W1 cases gained a `section` field from their source). heldout missing_quantification went from 0.913 to 0.894 and missing_outcome from 0.593 to 0.571, both because of a single project-block line, "LLM systems, intelligent Q&A", which is now checked. This is a deliberate trade: one more false positive in exchange for no longer missing short bullets in experience and project blocks. dev and W3 numbers are unchanged.
 
-W2 检索（R3，第四轮未改检索）：82 条用例 hit@3 0.927 / MRR 0.846，14 组评测对的问题覆盖率 202 / 202。
+W2 retrieval (R3; retrieval was not changed in round 4): over 82 cases, hit@3 0.927 / MRR 0.846. Issue coverage across the 14 evaluation pairs is 202 / 202.
 
-## 5. 局限
+## 5. Limitations
 
-1. **金标和评分都来自模型**：解析金标是 Claude 整理的银标，W4 由 sonnet 子代理盲评；检测器标注抽查 κ = 0.956 是 Claude 标注者和另一个 Claude 子代理之间的一致性，不是人和模型的一致性。没有真人评分。
-2. **作答和评分是同一系列模型**：回答来自 haiku，金标和评分来自 Claude / sonnet，可能有同系列模型的自偏好，盲评分数可能偏高。
-3. **评测模型 ≠ 线上模型**：回答来自 haiku，线上是 Gemini；修复后还没用 Gemini 复测。
-4. **样本小、单次采样**：14 份简历、14 组评测对、W4 每组 10–20 行，小于约 0.4 分的盲评差异分不出是不是噪声。
-5. **检测器没有真正的留出集**：heldout 已用于第三轮调规则；要报泛化能力需要另找新简历盲标。
-6. **评测对有不对口的组合**：按排序结果选岗位，部分简历和岗位方向不符，压低了"贴合 JD"。
+1. **Gold labels and ratings come from models.** The parsing gold set is a silver set built by Claude, and W4 was rated blind by sonnet sub-agents. The detector spot-check κ = 0.956 measures agreement between a Claude labeler and another Claude sub-agent, not between a human and a model. No human ratings were collected.
+2. **Answers and ratings come from the same model family.** Answers are from haiku; gold labels and ratings are from Claude / sonnet. Same-family self-preference may push blind scores up.
+3. **The evaluated model is not the production model.** Answers come from haiku, while production uses Gemini. The fixes have not been re-tested on Gemini.
+4. **Small samples, one sample per prompt.** 14 resumes, 14 evaluation pairs, 10–20 rated rows per W4 group. Blind-rating differences under about 0.4 cannot be told apart from noise.
+5. **The detector has no true held-out set.** heldout was used to tune rules in round 3. Reporting generalisation would need new resumes labeled blind.
+6. **Some evaluation pairs are mismatched.** Jobs were picked from ranking results, and some do not fit the resume's direction, which pulls "fits the JD" down.
 
-## 6. 文件
+## 6. Files
 
-| 路径 | 内容 |
+| Path | Contents |
 |---|---|
 | `SystemCode/backend/scripts/evaluate_resume_parsing.py` | P1–P3 |
-| `SystemCode/backend/scripts/evaluate_rewrite.py` | W1、W3、W5、W4 导出与打分 |
+| `SystemCode/backend/scripts/evaluate_rewrite.py` | W1, W3, W5, W4 export and scoring |
 | `SystemCode/backend/scripts/evaluate_guideline_retrieval.py` | W2 |
-| `SystemCode/backend/scripts/eval_llm_cache.py` / `prune_eval_cache.py` | 回放缓存 / 清理未命中的回答 |
-| `SystemCode/backend/resume test/parsed/` | 14 份解析金标 |
-| `SystemCode/backend/scripts/issue_detector_cases.json` | W1 标注（dev / heldout） |
-| `SystemCode/backend/scripts/rewrite_eval_pairs.json` | W3 的 14 组评测对 |
-| `SystemCode/backend/eval_outputs/haiku/` | 回答缓存、W4 评分表、被拒改动审阅表 |
-| `SystemCode/evaluation/figures/` | 本文档的图，`make_figures.py` 重新生成 |
+| `SystemCode/backend/scripts/eval_llm_cache.py` / `prune_eval_cache.py` | Replay cache / pruning unused answers |
+| `SystemCode/backend/resume test/parsed/` | 14 parsing gold files |
+| `SystemCode/backend/scripts/issue_detector_cases.json` | W1 labels (dev / heldout) |
+| `SystemCode/backend/scripts/rewrite_eval_pairs.json` | The 14 W3 evaluation pairs |
+| `SystemCode/backend/eval_outputs/haiku/` | Answer cache, W4 rating sheets, rejected-change review sheet |
+| `SystemCode/evaluation/figures/` | Figures used in this document |
