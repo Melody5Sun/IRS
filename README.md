@@ -118,20 +118,6 @@ The interface can be switched between Chinese and English at the top right. If t
 
 ### Project proposal
 * `IRS-Project-Proposal-IT-CareerPilot-Group28.pdf` — submitted proposal
-* `IRS-Project-Proposal-V1-EN.docx` / `IRS-Project-Proposal-V1-CN.docx` — proposal source (English / Chinese)
-* `IT-CareerPilot-Project-Proposal-Final-EN-10min.pptx` — proposal presentation slides
-* `IT-CareerPilot-Proposal-Architecture.html`, `IT-CareerPilot-Use-Case-Diagram.html` — proposal diagrams
-
-### proposal-assets/
-* Student persona, pain-point word cloud and their research sources (`CareerPilot-Persona-Research-Sources.md`)
-* Architecture, functional module, typical user flow and use case diagrams (HTML + PNG previews)
-
-### video-production/
-* Promotion video script, voice-over drafts and subtitles, style guide, style frames, sources and review notes
-* Background music track used in the promotion video
-
-### FinalReport-zjy.docx
-* An earlier full draft of the project report, kept for reference
 
 ### Evaluation write-ups (in SystemCode)
 * [`SystemCode/evaluation/README.md`](SystemCode/evaluation/README.md) — resume parsing and rewrite evaluation

@@ -21,7 +21,7 @@
 **截止日期**: 2026-10-25
 
 ## ✅ 已完成
-- 提案定稿（IRS-Project-Proposal-V1-CN.docx）、proposal-assets/ 整理、`.claude/` 配置系统
+- 提案定稿、`.claude/` 配置系统
 - 后端 FastAPI 骨架（`SystemCode/backend/`）：health / resumes / jobs / recommendations 四组路由；顶栏 `GET /jobs/library-status`（`MAX(last_seen_at)` + 在招数），`/profile` 响应带 `updated_at`
 - 简历解析：只保留 `POST /resumes/parse-pdf`（pdfminer 提取文本，纯文本的 `/parse` 已删除），调用 Gemini（OpenAI 兼容接口）抽取成结构化 `ResumeDocument`，校验失败自动重试一次
 - 简历 schema：

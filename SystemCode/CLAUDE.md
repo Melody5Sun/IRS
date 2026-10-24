@@ -27,7 +27,7 @@ IRS-v1/                                # 按 IRS-PM 提交模板组织
 │   ├── .gitignore                     # 代码相关忽略规则（Video/、.claude/ 下各有自己的 .gitignore）
 │   └── backend/.env(.example)         # config.py 读 SystemCode/backend/.env；.env 不提交
 ├── Video/                             # 只跟踪 README.md（YouTube 链接）；mp4 超过 100MB，由 Video/.gitignore 忽略
-├── Miscellaneous/                     # 提案、proposal-assets/、video-production/、旧版报告
+├── Miscellaneous/                     # 正式提案和 README 图片
 └── .claude/                           # Claude Code 配置（工作流规则、primer、lessons、hooks、模板）
 ```
 
